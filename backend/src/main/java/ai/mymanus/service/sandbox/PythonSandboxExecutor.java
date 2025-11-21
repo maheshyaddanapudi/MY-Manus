@@ -1,6 +1,5 @@
 package ai.mymanus.service.sandbox;
 
-import ai.mymanus.tool.Tool;
 import ai.mymanus.tool.ToolRegistry;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,6 +8,7 @@ import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.model.*;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,11 +18,15 @@ import java.io.File;
 import java.io.FileWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Executes Python code in isolated Docker containers.
+ * Executes Python code in session-based Docker containers.
  * Implements the CodeAct architecture with state persistence.
+ *
+ * IMPORTANT: Uses one container per session for efficiency.
+ * Containers are cached and reused across multiple code executions.
  */
 @Slf4j
 @Service
@@ -31,6 +35,9 @@ public class PythonSandboxExecutor {
     private final DockerClient dockerClient;
     private final ToolRegistry toolRegistry;
     private final ObjectMapper objectMapper;
+
+    // Container cache: sessionId -> containerId
+    private final Map<String, String> sessionContainers = new ConcurrentHashMap<>();
 
     @Value("${docker.sandbox.image:mymanus-sandbox:latest}")
     private String sandboxImage;
@@ -56,20 +63,22 @@ public class PythonSandboxExecutor {
     }
 
     /**
-     * Execute Python code with state persistence
+     * Execute Python code in a session-specific sandbox container.
+     * Reuses existing container if available for better performance.
+     *
+     * @param sessionId Session/conversation ID
+     * @param code Python code to execute
+     * @param previousState Previous execution context (variables)
+     * @return Execution result with stdout, stderr, and new state
      */
-    public ExecutionResult execute(String code, Map<String, Object> previousState) {
+    public ExecutionResult execute(String sessionId, String code, Map<String, Object> previousState) {
         long startTime = System.currentTimeMillis();
         String containerId = null;
 
         try {
-            // Create container with resource limits
-            containerId = createContainer();
-            log.info("Created container: {}", containerId);
-
-            // Start container
-            dockerClient.startContainerCmd(containerId).exec();
-            log.info("Started container: {}", containerId);
+            // Get or create container for this session (cached!)
+            containerId = getOrCreateContainer(sessionId);
+            log.debug("Using container {} for session {}", containerId.substring(0, 12), sessionId);
 
             // Prepare Python code with state restoration and tool bindings
             String fullCode = buildExecutionScript(code, previousState);
@@ -81,32 +90,84 @@ public class PythonSandboxExecutor {
             ExecutionResult result = executeInContainer(containerId);
             result.setExecutionTimeMs(System.currentTimeMillis() - startTime);
 
+            log.info("Executed code in session {} in {}ms", sessionId, result.getExecutionTimeMs());
             return result;
 
         } catch (Exception e) {
-            log.error("Execution error", e);
+            log.error("Execution error in session {}", sessionId, e);
+
+            // If container failed, remove it from cache so it gets recreated
+            if (containerId != null) {
+                sessionContainers.remove(sessionId);
+                cleanup(containerId);
+            }
+
             return ExecutionResult.builder()
                     .success(false)
                     .error(e.getMessage())
                     .executionTimeMs(System.currentTimeMillis() - startTime)
                     .build();
+        }
+        // Note: No finally block - container stays alive for reuse!
+    }
 
-        } finally {
-            // Cleanup container
-            if (containerId != null) {
-                cleanup(containerId);
-            }
+    /**
+     * Get existing container for session or create a new one.
+     * Containers are cached and reused for efficiency.
+     */
+    private String getOrCreateContainer(String sessionId) {
+        String existingContainerId = sessionContainers.get(sessionId);
+
+        // Check if we have a cached container that's still running
+        if (existingContainerId != null && isContainerRunning(existingContainerId)) {
+            log.debug("Reusing existing container {} for session {}",
+                    existingContainerId.substring(0, 12), sessionId);
+            return existingContainerId;
+        }
+
+        // Create new container
+        log.info("Creating new container for session {}", sessionId);
+        String containerId = createContainer(sessionId);
+
+        // Start container
+        dockerClient.startContainerCmd(containerId).exec();
+        log.info("Started container {} for session {}", containerId.substring(0, 12), sessionId);
+
+        // Cache it
+        sessionContainers.put(sessionId, containerId);
+
+        return containerId;
+    }
+
+    /**
+     * Check if container is still running
+     */
+    private boolean isContainerRunning(String containerId) {
+        try {
+            var container = dockerClient.inspectContainerCmd(containerId).exec();
+            Boolean running = container.getState().getRunning();
+            return running != null && running;
+        } catch (Exception e) {
+            log.debug("Container {} is not running: {}", containerId.substring(0, 12), e.getMessage());
+            return false;
         }
     }
 
-    private String createContainer() {
+    /**
+     * Create a new sandbox container for a session
+     */
+    private String createContainer(String sessionId) {
         HostConfig hostConfig = HostConfig.newHostConfig()
                 .withMemory(memoryLimit)
                 .withCpuQuota(cpuQuota)
                 .withNetworkMode(networkMode)
                 .withAutoRemove(false);
 
+        // Use session ID in container name for easy identification
+        String containerName = "manus-sandbox-" + sessionId.substring(0, Math.min(8, sessionId.length()));
+
         CreateContainerResponse container = dockerClient.createContainerCmd(sandboxImage)
+                .withName(containerName)
                 .withHostConfig(hostConfig)
                 .withUser("ubuntu")
                 .withWorkingDir("/home/ubuntu/workspace")
@@ -255,6 +316,9 @@ public class PythonSandboxExecutor {
         return new HashMap<>();
     }
 
+    /**
+     * Cleanup a specific container
+     */
     private void cleanup(String containerId) {
         try {
             dockerClient.stopContainerCmd(containerId)
@@ -263,9 +327,60 @@ public class PythonSandboxExecutor {
             dockerClient.removeContainerCmd(containerId)
                     .withForce(true)
                     .exec();
-            log.info("Cleaned up container: {}", containerId);
+            log.info("Cleaned up container: {}", containerId.substring(0, 12));
         } catch (Exception e) {
-            log.error("Error cleaning up container: {}", containerId, e);
+            log.warn("Error cleaning up container {}: {}",
+                    containerId.substring(0, 12), e.getMessage());
         }
+    }
+
+    /**
+     * Destroy container for a specific session.
+     * Called when user clears session or session expires.
+     */
+    public void destroySessionContainer(String sessionId) {
+        String containerId = sessionContainers.remove(sessionId);
+        if (containerId != null) {
+            log.info("Destroying container for session {}", sessionId);
+            cleanup(containerId);
+        } else {
+            log.debug("No container found for session {}", sessionId);
+        }
+    }
+
+    /**
+     * Clean up all containers on application shutdown
+     */
+    @PreDestroy
+    public void cleanupAllContainers() {
+        log.info("Cleaning up {} session containers on shutdown", sessionContainers.size());
+        sessionContainers.forEach((sessionId, containerId) -> {
+            log.info("Cleaning up container {} for session {}",
+                    containerId.substring(0, 12), sessionId);
+            cleanup(containerId);
+        });
+        sessionContainers.clear();
+    }
+
+    /**
+     * Get statistics about active containers for monitoring
+     */
+    public Map<String, Object> getContainerStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalContainers", sessionContainers.size());
+        stats.put("sessions", new ArrayList<>(sessionContainers.keySet()));
+
+        // Get detailed container info
+        List<Map<String, String>> containers = new ArrayList<>();
+        sessionContainers.forEach((sessionId, containerId) -> {
+            Map<String, String> containerInfo = new HashMap<>();
+            containerInfo.put("sessionId", sessionId);
+            containerInfo.put("containerId", containerId.substring(0, 12));
+            containerInfo.put("running", String.valueOf(isContainerRunning(containerId)));
+            containers.add(containerInfo);
+        });
+        stats.put("containers", containers);
+
+        return stats;
     }
 }

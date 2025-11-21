@@ -111,11 +111,11 @@ public class CodeActAgentService {
                 sendEvent(sessionId, "code", code,
                         Map.of("iteration", iteration, "block", i + 1, "total", codeBlocks.size()));
 
-                // Execute code in sandbox
+                // Execute code in sandbox (session-based container)
                 sendEvent(sessionId, "status", "executing",
                         Map.of("iteration", iteration, "block", i + 1));
 
-                ExecutionResult result = sandboxExecutor.execute(code, executionContext);
+                ExecutionResult result = sandboxExecutor.execute(sessionId, code, executionContext);
 
                 // Update execution context with new variables
                 if (result.getVariables() != null) {
@@ -221,10 +221,15 @@ public class CodeActAgentService {
     }
 
     /**
-     * Clear session state
+     * Clear session state and destroy sandbox container
      */
     public void clearSession(String sessionId) {
         log.info("Clearing session: {}", sessionId);
+
+        // Destroy sandbox container for this session
+        sandboxExecutor.destroySessionContainer(sessionId);
+
+        // Clear database state
         stateService.deleteSession(sessionId);
         stateService.createSession(sessionId);
     }
