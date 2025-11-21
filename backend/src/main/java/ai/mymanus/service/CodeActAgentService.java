@@ -84,11 +84,8 @@ public class CodeActAgentService {
             // Build system prompt with current context
             String systemPrompt = promptBuilder.buildSystemPrompt(executionContext, false);
 
-            // Get conversation history
-            List<String> history = stateService.getConversationHistory(sessionId);
-
-            // Generate LLM response
-            String llmResponse = anthropicService.generate(systemPrompt, history, userQuery);
+            // Generate LLM response (ChatClient uses conversation history from JDBC memory)
+            String llmResponse = anthropicService.generate(sessionId, systemPrompt, userQuery);
             fullResponse.append(llmResponse).append("\n\n");
 
             log.info("LLM Response (iteration {}): {}", iteration, llmResponse.substring(0, Math.min(200, llmResponse.length())));
