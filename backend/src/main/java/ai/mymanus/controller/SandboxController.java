@@ -1,6 +1,6 @@
 package ai.mymanus.controller;
 
-import ai.mymanus.service.sandbox.PythonSandboxExecutor;
+import ai.mymanus.service.sandbox.SandboxExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,22 +19,27 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/api/sandbox")
-@Tag(name = "Sandbox", description = "Sandbox container monitoring and management")
+@Tag(name = "Sandbox", description = "Sandbox environment monitoring and management")
 @RequiredArgsConstructor
 public class SandboxController {
 
-    private final PythonSandboxExecutor sandboxExecutor;
+    private final SandboxExecutor sandboxExecutor;
 
     @GetMapping("/stats")
     @Operation(
             summary = "Get sandbox statistics",
             description = """
-                    Retrieve statistics about active sandbox containers.
+                    Retrieve statistics about active sandbox environments.
 
-                    **Returns:**
+                    **Docker Mode Returns:**
                     - Total number of active containers
                     - List of session IDs with containers
                     - Container details (ID, running status)
+
+                    **Host Mode Returns:**
+                    - Python executable path
+                    - Workspace directory
+                    - Number of active session workspaces
 
                     Useful for monitoring resource usage and debugging.
                     """
@@ -53,14 +58,17 @@ public class SandboxController {
 
     @DeleteMapping("/cleanup/{sessionId}")
     @Operation(
-            summary = "Cleanup container for session",
+            summary = "Cleanup sandbox for session",
             description = """
-                    Force cleanup of sandbox container for a specific session.
+                    Force cleanup of sandbox environment for a specific session.
 
                     **Use Cases:**
-                    - Forcefully terminate a stuck container
+                    - Forcefully terminate a stuck execution
                     - Clean up resources when session is abandoned
-                    - Manually trigger container recreation
+                    - Manually trigger environment recreation
+
+                    **Docker Mode:** Stops and removes the container
+                    **Host Mode:** Deletes the workspace directory
 
                     ⚠️ This will terminate any running code execution!
                     """
@@ -91,14 +99,17 @@ public class SandboxController {
 
     @PostMapping("/cleanup/all")
     @Operation(
-            summary = "Cleanup all containers",
+            summary = "Cleanup all sandbox environments",
             description = """
-                    Force cleanup of ALL sandbox containers.
+                    Force cleanup of ALL sandbox environments.
 
                     **Warning:** This will:
                     - Terminate all running code executions
-                    - Remove all sandbox containers
+                    - Remove all sandbox environments
                     - Free up system resources
+
+                    **Docker Mode:** Stops and removes all containers
+                    **Host Mode:** Deletes all workspace directories
 
                     ⚠️ Only use this for maintenance or emergency cleanup!
                     """
@@ -106,15 +117,19 @@ public class SandboxController {
     public ResponseEntity<Map<String, Object>> cleanupAllContainers() {
         try {
             Map<String, Object> statsBefore = sandboxExecutor.getContainerStats();
-            int containerCount = (int) statsBefore.get("totalContainers");
+
+            // Get count based on mode (totalContainers for docker, activeSessions for host)
+            int count = statsBefore.containsKey("totalContainers")
+                    ? (int) statsBefore.get("totalContainers")
+                    : (int) statsBefore.getOrDefault("activeSessions", 0);
 
             sandboxExecutor.cleanupAllContainers();
 
             Map<String, Object> response = new HashMap<>();
-            response.put("message", "All containers destroyed");
-            response.put("containersDestroyed", containerCount);
+            response.put("message", "All sandbox environments destroyed");
+            response.put("environmentsDestroyed", count);
 
-            log.warn("Manually cleaned up all {} containers", containerCount);
+            log.warn("Manually cleaned up {} sandbox environments", count);
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {

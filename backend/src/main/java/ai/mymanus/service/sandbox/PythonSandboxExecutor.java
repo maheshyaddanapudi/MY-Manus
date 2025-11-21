@@ -11,6 +11,7 @@ import com.github.dockerjava.api.model.*;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -27,10 +28,13 @@ import java.util.concurrent.TimeUnit;
  *
  * IMPORTANT: Uses one container per session for efficiency.
  * Containers are cached and reused across multiple code executions.
+ *
+ * This implementation is active when sandbox.mode=docker (default).
  */
 @Slf4j
 @Service
-public class PythonSandboxExecutor {
+@ConditionalOnProperty(name = "sandbox.mode", havingValue = "docker", matchIfMissing = true)
+public class PythonSandboxExecutor implements SandboxExecutor {
 
     private final DockerClient dockerClient;
     private final ToolRegistry toolRegistry;
@@ -39,19 +43,19 @@ public class PythonSandboxExecutor {
     // Container cache: sessionId -> containerId
     private final Map<String, String> sessionContainers = new ConcurrentHashMap<>();
 
-    @Value("${docker.sandbox.image:mymanus-sandbox:latest}")
+    @Value("${sandbox.docker.image:mymanus-sandbox:latest}")
     private String sandboxImage;
 
-    @Value("${docker.sandbox.memory-limit:536870912}")
+    @Value("${sandbox.docker.memory-limit:536870912}")
     private Long memoryLimit;
 
-    @Value("${docker.sandbox.cpu-quota:50000}")
+    @Value("${sandbox.docker.cpu-quota:50000}")
     private Long cpuQuota;
 
-    @Value("${docker.sandbox.timeout-seconds:30}")
+    @Value("${sandbox.docker.timeout-seconds:30}")
     private Integer timeoutSeconds;
 
-    @Value("${docker.sandbox.network-mode:none}")
+    @Value("${sandbox.docker.network-mode:none}")
     private String networkMode;
 
     public PythonSandboxExecutor(DockerClient dockerClient,
@@ -71,6 +75,7 @@ public class PythonSandboxExecutor {
      * @param previousState Previous execution context (variables)
      * @return Execution result with stdout, stderr, and new state
      */
+    @Override
     public ExecutionResult execute(String sessionId, String code, Map<String, Object> previousState) {
         long startTime = System.currentTimeMillis();
         String containerId = null;
@@ -338,6 +343,7 @@ public class PythonSandboxExecutor {
      * Destroy container for a specific session.
      * Called when user clears session or session expires.
      */
+    @Override
     public void destroySessionContainer(String sessionId) {
         String containerId = sessionContainers.remove(sessionId);
         if (containerId != null) {
@@ -351,6 +357,7 @@ public class PythonSandboxExecutor {
     /**
      * Clean up all containers on application shutdown
      */
+    @Override
     @PreDestroy
     public void cleanupAllContainers() {
         log.info("Cleaning up {} session containers on shutdown", sessionContainers.size());
@@ -365,6 +372,7 @@ public class PythonSandboxExecutor {
     /**
      * Get statistics about active containers for monitoring
      */
+    @Override
     public Map<String, Object> getContainerStats() {
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalContainers", sessionContainers.size());

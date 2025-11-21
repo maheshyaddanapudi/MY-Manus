@@ -34,9 +34,13 @@ cp .env.example .env
 # Default values should work for local development
 ```
 
-### 3. Build the Sandbox Docker Image
+### 3. Choose Sandbox Mode
 
-This is the secure environment where agent code executes:
+The application supports two sandbox execution modes:
+
+#### Docker Mode (Production, Default)
+
+This is the secure, isolated environment where agent code executes:
 
 ```bash
 ./scripts/build-sandbox.sh
@@ -49,6 +53,42 @@ This will build the `mymanus-sandbox:latest` image with:
 - Data science libraries
 - Web scraping tools
 - Document processing utilities
+
+**When to use:**
+- ✅ Production deployments
+- ✅ Multi-user environments
+- ✅ Maximum security required
+- ✅ Untrusted code execution
+
+#### Host Mode (Development, Faster)
+
+Executes Python code directly on your machine without Docker overhead:
+
+```bash
+# Ensure Python 3.11+ is installed
+python3 --version
+
+# Configure in backend/.env or application-dev.yml:
+SANDBOX_MODE=host
+```
+
+**When to use:**
+- ✅ Local development
+- ✅ Faster iteration
+- ✅ Debugging Python code
+- ✅ Trusted development environment
+
+**⚠️ Security Warning:** Host mode runs generated code directly on your machine. Only use in trusted development environments!
+
+**Host Mode Configuration:**
+```yaml
+# application-dev.yml (already configured for dev profile)
+sandbox:
+  mode: host  # Switch between 'docker' or 'host'
+  host:
+    python-executable: python3
+    workspace-dir: /tmp/manus-workspace
+```
 
 ### 4. Start the Services
 

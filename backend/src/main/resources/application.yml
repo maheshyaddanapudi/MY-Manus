@@ -36,15 +36,20 @@ auth:
     secret: ${JWT_SECRET:my-secret-key-change-in-production}
     expiration: 86400000  # 24 hours
 
-# Docker Configuration
-docker:
-  host: ${DOCKER_HOST:unix:///var/run/docker.sock}
-  sandbox:
+# Sandbox Configuration
+sandbox:
+  mode: ${SANDBOX_MODE:docker}  # docker or host
+  docker:
+    host: ${DOCKER_HOST:unix:///var/run/docker.sock}
     image: mymanus-sandbox:latest
     memory-limit: 536870912  # 512MB
     cpu-quota: 50000  # 50% of one core
     timeout-seconds: 30
     network-mode: none
+  host:
+    python-executable: ${PYTHON_EXECUTABLE:python3}
+    workspace-dir: ${WORKSPACE_DIR:/tmp/manus-workspace}
+    timeout-seconds: 30
 
 # Agent Configuration
 agent:

@@ -25,8 +25,9 @@ cd ../frontend
 # Default values in .env should work
 ```
 
-### Step 2: Build Sandbox Image
+### Step 2: Choose Sandbox Mode
 
+**🐳 Docker Mode (Production-like, Recommended for first run)**
 ```bash
 cd ..
 ./scripts/build-sandbox.sh
@@ -39,6 +40,27 @@ This builds the Docker sandbox with:
 - FFmpeg, Poppler, GraphViz
 
 **⏱️ Takes ~10-15 minutes** (one-time build)
+
+**💻 Host Mode (Development, Faster)**
+
+For faster development without Docker overhead:
+```bash
+# Ensure Python 3.11+ is installed
+python3 --version
+
+# Set environment variable
+export SANDBOX_MODE=host
+
+# Or add to backend/.env:
+# SANDBOX_MODE=host
+```
+
+**Benefits of Host Mode:**
+- ⚡ Much faster execution (no container overhead)
+- 🐛 Easier to debug
+- 🔧 No Docker build required
+
+**⚠️ Security Warning:** Host mode runs code directly on your machine. Only use in trusted development environments!
 
 ### Step 3: Start Services
 

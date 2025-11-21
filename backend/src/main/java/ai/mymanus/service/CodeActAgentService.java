@@ -3,7 +3,7 @@ package ai.mymanus.service;
 import ai.mymanus.dto.AgentEvent;
 import ai.mymanus.model.Message;
 import ai.mymanus.service.sandbox.ExecutionResult;
-import ai.mymanus.service.sandbox.PythonSandboxExecutor;
+import ai.mymanus.service.sandbox.SandboxExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +24,7 @@ import java.util.Map;
 public class CodeActAgentService {
 
     private final AnthropicService anthropicService;
-    private final PythonSandboxExecutor sandboxExecutor;
+    private final SandboxExecutor sandboxExecutor;
     private final PromptBuilder promptBuilder;
     private final AgentStateService stateService;
     private final SimpMessagingTemplate messagingTemplate;

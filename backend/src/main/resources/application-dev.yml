@@ -15,5 +15,8 @@ logging:
 auth:
   enabled: false
 
+sandbox:
+  mode: host  # Use host mode in development for faster execution
+
 cors:
   allowed-origins: http://localhost:3000,http://localhost:5173

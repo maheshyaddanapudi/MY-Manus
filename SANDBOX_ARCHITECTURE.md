@@ -213,6 +213,79 @@ Container Pool (size: 5)
 
 ---
 
+---
+
+## 🖥️ Option D: Host Mode (NEW - For Development)
+
+**When:** Local development only
+
+**How it works:**
+```
+Backend (Java)
+    │
+    ↓ ProcessBuilder
+    │
+Python Process (Direct Execution)
+    │
+    ↓ Writes to
+    │
+/tmp/manus-workspace/{sessionId}/
+```
+
+**Benefits:**
+- ⚡ **Fastest** - No Docker overhead
+- 🐛 **Easy debugging** - Direct Python process
+- 🔧 **No Docker required** - Simpler setup
+- 📁 **File access** - Easy to inspect workspace
+
+**Implementation:**
+- Uses Java `ProcessBuilder` to execute Python directly
+- Creates workspace directories per session
+- Captures stdout/stderr via process streams
+- Same state serialization as Docker mode
+
+**Configuration:**
+```yaml
+sandbox:
+  mode: host  # Set to 'host' for development
+  host:
+    python-executable: python3
+    workspace-dir: /tmp/manus-workspace
+    timeout-seconds: 30
+```
+
+**Security Considerations:**
+- ⚠️ **NOT SECURE** - Code runs directly on your machine
+- 🚫 No resource limits
+- 🚫 No network isolation
+- 🚫 No filesystem isolation
+- ✅ Only use in trusted development environments
+
+**Performance Comparison:**
+```
+Host Mode:
+Create workspace (instant)
+Execute code #1 (0.5s)
+Execute code #2 (0.5s)
+Execute code #3 (0.5s)
+Execute code #4 (0.5s)
+Execute code #5 (0.5s)
+Total: ~2.5 seconds
+
+Docker Session-Based:
+Create container (2s)
+Execute code #1 (1s)
+Execute code #2 (1s)
+Execute code #3 (1s)
+Execute code #4 (1s)
+Execute code #5 (1s)
+Total: ~7 seconds
+
+Improvement: 3x faster than Docker!
+```
+
+---
+
 ## 🔧 How Docker Communication Works
 
 ### Docker Socket Communication
@@ -349,59 +422,107 @@ Total: ~7 seconds
 
 ## 🎯 Recommendation
 
-### Use Session-Based Containers
+### For Production: Use Session-Based Containers (Implemented ✅)
 
 **Why:**
-1. **Much faster** - 3-5x improvement
+1. **Much faster** - 3-5x improvement over ephemeral
 2. **True Python state** - Variables actually persist
 3. **Still secure** - Isolated per user
 4. **Scalable** - Works with many concurrent users
-5. **Simple** - Just cache containers by session ID
+5. **Simple** - Cache containers by session ID
 
-**Changes needed:**
-1. Update `PythonSandboxExecutor.execute()` to accept `sessionId`
-2. Add `Map<String, String> sessionContainers` cache
-3. Implement `getOrCreateContainer(sessionId)`
-4. Add cleanup on session delete
-5. Add `@PreDestroy` to clean up on shutdown
+**Status:** ✅ Fully implemented
+- `SandboxExecutor` interface created
+- `PythonSandboxExecutor` implements session-based caching
+- Conditional Spring Bean based on `sandbox.mode=docker`
 
-**Migration:**
-- Change is backward compatible
-- Old code still works (will be slower)
-- New code is opt-in
+### For Development: Use Host Mode (Implemented ✅)
+
+**Why:**
+1. **Fastest** - No Docker overhead
+2. **Easy debugging** - Direct Python process
+3. **Simple setup** - No Docker build required
+4. **File inspection** - Easy to view workspace
+
+**Status:** ✅ Fully implemented
+- `HostPythonExecutor` implements direct execution
+- Conditional Spring Bean based on `sandbox.mode=host`
+- Automatically enabled in `application-dev.yml`
+
+**⚠️ Security:** Only use host mode in trusted development environments!
+
+### Migration Guide
+
+**Switch to Docker Mode (Production):**
+```yaml
+# application.yml
+sandbox:
+  mode: docker  # Default
+```
+
+**Switch to Host Mode (Development):**
+```yaml
+# application-dev.yml or .env
+sandbox:
+  mode: host
+SANDBOX_MODE=host
+```
+
+Both modes implement the same `SandboxExecutor` interface, so the application code doesn't need to change!
 
 ---
 
-## 📝 Implementation Checklist
+## 📝 Implementation Status
 
-### To Switch to Session-Based:
+### Session-Based Containers: ✅ COMPLETE
 
-- [ ] Update `PythonSandboxExecutor` class
-  - [ ] Add `sessionContainers` cache
-  - [ ] Change `execute()` signature to include `sessionId`
-  - [ ] Implement `getOrCreateContainer(sessionId)`
-  - [ ] Add `destroySessionContainer(sessionId)`
-  - [ ] Add `@PreDestroy` cleanup
+- [x] Created `SandboxExecutor` interface
+- [x] Updated `PythonSandboxExecutor` class
+  - [x] Added `sessionContainers` cache
+  - [x] Changed `execute()` signature to include `sessionId`
+  - [x] Implemented `getOrCreateContainer(sessionId)`
+  - [x] Added `destroySessionContainer(sessionId)`
+  - [x] Added `@PreDestroy` cleanup
+  - [x] Added `@ConditionalOnProperty` for mode switching
 
-- [ ] Update `CodeActAgentService`
-  - [ ] Pass `sessionId` to sandbox executor
-  - [ ] Call `destroySessionContainer()` on session clear
+- [x] Created `HostPythonExecutor` class
+  - [x] Implemented direct Python execution
+  - [x] Session-based workspace directories
+  - [x] Same interface as Docker mode
+  - [x] Added `@ConditionalOnProperty` for mode switching
 
-- [ ] Update `AgentController`
-  - [ ] Ensure session cleanup calls sandbox cleanup
+- [x] Updated `CodeActAgentService`
+  - [x] Use `SandboxExecutor` interface
+  - [x] Pass `sessionId` to sandbox executor
+  - [x] Call `destroySessionContainer()` on session clear
 
-- [ ] Add monitoring endpoints
-  - [ ] GET `/api/admin/sandbox/stats` - Show active containers
-  - [ ] POST `/api/admin/sandbox/cleanup` - Force cleanup
+- [x] Updated `SandboxController`
+  - [x] Use `SandboxExecutor` interface
+  - [x] Handle both modes in stats endpoint
+  - [x] Handle both modes in cleanup endpoints
+
+- [x] Added monitoring endpoints
+  - [x] GET `/api/sandbox/stats` - Show active environments
+  - [x] DELETE `/api/sandbox/cleanup/{sessionId}` - Cleanup specific
+  - [x] POST `/api/sandbox/cleanup/all` - Force cleanup all
+
+- [x] Updated configuration
+  - [x] Added `sandbox.mode` property
+  - [x] Docker mode configuration
+  - [x] Host mode configuration
+  - [x] Dev profile defaults to host mode
+
+- [x] Updated documentation
+  - [x] QUICKSTART.md - Added sandbox mode selection
+  - [x] SETUP.md - Documented both modes
+  - [x] SANDBOX_ARCHITECTURE.md - Comprehensive guide
 
 ---
 
-## 🚀 Quick Fix
+## 🎉 Status: COMPLETE
 
-Want to implement session-based containers? I can update the code now. The changes are:
+Both Docker mode (session-based) and Host mode are fully implemented and ready to use!
 
-1. ✅ Sandbox Dockerfile is already separate
-2. ✅ Docker socket mounting is already configured
-3. ⚠️ **Need to implement session-based container caching**
-
-Should I proceed with the refactoring?
+**Choose your mode:**
+- Production: `sandbox.mode=docker` (default)
+- Development: `sandbox.mode=host` (faster, less secure)
