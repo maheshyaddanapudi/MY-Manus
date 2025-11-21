@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: my-manus
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:mymanus}
+    username: ${DB_USER:mymanus}
+    password: ${DB_PASSWORD:mymanus}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: false
+
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+      chat:
+        options:
+          model: claude-3-5-sonnet-20241022
+          temperature: 0.7
+          max-tokens: 4096
+
+server:
+  port: 8080
+
+# Security Configuration
+auth:
+  enabled: ${AUTH_ENABLED:false}
+  jwt:
+    secret: ${JWT_SECRET:my-secret-key-change-in-production}
+    expiration: 86400000  # 24 hours
+
+# Docker Configuration
+docker:
+  host: ${DOCKER_HOST:unix:///var/run/docker.sock}
+  sandbox:
+    image: mymanus-sandbox:latest
+    memory-limit: 536870912  # 512MB
+    cpu-quota: 50000  # 50% of one core
+    timeout-seconds: 30
+    network-mode: none
+
+# Agent Configuration
+agent:
+  max-iterations: 20
+  code-execution-timeout: 30
+
+logging:
+  level:
+    root: INFO
+    ai.mymanus: DEBUG
+
+# OpenAPI/Swagger Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
