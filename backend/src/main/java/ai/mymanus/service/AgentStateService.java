@@ -30,19 +30,28 @@ public class AgentStateService {
     private final ToolExecutionRepository toolExecutionRepository;
 
     /**
-     * Create a new agent session
+     * Create a new agent session with optional title
      */
     @Transactional
-    public AgentState createSession(String sessionId) {
-        log.info("Creating new session: {}", sessionId);
+    public AgentState createSession(String sessionId, String title) {
+        log.info("Creating new session: {} with title: {}", sessionId, title);
 
         AgentState state = AgentState.builder()
                 .sessionId(sessionId != null ? sessionId : UUID.randomUUID().toString())
+                .title(title != null ? title : "New Conversation")
                 .executionContext(new HashMap<>())
                 .metadata(new HashMap<>())
                 .build();
 
         return agentStateRepository.save(state);
+    }
+
+    /**
+     * Create a new agent session with default title
+     */
+    @Transactional
+    public AgentState createSession(String sessionId) {
+        return createSession(sessionId, null);
     }
 
     /**
@@ -186,5 +195,58 @@ public class AgentStateService {
         return messages.stream()
                 .map(Message::getContent)
                 .toList();
+    }
+
+    /**
+     * List all sessions ordered by most recently updated
+     */
+    public List<AgentState> listAllSessions() {
+        return agentStateRepository.findAll().stream()
+                .sorted((a, b) -> b.getUpdatedAt().compareTo(a.getUpdatedAt()))
+                .toList();
+    }
+
+    /**
+     * Update session title
+     */
+    @Transactional
+    public void updateSessionTitle(String sessionId, String title) {
+        AgentState state = getSession(sessionId);
+        state.setTitle(title);
+        agentStateRepository.save(state);
+        log.info("Updated session {} title to: {}", sessionId, title);
+    }
+
+    /**
+     * Auto-generate and set session title from first user message
+     */
+    @Transactional
+    public void autoGenerateTitle(String sessionId, String firstMessage) {
+        AgentState state = getSession(sessionId);
+
+        // Only auto-generate if still using default title
+        if (state.getTitle() == null || state.getTitle().equals("New Conversation")) {
+            String title = generateTitleFromMessage(firstMessage);
+            state.setTitle(title);
+            agentStateRepository.save(state);
+            log.info("Auto-generated title for session {}: {}", sessionId, title);
+        }
+    }
+
+    /**
+     * Generate a short title from a message (max 50 chars)
+     */
+    private String generateTitleFromMessage(String message) {
+        if (message == null || message.isEmpty()) {
+            return "New Conversation";
+        }
+
+        // Take first line or first 50 characters
+        String title = message.split("\n")[0];
+        if (title.length() > 50) {
+            title = title.substring(0, 47) + "...";
+        }
+
+        return title;
     }
 }

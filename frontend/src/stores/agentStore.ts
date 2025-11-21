@@ -1,8 +1,13 @@
 import { create } from 'zustand';
-import { Message, AgentEvent, TerminalOutput, ExecutionContext } from '../types';
+import { Message, AgentEvent, TerminalOutput, ExecutionContext, Session } from '../types';
+import { apiService } from '../services/api';
 
 interface AgentState {
-  // Session
+  // Multi-session support
+  sessions: Session[];
+  currentSessionId: string | null;
+
+  // Legacy (keep for backward compatibility)
   sessionId: string | null;
   isConnected: boolean;
 
@@ -43,11 +48,20 @@ interface AgentState {
   setActivePanel: (panel: AgentState['activePanel']) => void;
   toggleSidebar: () => void;
   resetSession: () => void;
+
+  // Multi-session actions
+  loadSessions: () => Promise<void>;
+  createNewSession: (title?: string) => Promise<string>;
+  switchSession: (sessionId: string) => Promise<void>;
+  deleteSession: (sessionId: string) => Promise<void>;
+  renameSession: (sessionId: string, title: string) => Promise<void>;
 }
 
 export const useAgentStore = create<AgentState>((set, get) => ({
   // Initial state
-  sessionId: null,
+  sessions: [],
+  currentSessionId: null,
+  sessionId: null, // Legacy
   isConnected: false,
   messages: [],
   agentStatus: 'idle',
@@ -158,4 +172,99 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     codeHistory: [],
     executionContext: {},
   }),
+
+  // Multi-session actions
+  loadSessions: async () => {
+    try {
+      const sessions = await apiService.listSessions();
+      set({ sessions });
+    } catch (error) {
+      console.error('Failed to load sessions:', error);
+    }
+  },
+
+  createNewSession: async (title?: string) => {
+    try {
+      const response = await apiService.createSession(undefined, title);
+      const sessionId = response.sessionId;
+
+      // Reload sessions list
+      await get().loadSessions();
+
+      // Switch to new session
+      await get().switchSession(sessionId);
+
+      return sessionId;
+    } catch (error) {
+      console.error('Failed to create session:', error);
+      throw error;
+    }
+  },
+
+  switchSession: async (sessionId: string) => {
+    try {
+      // Clear current session state
+      get().resetSession();
+
+      // Set new session ID
+      set({
+        sessionId,
+        currentSessionId: sessionId,
+        agentStatus: 'idle',
+      });
+
+      // Load messages for this session
+      const messages = await apiService.getMessages(sessionId);
+      set({
+        messages: messages.map((msg) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        })),
+      });
+
+      // Load execution context
+      const context = await apiService.getExecutionContext(sessionId);
+      set({ executionContext: context });
+
+      console.log(`Switched to session: ${sessionId}`);
+    } catch (error) {
+      console.error('Failed to switch session:', error);
+      // Session might not exist yet, that's okay
+    }
+  },
+
+  deleteSession: async (sessionId: string) => {
+    try {
+      await apiService.clearSession(sessionId);
+
+      // Remove from sessions list
+      set((state) => ({
+        sessions: state.sessions.filter((s) => s.sessionId !== sessionId),
+      }));
+
+      // If deleted current session, create a new one
+      if (get().currentSessionId === sessionId) {
+        await get().createNewSession();
+      }
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+      throw error;
+    }
+  },
+
+  renameSession: async (sessionId: string, title: string) => {
+    try {
+      await apiService.updateSessionTitle(sessionId, title);
+
+      // Update in sessions list
+      set((state) => ({
+        sessions: state.sessions.map((s) =>
+          s.sessionId === sessionId ? { ...s, title } : s
+        ),
+      }));
+    } catch (error) {
+      console.error('Failed to rename session:', error);
+      throw error;
+    }
+  },
 }));

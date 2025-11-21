@@ -29,15 +29,37 @@ class ApiService {
   }
 
   // Session management
-  async createSession(sessionId?: string): Promise<{ sessionId: string; message: string }> {
+  async createSession(sessionId?: string, title?: string): Promise<{ sessionId: string; message: string }> {
+    const params: any = {};
+    if (sessionId) params.sessionId = sessionId;
+    if (title) params.title = title;
+
     const response = await this.client.post('/api/agent/session', null, {
-      params: sessionId ? { sessionId } : undefined,
+      params: Object.keys(params).length > 0 ? params : undefined,
     });
+    return response.data;
+  }
+
+  async listSessions(): Promise<Array<{
+    sessionId: string;
+    title: string;
+    createdAt: string;
+    updatedAt: string;
+    messageCount: number;
+  }>> {
+    const response = await this.client.get('/api/agent/sessions');
     return response.data;
   }
 
   async getSessionStatus(sessionId: string): Promise<SessionStatus> {
     const response = await this.client.get<SessionStatus>(`/api/agent/session/${sessionId}`);
+    return response.data;
+  }
+
+  async updateSessionTitle(sessionId: string, title: string): Promise<{ message: string; sessionId: string; title: string }> {
+    const response = await this.client.put(`/api/agent/session/${sessionId}/title`, null, {
+      params: { title },
+    });
     return response.data;
   }
 

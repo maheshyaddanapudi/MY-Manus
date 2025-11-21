@@ -251,7 +251,7 @@ public class AgentController {
     @Operation(
             summary = "Create new session",
             description = """
-                    Create a new agent session with an optional custom session ID.
+                    Create a new agent session with an optional custom session ID and title.
                     If no session ID is provided, a random UUID will be generated.
 
                     Sessions store:
@@ -267,19 +267,118 @@ public class AgentController {
     public ResponseEntity<Map<String, String>> createSession(
             @RequestParam(required = false)
             @Parameter(description = "Optional custom session ID. If not provided, a UUID will be generated.")
-            String sessionId) {
+            String sessionId,
+            @RequestParam(required = false)
+            @Parameter(description = "Optional session title. Defaults to 'New Conversation'.")
+            String title) {
 
         String id = (sessionId != null && !sessionId.isEmpty())
                 ? sessionId
                 : UUID.randomUUID().toString();
 
-        stateService.createSession(id);
+        stateService.createSession(id, title);
 
         Map<String, String> response = new HashMap<>();
         response.put("sessionId", id);
         response.put("message", "Session created successfully");
 
-        log.info("Created new session: {}", id);
+        log.info("Created new session: {} with title: {}", id, title);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/sessions")
+    @Operation(
+            summary = "List all sessions",
+            description = """
+                    Retrieve all agent sessions ordered by most recently updated.
+
+                    **Returns:**
+                    - List of all sessions with:
+                      - sessionId
+                      - title
+                      - createdAt
+                      - updatedAt
+                      - message count
+
+                    Useful for implementing a conversation list UI similar to ChatGPT/Claude.
+                    """,
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Sessions retrieved successfully")
+            }
+    )
+    public ResponseEntity<List<Map<String, Object>>> listSessions() {
+        try {
+            var sessions = stateService.listAllSessions();
+
+            List<Map<String, Object>> sessionList = sessions.stream()
+                    .map(session -> {
+                        Map<String, Object> sessionData = new HashMap<>();
+                        sessionData.put("sessionId", session.getSessionId());
+                        sessionData.put("title", session.getTitle());
+                        sessionData.put("createdAt", session.getCreatedAt());
+                        sessionData.put("updatedAt", session.getUpdatedAt());
+
+                        // Get message count
+                        try {
+                            int messageCount = stateService.getMessages(session.getSessionId()).size();
+                            sessionData.put("messageCount", messageCount);
+                        } catch (Exception e) {
+                            sessionData.put("messageCount", 0);
+                        }
+
+                        return sessionData;
+                    })
+                    .toList();
+
+            log.info("Retrieved {} sessions", sessionList.size());
+            return ResponseEntity.ok(sessionList);
+
+        } catch (Exception e) {
+            log.error("Error listing sessions", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @PutMapping("/session/{sessionId}/title")
+    @Operation(
+            summary = "Update session title",
+            description = """
+                    Update the title of an existing session.
+
+                    **Use Cases:**
+                    - User manually renames conversation
+                    - Auto-generated title needs correction
+                    - Organizing conversations
+                    """,
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Title updated successfully"),
+                    @ApiResponse(responseCode = "404", description = "Session not found")
+            }
+    )
+    public ResponseEntity<Map<String, String>> updateSessionTitle(
+            @PathVariable
+            @Parameter(description = "Session ID to update", required = true)
+            String sessionId,
+            @RequestParam
+            @Parameter(description = "New title for the session", required = true)
+            String title) {
+
+        try {
+            stateService.updateSessionTitle(sessionId, title);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Title updated successfully");
+            response.put("sessionId", sessionId);
+            response.put("title", title);
+
+            log.info("Updated title for session {}: {}", sessionId, title);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Failed to update title for session: {}", sessionId, e);
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(404).body(error);
+        }
     }
 }

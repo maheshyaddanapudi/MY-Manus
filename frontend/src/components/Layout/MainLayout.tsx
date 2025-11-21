@@ -3,12 +3,13 @@ import { Header } from './Header';
 import { useAgentStore } from '../../stores/agentStore';
 
 interface MainLayoutProps {
+  conversationListPanel?: ReactNode;
   chatPanel: ReactNode;
   terminalPanel: ReactNode;
   editorPanel: ReactNode;
 }
 
-export const MainLayout = ({ chatPanel, terminalPanel, editorPanel }: MainLayoutProps) => {
+export const MainLayout = ({ conversationListPanel, chatPanel, terminalPanel, editorPanel }: MainLayoutProps) => {
   const { activePanel } = useAgentStore();
 
   return (
@@ -16,8 +17,15 @@ export const MainLayout = ({ chatPanel, terminalPanel, editorPanel }: MainLayout
       <Header />
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - Chat */}
-        <div className="w-1/2 border-r border-gray-700 flex flex-col">
+        {/* Conversation List Sidebar */}
+        {conversationListPanel && (
+          <div className="w-64 flex-shrink-0">
+            {conversationListPanel}
+          </div>
+        )}
+
+        {/* Middle Panel - Chat */}
+        <div className="flex-1 min-w-0 border-r border-gray-700 flex flex-col">
           {chatPanel}
         </div>
 

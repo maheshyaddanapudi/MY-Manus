@@ -3,51 +3,50 @@ import { MainLayout } from './components/Layout/MainLayout';
 import { ChatPanel } from './components/Chat/ChatPanel';
 import { TerminalPanel } from './components/Terminal/TerminalPanel';
 import { EditorPanel } from './components/Editor/EditorPanel';
+import { ConversationList } from './components/ConversationList';
 import { useAgentStore } from './stores/agentStore';
 import { websocketService } from './services/websocket';
 import { apiService } from './services/api';
 
 function App() {
   const {
-    sessionId,
+    currentSessionId,
     setSessionId,
     setConnected,
     handleAgentEvent,
+    loadSessions,
+    createNewSession,
+    sessions,
   } = useAgentStore();
 
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    // Initialize session
-    const initializeSession = async () => {
+    // Initialize multi-session app
+    const initializeApp = async () => {
       try {
         // Check backend health
         await apiService.health();
         console.log('Backend is healthy');
 
-        // Create or retrieve session
-        let sid = sessionId;
-        if (!sid) {
-          const response = await apiService.createSession();
-          sid = response.sessionId;
-          setSessionId(sid);
-          console.log('Created new session:', sid);
+        // Load all sessions
+        await loadSessions();
+        console.log('Loaded sessions');
+
+        // If no sessions exist, create one
+        if (sessions.length === 0) {
+          console.log('No sessions found, creating new session');
+          await createNewSession();
+        } else {
+          // Use the most recent session (first in the list)
+          const mostRecentSession = sessions[0];
+          console.log('Using most recent session:', mostRecentSession.sessionId);
+
+          // Load the session via store action
+          const { switchSession } = useAgentStore.getState();
+          await switchSession(mostRecentSession.sessionId);
+          setSessionId(mostRecentSession.sessionId);
         }
-
-        // Connect WebSocket
-        websocketService.connect(sid, (event) => {
-          handleAgentEvent(event);
-        });
-
-        websocketService.onConnect(() => {
-          console.log('WebSocket connected');
-          setConnected(true);
-        });
-
-        websocketService.onDisconnect(() => {
-          console.log('WebSocket disconnected');
-          setConnected(false);
-        });
 
         setIsInitializing(false);
       } catch (error) {
@@ -56,13 +55,36 @@ function App() {
       }
     };
 
-    initializeSession();
+    initializeApp();
+  }, []);
+
+  // Connect WebSocket when currentSessionId changes
+  useEffect(() => {
+    if (currentSessionId) {
+      // Disconnect previous WebSocket
+      websocketService.disconnect();
+
+      // Connect to new session
+      websocketService.connect(currentSessionId, (event) => {
+        handleAgentEvent(event);
+      });
+
+      websocketService.onConnect(() => {
+        console.log('WebSocket connected to session:', currentSessionId);
+        setConnected(true);
+      });
+
+      websocketService.onDisconnect(() => {
+        console.log('WebSocket disconnected');
+        setConnected(false);
+      });
+    }
 
     // Cleanup
     return () => {
       websocketService.disconnect();
     };
-  }, []);
+  }, [currentSessionId]);
 
   if (isInitializing) {
     return (
@@ -78,6 +100,7 @@ function App() {
 
   return (
     <MainLayout
+      conversationListPanel={<ConversationList />}
       chatPanel={<ChatPanel />}
       terminalPanel={<TerminalPanel />}
       editorPanel={<EditorPanel />}

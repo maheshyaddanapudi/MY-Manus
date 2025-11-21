@@ -22,6 +22,14 @@ export interface ChatResponse {
   status: 'pending' | 'completed' | 'error';
 }
 
+export interface Session {
+  sessionId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+}
+
 export interface SessionStatus {
   sessionId: string;
   exists: boolean;

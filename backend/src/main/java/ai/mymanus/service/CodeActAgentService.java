@@ -45,6 +45,9 @@ public class CodeActAgentService {
             // Add user message to history
             stateService.addMessage(sessionId, Message.MessageRole.USER, userQuery);
 
+            // Auto-generate title from first message
+            stateService.autoGenerateTitle(sessionId, userQuery);
+
             // Send status update
             sendEvent(sessionId, "status", "thinking", Map.of("iteration", 0));
 

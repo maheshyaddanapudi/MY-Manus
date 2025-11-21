@@ -27,6 +27,9 @@ public class AgentState {
     @Column(unique = true, nullable = false)
     private String sessionId;
 
+    @Column(length = 500)
+    private String title;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
