@@ -3,6 +3,7 @@ import { Header } from './Header';
 import { useAgentStore } from '../../stores/agentStore';
 import { EventStreamPanel } from '../EventStream';
 import { BrowserPanel } from '../Browser';
+import { FileTreePanel } from '../FileTree';
 
 interface MainLayoutProps {
   conversationListPanel?: ReactNode;
@@ -59,6 +60,12 @@ export const MainLayout = ({ conversationListPanel, chatPanel, terminalPanel, ed
               icon="🌐"
               active={activePanel === 'browser'}
             />
+            <PanelTab
+              name="files"
+              label="Files"
+              icon="📂"
+              active={activePanel === 'files'}
+            />
           </div>
 
           {/* Panel Content */}
@@ -70,6 +77,9 @@ export const MainLayout = ({ conversationListPanel, chatPanel, terminalPanel, ed
             )}
             {activePanel === 'browser' && currentSessionId && (
               <BrowserPanel sessionId={currentSessionId} />
+            )}
+            {activePanel === 'files' && currentSessionId && (
+              <FileTreePanel sessionId={currentSessionId} />
             )}
           </div>
         </div>
