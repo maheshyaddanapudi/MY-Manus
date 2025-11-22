@@ -2,10 +2,12 @@ package ai.mymanus.controller;
 
 import ai.mymanus.dto.ChatRequest;
 import ai.mymanus.dto.ChatResponse;
+import ai.mymanus.model.Event;
 import ai.mymanus.model.Message;
 import ai.mymanus.model.ToolExecution;
 import ai.mymanus.service.AgentStateService;
 import ai.mymanus.service.CodeActAgentService;
+import ai.mymanus.service.EventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -36,6 +38,7 @@ public class AgentController {
 
     private final CodeActAgentService agentService;
     private final AgentStateService stateService;
+    private final EventService eventService;
 
     @PostMapping("/chat")
     @Operation(
@@ -206,6 +209,95 @@ public class AgentController {
             return ResponseEntity.ok(executions);
         } catch (Exception e) {
             log.warn("Failed to retrieve tool executions for session: {}", sessionId, e);
+            return ResponseEntity.status(404).build();
+        }
+    }
+
+    @GetMapping("/session/{sessionId}/events")
+    @Operation(
+            summary = "Get event stream",
+            description = """
+                    Retrieve the complete event stream for a session in chronological order.
+
+                    **Event Stream Architecture:**
+                    The event stream captures the entire agent execution flow following Manus AI's pattern:
+                    [UserMessage → AgentThought → AgentAction → Observation → ...]
+
+                    **Event Types:**
+                    - USER_MESSAGE: User sends a query
+                    - AGENT_THOUGHT: Agent's reasoning/planning
+                    - AGENT_ACTION: Tool/code execution initiated
+                    - OBSERVATION: Result from action execution
+                    - AGENT_RESPONSE: Agent's final response
+                    - SYSTEM: System messages
+                    - ERROR: Error events
+
+                    **Use Cases:**
+                    - Session replay and debugging
+                    - Understanding agent decision-making
+                    - Visualizing execution timeline
+                    - Performance analysis
+                    """,
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Event stream retrieved successfully"),
+                    @ApiResponse(responseCode = "404", description = "Session not found")
+            }
+    )
+    public ResponseEntity<List<Event>> getEventStream(
+            @PathVariable
+            @Parameter(description = "Session ID", required = true)
+            String sessionId) {
+
+        try {
+            List<Event> events = eventService.getEventStream(sessionId);
+            log.info("Retrieved {} events for session: {}", events.size(), sessionId);
+            return ResponseEntity.ok(events);
+        } catch (Exception e) {
+            log.warn("Failed to retrieve event stream for session: {}", sessionId, e);
+            return ResponseEntity.status(404).build();
+        }
+    }
+
+    @GetMapping("/session/{sessionId}/events/iteration/{iteration}")
+    @Operation(
+            summary = "Get events for specific iteration",
+            description = """
+                    Retrieve all events for a specific iteration within a session.
+
+                    **Iteration Concept:**
+                    Each iteration represents one complete cycle of:
+                    1. Agent thinks (AGENT_THOUGHT)
+                    2. Agent acts (AGENT_ACTION) - ONE action only
+                    3. System observes (OBSERVATION)
+
+                    This follows Manus AI's ONE action per iteration pattern.
+
+                    **Use Cases:**
+                    - Debugging specific iteration failures
+                    - Understanding action-observation pairs
+                    - Performance analysis per iteration
+                    """,
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Events retrieved successfully"),
+                    @ApiResponse(responseCode = "404", description = "Session not found")
+            }
+    )
+    public ResponseEntity<List<Event>> getEventsForIteration(
+            @PathVariable
+            @Parameter(description = "Session ID", required = true)
+            String sessionId,
+            @PathVariable
+            @Parameter(description = "Iteration number (starts at 1)", required = true)
+            int iteration) {
+
+        try {
+            List<Event> events = eventService.getEventsForIteration(sessionId, iteration);
+            log.info("Retrieved {} events for session: {}, iteration: {}",
+                    events.size(), sessionId, iteration);
+            return ResponseEntity.ok(events);
+        } catch (Exception e) {
+            log.warn("Failed to retrieve events for session: {}, iteration: {}",
+                    sessionId, iteration, e);
             return ResponseEntity.status(404).build();
         }
     }

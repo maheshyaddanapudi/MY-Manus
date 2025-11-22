@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Header } from './Header';
 import { useAgentStore } from '../../stores/agentStore';
+import { EventStreamPanel } from '../EventStream';
 
 interface MainLayoutProps {
   conversationListPanel?: ReactNode;
@@ -10,7 +11,7 @@ interface MainLayoutProps {
 }
 
 export const MainLayout = ({ conversationListPanel, chatPanel, terminalPanel, editorPanel }: MainLayoutProps) => {
-  const { activePanel } = useAgentStore();
+  const { activePanel, currentSessionId } = useAgentStore();
 
   return (
     <div className="h-screen flex flex-col bg-gray-900 text-white">
@@ -46,6 +47,12 @@ export const MainLayout = ({ conversationListPanel, chatPanel, terminalPanel, ed
               active={activePanel === 'editor'}
             />
             <PanelTab
+              name="events"
+              label="Event Stream"
+              icon="📊"
+              active={activePanel === 'events'}
+            />
+            <PanelTab
               name="browser"
               label="Browser"
               icon="🌐"
@@ -57,6 +64,9 @@ export const MainLayout = ({ conversationListPanel, chatPanel, terminalPanel, ed
           <div className="flex-1 overflow-hidden">
             {activePanel === 'terminal' && terminalPanel}
             {activePanel === 'editor' && editorPanel}
+            {activePanel === 'events' && currentSessionId && (
+              <EventStreamPanel sessionId={currentSessionId} autoRefresh={true} />
+            )}
             {activePanel === 'browser' && (
               <div className="h-full flex items-center justify-center text-gray-500">
                 Browser panel (coming soon)

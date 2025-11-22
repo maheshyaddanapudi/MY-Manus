@@ -54,3 +54,25 @@ export interface TerminalOutput {
   type: 'stdout' | 'stderr';
   timestamp: Date;
 }
+
+export type EventType =
+  | 'USER_MESSAGE'
+  | 'AGENT_THOUGHT'
+  | 'AGENT_ACTION'
+  | 'OBSERVATION'
+  | 'AGENT_RESPONSE'
+  | 'SYSTEM'
+  | 'ERROR';
+
+export interface Event {
+  id: string;
+  type: EventType;
+  iteration: number;
+  sequence: number;
+  content: string;
+  data?: Record<string, any>;
+  timestamp: string;
+  durationMs?: number;
+  success?: boolean;
+  error?: string;
+}

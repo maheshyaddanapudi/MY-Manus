@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { ChatRequest, ChatResponse, SessionStatus, Message, ExecutionContext } from '../types';
+import { ChatRequest, ChatResponse, SessionStatus, Message, ExecutionContext, Event } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -85,6 +85,19 @@ class ApiService {
   // Tool executions
   async getToolExecutions(sessionId: string): Promise<any[]> {
     const response = await this.client.get(`/api/agent/session/${sessionId}/tools`);
+    return response.data;
+  }
+
+  // Event stream
+  async getEventStream(sessionId: string): Promise<Event[]> {
+    const response = await this.client.get<Event[]>(`/api/agent/session/${sessionId}/events`);
+    return response.data;
+  }
+
+  async getEventsForIteration(sessionId: string, iteration: number): Promise<Event[]> {
+    const response = await this.client.get<Event[]>(
+      `/api/agent/session/${sessionId}/events/iteration/${iteration}`
+    );
     return response.data;
   }
 }
