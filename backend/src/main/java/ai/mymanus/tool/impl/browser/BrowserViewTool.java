@@ -39,12 +39,15 @@ public class BrowserViewTool extends BrowserTool {
         try {
             String screenshot = browserExecutor.captureScreenshot(sessionId);
             String accessibilityTree = browserExecutor.getAccessibilityTree(sessionId);
+            String htmlContent = browserExecutor.getHtmlContent(sessionId);
 
             var result = success("Browser view captured");
             result.put("screenshot", screenshot);
             result.put("accessibilityTree", accessibilityTree);
+            result.put("htmlContent", htmlContent);
             result.put("url", browserExecutor.getCurrentUrl(sessionId));
             result.put("title", browserExecutor.getCurrentTitle(sessionId));
+            result.put("timestamp", System.currentTimeMillis());
 
             return result;
 

@@ -153,6 +153,26 @@ public class BrowserExecutor {
     }
 
     /**
+     * Get HTML content of current page
+     */
+    public String getHtmlContent(String sessionId) {
+        BrowserSession session = getOrCreateSession(sessionId);
+        Page page = session.getPage();
+
+        log.info("📄 Extracting HTML content...");
+
+        try {
+            String html = page.content();
+            log.info("✅ HTML content extracted ({} bytes)", html.length());
+            return html;
+
+        } catch (Exception e) {
+            log.warn("⚠️ Failed to extract HTML content: {}", e.getMessage());
+            return "";
+        }
+    }
+
+    /**
      * Build accessibility tree string representation
      */
     private void buildAccessibilityTree(AccessibilityNode node, StringBuilder tree, int depth) {

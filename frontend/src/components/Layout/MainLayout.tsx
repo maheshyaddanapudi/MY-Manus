@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Header } from './Header';
 import { useAgentStore } from '../../stores/agentStore';
 import { EventStreamPanel } from '../EventStream';
+import { BrowserPanel } from '../Browser';
 
 interface MainLayoutProps {
   conversationListPanel?: ReactNode;
@@ -67,10 +68,8 @@ export const MainLayout = ({ conversationListPanel, chatPanel, terminalPanel, ed
             {activePanel === 'events' && currentSessionId && (
               <EventStreamPanel sessionId={currentSessionId} autoRefresh={true} />
             )}
-            {activePanel === 'browser' && (
-              <div className="h-full flex items-center justify-center text-gray-500">
-                Browser panel (coming soon)
-              </div>
+            {activePanel === 'browser' && currentSessionId && (
+              <BrowserPanel sessionId={currentSessionId} />
             )}
           </div>
         </div>
