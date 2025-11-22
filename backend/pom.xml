@@ -76,6 +76,13 @@
             <version>${docker-java.version}</version>
         </dependency>
 
+        <!-- Playwright for Browser Automation -->
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>1.40.0</version>
+        </dependency>
+
         <!-- JSON Processing -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
