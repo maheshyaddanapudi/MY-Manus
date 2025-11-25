@@ -1,331 +1,764 @@
 # Tools Development Guide
 
+## Overview
+
+Tools in the Manus AI clone are Java components that expose functionality to the agent as Python functions. Tools are automatically discovered via Spring's dependency injection and registered in the ToolRegistry.
+
 ## Tool Architecture
 
-Tools are Python functions available to the agent in the sandbox environment.
+### Core Interface
 
-## Core Interface
+**Location**: `/backend/src/main/java/ai/mymanus/tool/Tool.java`
 
-Every tool must implement:
-- Name (unique identifier)
-- Description (for agent context)
-- Python signature
-- Documentation with examples
-- Execution logic
-- Sandbox requirements
+```java
+public interface Tool {
+    /**
+     * Get the name of the tool (used in Python function name)
+     */
+    String getName();
 
-## Tool Categories
+    /**
+     * Get a description of what the tool does
+     */
+    String getDescription();
 
-### Research Tools
-- **web_search**: Search the internet
-- **wikipedia**: Query Wikipedia
-- **arxiv_search**: Academic papers
+    /**
+     * Get the Python function signature
+     */
+    String getPythonSignature();
 
-### File System Tools
-- **read_file**: Read file contents
-- **write_file**: Create/update files
-- **list_files**: Directory listing
-- **delete_file**: Remove files
+    /**
+     * Execute the tool with given parameters
+     * @param parameters Map of parameter name to value
+     * @return Result of tool execution (must be JSON-serializable)
+     */
+    Map<String, Object> execute(Map<String, Object> parameters) throws Exception;
 
-### Data Tools
-- **query_database**: SQL queries (read-only)
-- **parse_csv**: CSV processing
-- **analyze_data**: Statistical analysis
-
-### Network Tools
-- **http_request**: API calls
-- **download_file**: Fetch from URL
-- **parse_html**: Extract from web pages
-
-### Media Tools
-- **render_diagram**: Create diagrams
-- **convert_image**: Image manipulation
-- **generate_pdf**: PDF creation
-- **extract_text**: OCR/parsing
-
-## Implementation Pattern
-
-### Spring Component Structure
+    /**
+     * Whether this tool requires network access
+     */
+    default boolean requiresNetwork() {
+        return false;
+    }
+}
 ```
+
+Every tool must:
+1. Implement the `Tool` interface
+2. Be a Spring `@Component` for auto-discovery
+3. Return JSON-serializable Map from `execute()`
+4. Handle errors gracefully
+
+## Implemented Tools
+
+### File Operations
+
+**Base Class**: `/backend/src/main/java/ai/mymanus/tool/impl/file/FileTool.java`
+
+All file tools extend `FileTool` which provides:
+- Security sandboxing (restricts access to workspace)
+- Path validation (prevents path traversal)
+- Helper methods (`success()`, `error()`, `addFileMetadata()`)
+
+#### Security Model
+
+```java
+// Workspace root for file operations
+protected static final String WORKSPACE_ROOT = System.getenv()
+    .getOrDefault("MANUS_WORKSPACE", "/tmp/manus-workspace");
+
+protected Path validateAndResolvePath(String filePath) {
+    Path workspaceRoot = Paths.get(WORKSPACE_ROOT).toRealPath();
+    Path resolvedPath = workspaceRoot.resolve(filePath).normalize();
+
+    // Security check: resolved path must start with workspace root
+    if (!resolvedPath.startsWith(workspaceRoot)) {
+        throw new SecurityException("Access denied: Path escapes workspace");
+    }
+
+    return resolvedPath;
+}
+```
+
+**Implemented File Tools**:
+- `file_read(path: str)` - Read file contents
+- `file_write(path: str, content: str)` - Write/create file
+- `file_list(path: str)` - List directory contents
+- `file_find_by_name(pattern: str, path: str)` - Search files by name
+- `file_find_content(pattern: str, path: str)` - Search file contents
+- `file_replace_string(path: str, old_string: str, new_string: str)` - Replace text
+
+**Example**: FileReadTool
+
+```java
+@Slf4j
 @Component
-@ToolMetadata(
-    name = "tool_name",
-    category = "category",
-    requiresSandbox = true
-)
-public class CustomTool implements Tool
+public class FileReadTool extends FileTool {
+
+    @Override
+    public String getName() {
+        return "file_read";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Read the entire contents of a file. Returns the file content as a string.";
+    }
+
+    @Override
+    public String getPythonSignature() {
+        return "file_read(path: str) -> str";
+    }
+
+    @Override
+    public Map<String, Object> execute(Map<String, Object> parameters) throws Exception {
+        String filePath = (String) parameters.get("path");
+
+        // Validate and resolve path with security checks
+        Path resolvedPath = validateAndResolvePath(filePath);
+
+        // Check if file exists
+        if (!Files.exists(resolvedPath)) {
+            return error("File not found: " + filePath, null);
+        }
+
+        // Read file content
+        String content = Files.readString(resolvedPath, StandardCharsets.UTF_8);
+
+        // Build result
+        var result = success("File read successfully");
+        result.put("path", filePath);
+        result.put("content", content);
+        result.put("length", content.length());
+        addFileMetadata(result, resolvedPath);
+
+        return result;
+    }
+}
 ```
 
-### Python Bridge
-Tools appear as Python functions:
-```python
-def tool_name(param1, param2="default"):
-    """Documentation here"""
-    return _execute_tool('tool_name', locals())
+### Browser Automation
+
+**Base Class**: `/backend/src/main/java/ai/mymanus/tool/impl/browser/BrowserTool.java`
+
+Browser tools use Playwright for browser automation and inherit from `BrowserTool`.
+
+**Implemented Browser Tools**:
+- `browser_navigate(sessionId: str, url: str)` - Navigate to URL
+- `browser_view(sessionId: str)` - Get current page content
+- `browser_click(sessionId: str, selector: str)` - Click element
+- `browser_input(sessionId: str, selector: str, text: str)` - Type text
+- `browser_scroll_up(sessionId: str)` - Scroll up
+- `browser_scroll_down(sessionId: str)` - Scroll down
+- `browser_press_key(sessionId: str, key: str)` - Press keyboard key
+- `browser_refresh(sessionId: str)` - Refresh page
+
+**Example**: BrowserNavigateTool
+
+```java
+@Slf4j
+@Component
+public class BrowserNavigateTool extends BrowserTool {
+
+    public BrowserNavigateTool(BrowserExecutor browserExecutor) {
+        super(browserExecutor);
+    }
+
+    @Override
+    public String getName() {
+        return "browser_navigate";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Navigate the browser to a specific URL. Returns success status and current URL.";
+    }
+
+    @Override
+    public String getPythonSignature() {
+        return "browser_navigate(sessionId: str, url: str) -> dict";
+    }
+
+    @Override
+    public Map<String, Object> execute(Map<String, Object> parameters) throws Exception {
+        String sessionId = getSessionId(parameters);
+        String url = (String) parameters.get("url");
+
+        if (url == null || url.isEmpty()) {
+            return error("URL parameter is required", null);
+        }
+
+        browserExecutor.navigate(sessionId, url);
+
+        var result = success("Navigation successful");
+        result.put("url", browserExecutor.getCurrentUrl(sessionId));
+        result.put("title", browserExecutor.getCurrentTitle(sessionId));
+
+        return result;
+    }
+}
 ```
+
+### Shell Execution
+
+**Location**: `/backend/src/main/java/ai/mymanus/tool/impl/shell/ShellExecTool.java`
+
+Executes shell commands in the sandbox using the CodeAct pattern.
+
+```java
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class ShellExecTool implements Tool {
+
+    private final SandboxExecutor sandboxExecutor;
+
+    @Override
+    public String getName() {
+        return "shell_exec";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Execute a shell command in the sandbox. Returns stdout, stderr, and exit code.";
+    }
+
+    @Override
+    public String getPythonSignature() {
+        return "shell_exec(sessionId: str, command: str, timeout: int = 30) -> dict";
+    }
+
+    @Override
+    public Map<String, Object> execute(Map<String, Object> parameters) throws Exception {
+        String sessionId = (String) parameters.get("sessionId");
+        String command = (String) parameters.get("command");
+
+        // Generate Python code to execute shell command (CodeAct pattern)
+        String pythonCode = generateShellPython(command, timeout);
+
+        // Execute Python code in sandbox
+        var execResult = sandboxExecutor.execute(sessionId, pythonCode, Map.of());
+
+        var response = new HashMap<String, Object>();
+        response.put("success", execResult.isSuccess());
+        response.put("stdout", execResult.getStdout());
+        response.put("stderr", execResult.getStderr());
+        response.put("exitCode", execResult.isSuccess() ? 0 : 1);
+
+        return response;
+    }
+
+    private String generateShellPython(String command, int timeout) {
+        return String.format("""
+            import subprocess
+            import sys
+
+            try:
+                result = subprocess.run(
+                    '%s',
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=%d
+                )
+                print(result.stdout, end='')
+                sys.exit(result.returncode)
+            except subprocess.TimeoutExpired:
+                print('Command timed out', file=sys.stderr)
+                sys.exit(124)
+            """, command, timeout);
+    }
+}
+```
+
+**Key Pattern**: Tools generate Python code that's executed in the sandbox (CodeAct approach).
+
+### Web Search
+
+**Location**: `/backend/src/main/java/ai/mymanus/tool/impl/WebSearchTool.java`
+
+```java
+@Slf4j
+@Component
+public class WebSearchTool implements Tool {
+
+    @Override
+    public String getName() {
+        return "search_web";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Search the web for information";
+    }
+
+    @Override
+    public String getPythonSignature() {
+        return "search_web(query: str, max_results: int = 5)";
+    }
+
+    @Override
+    public Map<String, Object> execute(Map<String, Object> parameters) {
+        String query = (String) parameters.get("query");
+        Integer maxResults = parameters.containsKey("max_results")
+            ? ((Number) parameters.get("max_results")).intValue()
+            : 5;
+
+        // TODO: Integrate with real search API (Google, Bing, SearXNG)
+        List<Map<String, String>> results = new ArrayList<>();
+        // ... placeholder implementation
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("query", query);
+        response.put("results", results);
+        return response;
+    }
+
+    @Override
+    public boolean requiresNetwork() {
+        return true;
+    }
+}
+```
+
+**Note**: Currently a placeholder. In production, integrate with search APIs.
+
+### Communication Tools
+
+**User Notification**: `/backend/src/main/java/ai/mymanus/tool/impl/communication/MessageNotifyUserTool.java`
+
+```java
+@Component
+public class MessageNotifyUserTool implements Tool {
+
+    private final SimpMessagingTemplate messagingTemplate;
+
+    @Override
+    public String getName() {
+        return "message_notify_user";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Send a notification message to the user via WebSocket";
+    }
+
+    @Override
+    public String getPythonSignature() {
+        return "message_notify_user(sessionId: str, message: str, level: str = 'info')";
+    }
+
+    @Override
+    public Map<String, Object> execute(Map<String, Object> parameters) {
+        String sessionId = (String) parameters.get("sessionId");
+        String message = (String) parameters.get("message");
+        String level = (String) parameters.getOrDefault("level", "info");
+
+        // Send via WebSocket
+        messagingTemplate.convertAndSend("/topic/notifications/" + sessionId,
+            Map.of("message", message, "level", level));
+
+        return Map.of("success", true);
+    }
+}
+```
+
+**User Input**: `/backend/src/main/java/ai/mymanus/tool/impl/communication/MessageAskUserTool.java`
+
+Sends a question to the user and waits for a response via WebSocket.
+
+### Data Visualization
+
+**Location**: `/backend/src/main/java/ai/mymanus/tool/impl/DataVisualizationTool.java`
+
+Generates charts and visualizations (placeholder for matplotlib/plotly integration).
+
+### Utility Tools
+
+**PrintTool**: Simple console output tool
+**TodoTool**: Task list management
+**SearchToolsTool**: Search available tools by name/description
 
 ## Tool Registry
 
-### Registration Flow
-1. Scan for @Component beans
-2. Extract @ToolMetadata
-3. Generate Python signatures
-4. Create execution mappings
-5. Build documentation
+**Location**: `/backend/src/main/java/ai/mymanus/tool/ToolRegistry.java`
 
-### Dynamic Loading
-- Hot reload in development
-- Cache in production
-- Version management
-- Deprecation handling
+```java
+@Slf4j
+@Component
+public class ToolRegistry {
 
-## Parameter Handling
+    private final Map<String, Tool> tools = new ConcurrentHashMap<>();
 
-### Input Validation
-- Type checking
-- Range validation
-- Format verification
-- Injection prevention
+    public ToolRegistry(List<Tool> toolList) {
+        // Auto-registers all Spring @Component tools
+        toolList.forEach(tool -> {
+            tools.put(tool.getName(), tool);
+            log.info("Registered tool: {} - {}", tool.getName(), tool.getDescription());
+        });
+    }
 
-### Serialization
-- JSON-compatible types only
-- Handle nested structures
-- Convert special types
-- Preserve precision
+    public Optional<Tool> getTool(String name) {
+        return Optional.ofNullable(tools.get(name));
+    }
+
+    public Collection<Tool> getAllTools() {
+        return tools.values();
+    }
+
+    public String getToolDescriptions() {
+        return tools.values().stream()
+            .map(tool -> String.format("%s: %s\nSignature: %s",
+                tool.getName(),
+                tool.getDescription(),
+                tool.getPythonSignature()))
+            .collect(Collectors.joining("\n\n"));
+    }
+
+    public String generatePythonBindings() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("# Tool functions available in this environment\n\n");
+
+        for (Tool tool : tools.values()) {
+            sb.append(String.format("def %s:\n", tool.getPythonSignature()));
+            sb.append(String.format("    '''%s'''\n", tool.getDescription()));
+            sb.append(String.format("    return _execute_tool('%s', locals())\n\n",
+                tool.getName()));
+        }
+
+        return sb.toString();
+    }
+}
+```
+
+**Auto-Discovery**: Tools are automatically registered when Spring creates them as @Component beans.
+
+## Creating a New Tool
+
+### Step 1: Implement Tool Interface
+
+```java
+package ai.mymanus.tool.impl;
+
+import ai.mymanus.tool.Tool;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Slf4j
+@Component
+public class MyCustomTool implements Tool {
+
+    @Override
+    public String getName() {
+        return "my_custom_tool";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Does something useful for the agent";
+    }
+
+    @Override
+    public String getPythonSignature() {
+        return "my_custom_tool(param1: str, param2: int = 10)";
+    }
+
+    @Override
+    public Map<String, Object> execute(Map<String, Object> parameters) throws Exception {
+        // Extract parameters
+        String param1 = (String) parameters.get("param1");
+        Integer param2 = parameters.containsKey("param2")
+            ? ((Number) parameters.get("param2")).intValue()
+            : 10;
+
+        log.info("Executing custom tool with param1={}, param2={}", param1, param2);
+
+        try {
+            // Tool logic here
+            String result = performOperation(param1, param2);
+
+            // Return success response
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("result", result);
+            return response;
+
+        } catch (Exception e) {
+            log.error("Tool execution failed", e);
+
+            // Return error response
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return response;
+        }
+    }
+
+    @Override
+    public boolean requiresNetwork() {
+        return false; // Set to true if tool needs network access
+    }
+
+    private String performOperation(String param1, int param2) {
+        // Implementation
+        return "result";
+    }
+}
+```
+
+### Step 2: That's It!
+
+Spring automatically discovers and registers your tool. No manual registration needed.
+
+### Step 3: Test Your Tool
+
+```java
+@Test
+void testCustomTool() {
+    MyCustomTool tool = new MyCustomTool();
+
+    Map<String, Object> params = Map.of("param1", "test", "param2", 20);
+    Map<String, Object> result = tool.execute(params);
+
+    assertTrue((Boolean) result.get("success"));
+    assertNotNull(result.get("result"));
+}
+```
+
+## Parameter Handling Best Practices
+
+### Type Conversion
+
+```java
+// String parameter
+String strParam = (String) parameters.get("name");
+
+// Integer parameter with default
+Integer intParam = parameters.containsKey("count")
+    ? ((Number) parameters.get("count")).intValue()
+    : 10;
+
+// Boolean parameter
+Boolean boolParam = parameters.containsKey("enabled")
+    ? (Boolean) parameters.get("enabled")
+    : false;
+
+// List parameter
+@SuppressWarnings("unchecked")
+List<String> listParam = (List<String>) parameters.get("items");
+
+// Map parameter
+@SuppressWarnings("unchecked")
+Map<String, Object> mapParam = (Map<String, Object>) parameters.get("data");
+```
+
+### Validation
+
+```java
+// Required parameter
+if (param == null || param.isEmpty()) {
+    return error("Parameter 'name' is required", null);
+}
+
+// Range validation
+if (count < 1 || count > 100) {
+    return error("Parameter 'count' must be between 1 and 100", null);
+}
+
+// Format validation
+if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+    return error("Invalid email format", null);
+}
+```
+
+## Error Handling Patterns
+
+### Standard Error Response
+
+```java
+protected Map<String, Object> error(String message, Exception e) {
+    Map<String, Object> result = new HashMap<>();
+    result.put("success", false);
+    result.put("error", message);
+    if (e != null) {
+        result.put("errorType", e.getClass().getSimpleName());
+        result.put("errorMessage", e.getMessage());
+    }
+    return result;
+}
+```
+
+### Graceful Failure
+
+```java
+try {
+    // Risky operation
+    String data = externalApiCall();
+    return success("Data retrieved successfully");
+} catch (TimeoutException e) {
+    log.warn("API timeout, using cached data");
+    String cachedData = getFromCache();
+    return success("Using cached data (API unavailable)");
+} catch (Exception e) {
+    log.error("Failed to retrieve data", e);
+    return error("Data retrieval failed: " + e.getMessage(), e);
+}
+```
 
 ## Security Considerations
 
-### Sandboxing Levels
-1. **No Sandbox**: Internal calculations
-2. **Restricted**: File system access
-3. **Full Sandbox**: Network/execution
+### Path Validation (File Tools)
 
-### Input Sanitization
-- SQL injection prevention
-- Path traversal blocking
-- Command injection defense
-- XXE attack prevention
+Always use `validateAndResolvePath()` from `FileTool` base class to prevent path traversal attacks.
 
-### Rate Limiting
-Per-tool limits:
-- Requests per minute
-- Data size limits
-- Execution time
-- Resource consumption
+### Input Sanitization (Shell Tools)
 
-## Example Implementations
+```java
+// Escape single quotes
+String escapedCommand = command.replace("'", "\\'");
 
-### Web Search Tool
-Features:
-- Query sanitization
-- Result limiting
-- Snippet extraction
-- URL validation
-
-### File Operations
-Constraints:
-- Workspace isolation
-- Size limits (10MB)
-- Type restrictions
-- Permission checks
-
-### Database Query
-Safety:
-- Read-only access
-- Query validation
-- Result pagination
-- Timeout enforcement
-
-### HTTP Request
-Controls:
-- URL whitelist
-- Method restrictions
-- Header validation
-- Response size limits
-
-## Custom Utility Tools
-
-Replacing Manus utilities:
-
-### render_diagram
-Supports:
-- Mermaid syntax
-- D2 diagrams
-- GraphViz DOT
-- PlantUML
-
-Implementation:
-1. Parse diagram syntax
-2. Detect format type
-3. Call appropriate renderer
-4. Return PNG/SVG
-
-### markdown_to_pdf
-Pipeline:
-1. Parse Markdown
-2. Generate HTML
-3. Apply CSS styling
-4. Convert via WeasyPrint
-5. Return PDF bytes
-
-### file_upload
-Process:
-1. Validate file type
-2. Generate unique ID
-3. Store in S3/local
-4. Create shareable URL
-5. Set expiration
-
-## Tool Documentation
-
-### Required Sections
-- Brief description
-- Parameter details
-- Return value format
-- Usage examples
-- Error cases
-- Performance notes
-
-### Example Format
-```
-Search the web for information.
-
-Args:
-    query: Search terms
-    max_results: Limit (1-10)
-    
-Returns:
-    List of results with:
-    - title: Page title
-    - url: Page URL  
-    - snippet: Preview text
-    
-Example:
-    results = web_search("CodeAct paper")
-    for r in results:
-        print(r['title'])
+// Or use prepared statements for SQL
+PreparedStatement stmt = connection.prepareStatement(
+    "SELECT * FROM table WHERE id = ?"
+);
+stmt.setInt(1, userId);
 ```
 
-## Error Handling
+### Network Access Control
 
-### Graceful Failures
-- Return error in result
-- Include helpful message
-- Suggest alternatives
-- Log for debugging
+```java
+@Override
+public boolean requiresNetwork() {
+    return true; // Mark tools that need network access
+}
+```
 
-### Recovery Strategies
-- Retry with backoff
-- Fallback options
-- Cached responses
-- Default values
+The sandbox can be configured to block network access for tools that don't require it.
 
 ## Testing Tools
 
-### Unit Tests
-- Input validation
-- Output format
-- Error conditions
-- Edge cases
+### Unit Test Example
 
-### Integration Tests
-- Full execution path
-- Sandbox interaction
-- State management
-- Performance limits
+```java
+@SpringBootTest
+class FileReadToolTest {
 
-### Security Tests
-- Injection attempts
-- Resource exhaustion
-- Permission bypass
-- Data leakage
+    @Autowired
+    private FileReadTool fileReadTool;
+
+    @Test
+    void testReadExistingFile() throws Exception {
+        // Create test file
+        Path testFile = Paths.get(FileTool.WORKSPACE_ROOT, "test.txt");
+        Files.writeString(testFile, "Hello, World!");
+
+        // Execute tool
+        Map<String, Object> params = Map.of("path", "test.txt");
+        Map<String, Object> result = fileReadTool.execute(params);
+
+        // Verify result
+        assertTrue((Boolean) result.get("success"));
+        assertEquals("Hello, World!", result.get("content"));
+
+        // Cleanup
+        Files.delete(testFile);
+    }
+
+    @Test
+    void testReadNonExistentFile() throws Exception {
+        Map<String, Object> params = Map.of("path", "nonexistent.txt");
+        Map<String, Object> result = fileReadTool.execute(params);
+
+        assertFalse((Boolean) result.get("success"));
+        assertTrue(result.get("error").toString().contains("not found"));
+    }
+
+    @Test
+    void testPathTraversalAttack() {
+        Map<String, Object> params = Map.of("path", "../../etc/passwd");
+
+        assertThrows(SecurityException.class, () -> {
+            fileReadTool.execute(params);
+        });
+    }
+}
+```
 
 ## Performance Optimization
 
-### Caching Strategy
-- Cache tool metadata
-- Store common results
-- Precompute expensive ops
-- Invalidate intelligently
+### Caching Tool Metadata
 
-### Async Execution
-- Non-blocking I/O
-- Parallel processing
-- Queue management
-- Result aggregation
+Tool descriptions are cached by ToolRegistry for fast prompt generation.
 
-## Monitoring
+### Async Execution (Future Enhancement)
 
-### Metrics
-- Execution count
-- Success rate
-- Average duration
-- Error frequency
-- Resource usage
+For long-running tools, consider async execution:
 
-### Logging
-- Input parameters
-- Execution time
-- Result size
-- Error details
-- User context
+```java
+@Async
+public CompletableFuture<Map<String, Object>> executeAsync(Map<String, Object> params) {
+    return CompletableFuture.supplyAsync(() -> execute(params));
+}
+```
 
-## Tool Versioning
+## Logging Best Practices
 
-### Compatibility
-- Backward compatibility
-- Deprecation warnings
-- Migration guides
-- Feature flags
+```java
+// Use emoji prefixes for easy scanning
+log.info("📖 Reading file: {}", filePath);
+log.info("✅ Successfully read file: {} ({} bytes)", filePath, content.length());
+log.warn("⚠️ File not found: {}", resolvedPath);
+log.error("❌ Error reading file: {}", filePath, e);
+log.error("🚨 Security violation reading file: {}", filePath, e);
+```
 
-### Updates
-- Add parameters carefully
-- Preserve signatures
-- Document changes
-- Test thoroughly
+## Tool Categories
 
-## Best Practices
+Currently implemented tools by category:
 
-1. **Keep tools focused** on single purpose
-2. **Validate everything** before execution
-3. **Document thoroughly** with examples
-4. **Handle errors** gracefully
-5. **Log appropriately** for debugging
-6. **Test security** rigorously
-7. **Monitor usage** patterns
-8. **Optimize hot paths** only
+### File Operations (7 tools)
+- file_read, file_write, file_list, file_find_by_name, file_find_content, file_replace_string
 
-## Common Pitfalls
+### Browser Automation (9 tools)
+- browser_navigate, browser_view, browser_click, browser_input, browser_scroll_up, browser_scroll_down, browser_press_key, browser_refresh
 
-- Over-complex tools
-- Poor error messages
-- Missing validation
-- Inadequate documentation
-- Performance bottlenecks
-- Security vulnerabilities
-- State corruption
-- Memory leaks
+### Shell Execution (1 tool)
+- shell_exec
 
-## Tool Development Workflow
+### Communication (2 tools)
+- message_notify_user, message_ask_user
 
-1. Define tool purpose
-2. Design Python interface
-3. Implement Java backend
-4. Add validation logic
-5. Create documentation
-6. Write comprehensive tests
-7. Security review
-8. Performance testing
-9. Deploy to registry
-10. Monitor usage
+### Web Search (1 tool)
+- search_web (placeholder)
 
-## Future Enhancements
+### Utilities (3 tools)
+- print, todo, search_tools
 
-- Tool composition
-- Dynamic parameters
-- Streaming results
-- Batch operations
-- Tool marketplace
-- User-defined tools
-- ML-enhanced tools
-- Tool recommendations
+### Data Visualization (1 tool)
+- data_visualization (placeholder)
+
+## Future Tool Ideas
+
+- **Database Tools**: query_postgres, query_sqlite
+- **API Tools**: http_get, http_post, graphql_query
+- **Media Tools**: image_resize, pdf_merge, video_thumbnail
+- **Analysis Tools**: analyze_csv, json_to_csv, xml_parse
+- **ML Tools**: classify_text, extract_entities, summarize
+- **Code Tools**: format_code, run_tests, lint_python
+
+## Best Practices Summary
+
+1. **Always extend base classes** (FileTool, BrowserTool) when appropriate
+2. **Validate all inputs** before processing
+3. **Return consistent response format** (success/error with metadata)
+4. **Log with emoji prefixes** for easy debugging
+5. **Handle errors gracefully** with helpful messages
+6. **Mark network requirements** accurately
+7. **Write comprehensive tests** including security tests
+8. **Document Python signatures** clearly
+9. **Keep tools focused** on single responsibility
+10. **Consider security first** (sandboxing, validation, escaping)
