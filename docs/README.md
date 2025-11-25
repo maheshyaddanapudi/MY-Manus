@@ -81,32 +81,10 @@ Project status, analysis, and planning documents:
   - 100% core feature parity analysis
   - 8 major exclusive enhancements
 
-- **[IMPLEMENTATION_STATUS.md](project/IMPLEMENTATION_STATUS.md)** - Feature completion tracking
-  - Backend implementation status (100% complete)
-  - Frontend implementation status (100% complete)
-  - Infrastructure setup (100% complete)
-  - Testing coverage details
-
 - **[FINAL_SUMMARY.md](project/FINAL_SUMMARY.md)** - Project completion summary
   - Implementation achievements
   - Performance metrics
   - Production readiness checklist
-
-- **[GAP_ANALYSIS.md](project/GAP_ANALYSIS.md)** - Original gap analysis vs Manus AI
-  - Identified gaps
-  - Implemented solutions
-  - Remaining opportunities
-
-- **[IMPLEMENTATION_PLAN.md](project/IMPLEMENTATION_PLAN.md)** - Original implementation plan
-  - Phase-by-phase development strategy
-  - Timeline and milestones
-  - Resource allocation
-
-- **[TEST_PLAN.md](project/TEST_PLAN.md)** - Testing strategy and coverage
-  - Unit testing approach
-  - Integration testing
-  - E2E testing
-  - Security testing
 
 ---
 
@@ -131,8 +109,8 @@ Research reports and analysis:
 
 **Frontend Development:**
 1. Start with [UI_GUIDE.md](guides/UI_GUIDE.md)
-2. Review [FRONTEND_ARCHITECTURE.md](architecture/FRONTEND_ARCHITECTURE.md) for component structure
-3. Check [IMPLEMENTATION_STATUS.md](project/IMPLEMENTATION_STATUS.md) for current state
+2. Review [FRONTEND_ARCHITECTURE.md](architecture/FRONTEND_ARCHITECTURE.md) for complete UI layout and component structure
+3. Check [FINAL_SUMMARY.md](project/FINAL_SUMMARY.md) for implementation achievements
 
 **Backend Development:**
 1. Begin with [AGENT_GUIDE.md](guides/AGENT_GUIDE.md)
@@ -148,15 +126,13 @@ Research reports and analysis:
 
 ### For Product Managers
 
-**Feature Comparison:**
-1. Read [DIFFERENTIAL_ANALYSIS.md](project/DIFFERENTIAL_ANALYSIS.md)
-2. Check [IMPLEMENTATION_STATUS.md](project/IMPLEMENTATION_STATUS.md)
-3. Review [FINAL_SUMMARY.md](project/FINAL_SUMMARY.md)
+**Feature Analysis:**
+1. Read [DIFFERENTIAL_ANALYSIS.md](project/DIFFERENTIAL_ANALYSIS.md) - Complete feature comparison with Manus AI
+2. Review [FINAL_SUMMARY.md](project/FINAL_SUMMARY.md) - Implementation achievements and production readiness
+3. Check [FRONTEND_ARCHITECTURE.md](architecture/FRONTEND_ARCHITECTURE.md) - Complete UI/UX specifications
 
-**Project Planning:**
-1. See [IMPLEMENTATION_PLAN.md](project/IMPLEMENTATION_PLAN.md)
-2. Review [GAP_ANALYSIS.md](project/GAP_ANALYSIS.md)
-3. Check [TEST_PLAN.md](project/TEST_PLAN.md)
+**Research:**
+1. See [MANUS_AI_RESEARCH_REPORT.md](research/MANUS_AI_RESEARCH_REPORT.md) - Original platform research
 
 ---
 
