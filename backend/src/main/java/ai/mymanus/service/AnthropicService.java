@@ -44,6 +44,21 @@ public class AnthropicService {
     }
 
     /**
+     * Send a simple message without conversation history (for classification, etc.)
+     */
+    public String sendSimpleMessage(String message) {
+        try {
+            return chatClient.prompt()
+                .user(message)
+                .call()
+                .content();
+        } catch (Exception e) {
+            log.error("Error sending simple message", e);
+            throw new RuntimeException("Failed to send message: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * Generate a streaming response
      */
     public Flux<String> generateStream(String conversationId, String systemPrompt, String userMessage) {

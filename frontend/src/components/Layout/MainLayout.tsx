@@ -6,6 +6,7 @@ import { EnhancedBrowserPanel } from '../Browser';
 import { FileTreePanel } from '../FileTree';
 import { SessionReplayPanel } from '../Replay';
 import { DocumentPanel } from '../Knowledge';
+import { PlanPanel } from '../Plan';
 
 interface MainLayoutProps {
   conversationListPanel?: ReactNode;
@@ -80,6 +81,12 @@ export const MainLayout = ({ conversationListPanel, chatPanel, terminalPanel, ed
               icon="📚"
               active={activePanel === 'knowledge'}
             />
+            <PanelTab
+              name="plan"
+              label="Plan"
+              icon="📋"
+              active={activePanel === 'plan'}
+            />
           </div>
 
           {/* Panel Content */}
@@ -100,6 +107,9 @@ export const MainLayout = ({ conversationListPanel, chatPanel, terminalPanel, ed
             )}
             {activePanel === 'knowledge' && currentSessionId && (
               <DocumentPanel sessionId={currentSessionId} />
+            )}
+            {activePanel === 'plan' && currentSessionId && (
+              <PlanPanel sessionId={currentSessionId} />
             )}
           </div>
         </div>

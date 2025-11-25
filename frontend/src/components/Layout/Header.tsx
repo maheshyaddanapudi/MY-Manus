@@ -1,4 +1,5 @@
 import { useAgentStore } from '../../stores/agentStore';
+import { NotificationBell } from '../Notifications';
 
 export const Header = () => {
   const { sessionId, isConnected, agentStatus } = useAgentStore();
@@ -44,6 +45,9 @@ export const Header = () => {
           <div className={`w-3 h-3 rounded-full ${getStatusColor()}`}></div>
           <span className="text-sm text-gray-300">{getStatusText()}</span>
         </div>
+
+        {/* Notification Bell */}
+        <NotificationBell />
       </div>
     </header>
   );
