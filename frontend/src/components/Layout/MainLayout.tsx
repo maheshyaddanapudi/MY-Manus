@@ -2,8 +2,10 @@ import { ReactNode } from 'react';
 import { Header } from './Header';
 import { useAgentStore } from '../../stores/agentStore';
 import { EventStreamPanel } from '../EventStream';
-import { BrowserPanel } from '../Browser';
+import { EnhancedBrowserPanel } from '../Browser';
 import { FileTreePanel } from '../FileTree';
+import { SessionReplayPanel } from '../Replay';
+import { DocumentPanel } from '../Knowledge';
 
 interface MainLayoutProps {
   conversationListPanel?: ReactNode;
@@ -66,6 +68,18 @@ export const MainLayout = ({ conversationListPanel, chatPanel, terminalPanel, ed
               icon="📂"
               active={activePanel === 'files'}
             />
+            <PanelTab
+              name="replay"
+              label="Replay"
+              icon="⏯️"
+              active={activePanel === 'replay'}
+            />
+            <PanelTab
+              name="knowledge"
+              label="Knowledge"
+              icon="📚"
+              active={activePanel === 'knowledge'}
+            />
           </div>
 
           {/* Panel Content */}
@@ -76,10 +90,16 @@ export const MainLayout = ({ conversationListPanel, chatPanel, terminalPanel, ed
               <EventStreamPanel sessionId={currentSessionId} autoRefresh={true} />
             )}
             {activePanel === 'browser' && currentSessionId && (
-              <BrowserPanel sessionId={currentSessionId} />
+              <EnhancedBrowserPanel sessionId={currentSessionId} />
             )}
             {activePanel === 'files' && currentSessionId && (
               <FileTreePanel sessionId={currentSessionId} />
+            )}
+            {activePanel === 'replay' && currentSessionId && (
+              <SessionReplayPanel sessionId={currentSessionId} />
+            )}
+            {activePanel === 'knowledge' && currentSessionId && (
+              <DocumentPanel sessionId={currentSessionId} />
             )}
           </div>
         </div>

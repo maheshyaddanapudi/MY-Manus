@@ -30,7 +30,7 @@ interface AgentState {
   executionContext: ExecutionContext;
 
   // UI State
-  activePanel: 'terminal' | 'editor' | 'browser' | 'events';
+  activePanel: 'terminal' | 'editor' | 'browser' | 'events' | 'files' | 'replay' | 'knowledge';
   isSidebarOpen: boolean;
 
   // Actions

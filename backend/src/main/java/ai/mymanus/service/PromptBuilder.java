@@ -1,5 +1,6 @@
 package ai.mymanus.service;
 
+import ai.mymanus.model.DocumentChunk;
 import ai.mymanus.model.Message;
 import ai.mymanus.tool.ToolRegistry;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import java.util.Map;
 public class PromptBuilder {
 
     private final ToolRegistry toolRegistry;
+    private final RAGService ragService;
 
     private static final String SYSTEM_PROMPT_TEMPLATE = """
             You are a helpful AI assistant that solves problems by writing and executing Python code.
@@ -54,6 +56,8 @@ public class PromptBuilder {
             ## Current Execution Context:
             Variables in memory: %s
 
+            %s
+
             ## Important Rules:
             - Always use print() to show results to the user
             - Handle errors gracefully with try/except
@@ -75,14 +79,50 @@ public class PromptBuilder {
      * Build the system prompt with current context
      */
     public String buildSystemPrompt(Map<String, Object> executionContext, boolean networkEnabled) {
+        return buildSystemPrompt(executionContext, networkEnabled, null, null);
+    }
+
+    /**
+     * Build the system prompt with current context and RAG knowledge base
+     */
+    public String buildSystemPrompt(Map<String, Object> executionContext, boolean networkEnabled,
+                                     String sessionId, String userQuery) {
         String toolDescriptions = toolRegistry.getToolDescriptions();
         String networkStatus = networkEnabled ? "Enabled" : "Disabled (no external requests)";
         String contextDescription = buildContextDescription(executionContext);
 
+        // Add RAG context if available
+        String ragContext = "";
+        if (sessionId != null && userQuery != null) {
+            ragContext = buildRAGContext(sessionId, userQuery);
+        }
+
         return String.format(SYSTEM_PROMPT_TEMPLATE,
                 toolDescriptions,
                 networkStatus,
-                contextDescription);
+                contextDescription,
+                ragContext);
+    }
+
+    /**
+     * Build RAG context from knowledge base
+     */
+    private String buildRAGContext(String sessionId, String userQuery) {
+        try {
+            List<DocumentChunk> relevantChunks = ragService.retrieveContext(sessionId, userQuery);
+
+            if (relevantChunks.isEmpty()) {
+                return "";
+            }
+
+            String context = ragService.buildContextString(relevantChunks);
+            return "## Knowledge Base Context:\n" +
+                   "The following information from your knowledge base may be relevant:\n\n" +
+                   context;
+        } catch (Exception e) {
+            // Don't fail if RAG retrieval fails
+            return "";
+        }
     }
 
     /**
