@@ -305,12 +305,40 @@ Open http://localhost:8080/swagger-ui.html to:
 - **Tool Usage**: Agent automatically uses available tools
 - **Session Management**: Sessions persist in database
 
+## 📚 Comprehensive Documentation
+
+### Getting Started
+- **[Setup Guide](SETUP.md)** - Detailed installation and configuration
+- **[Development Guide](docs/guides/DEVELOPMENT_GUIDE.md)** - Complete developer onboarding (prerequisites → first contribution)
+- **[Project Overview](docs/PROJECT_OVERVIEW.md)** - Project need, inspiration, vision, and design philosophy
+
+### Architecture & Design
+- **[System Architecture](docs/architecture/ARCHITECTURE.md)** - Complete system architecture with 10+ diagrams
+- **[Database Schema](docs/architecture/DATABASE_SCHEMA.md)** - Full ERD and schema documentation for all 12 tables
+- **[Event Stream Guide](docs/architecture/EVENT_STREAM_GUIDE.md)** - Deep dive into event stream architecture (7 event types)
+- **[Frontend Architecture](docs/architecture/FRONTEND_ARCHITECTURE.md)** - React components, state management, WebSocket integration
+
+### Advanced Features
+- **[Multi-Turn Conversations](docs/guides/MULTI_TURN_SCENARIOS.md)** - TASK/QUERY/ADJUSTMENT classification with real examples
+- **[Observability](docs/guides/OBSERVABILITY.md)** - Prometheus/Grafana setup with metrics and dashboards
+- **[API Reference](docs/guides/API_REFERENCE.md)** - Complete REST and WebSocket API documentation (40+ endpoints)
+
+### Implementation Guides
+- **[Agent Guide](docs/guides/AGENT_GUIDE.md)** - CodeAct implementation details
+- **[UI Guide](docs/guides/UI_GUIDE.md)** - Frontend development patterns
+- **[Sandbox Guide](docs/guides/SANDBOX_GUIDE.md)** - Docker environment setup
+- **[Tools Guide](docs/guides/TOOLS_GUIDE.md)** - Adding new tools
+- **[Deployment Guide](docs/guides/DEPLOYMENT.md)** - Production deployment
+
+### Project Status
+- **[Implementation Status](IMPLEMENTATION_STATUS.md)** - Current implementation status
+- **[Final Summary](docs/project/FINAL_SUMMARY.md)** - Complete differential analysis
+
 ## 🆘 Get Help
 
-- **Documentation**: See `docs/` directory
-- **Implementation Status**: See `IMPLEMENTATION_STATUS.md`
-- **Setup Guide**: See `SETUP.md`
+- **Documentation**: See comprehensive docs above
 - **Issues**: Create a GitHub issue
+- **Quick Reference**: See [Development Guide - Quick Reference](docs/guides/DEVELOPMENT_GUIDE.md#quick-reference)
 
 ---
 

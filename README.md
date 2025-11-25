@@ -195,29 +195,67 @@ rate-limit:
 
 ## 📚 Documentation
 
-### Getting Started
-- [QUICKSTART.md](QUICKSTART.md) - 5-minute quick start guide
-- [SETUP.md](SETUP.md) - Comprehensive setup instructions
-- [CLAUDE.md](CLAUDE.md) - Development instructions for Claude Code
+> **Comprehensive documentation suite enabling new developers to understand everything A-Z without reading code first.**
 
-### Guides
-- [Agent Guide](docs/guides/AGENT_GUIDE.md) - CodeAct implementation details
-- [UI Guide](docs/guides/UI_GUIDE.md) - Frontend development patterns
-- [Sandbox Guide](docs/guides/SANDBOX_GUIDE.md) - Environment setup and configuration
-- [Tools Guide](docs/guides/TOOLS_GUIDE.md) - Adding and customizing tools
-- [Deployment Guide](docs/guides/DEPLOYMENT.md) - Production deployment strategies
+### 🚀 Getting Started
+- **[QUICKSTART.md](QUICKSTART.md)** - Get started in 5 minutes
+- **[SETUP.md](SETUP.md)** - Detailed installation and configuration
+- **[Development Guide](docs/guides/DEVELOPMENT_GUIDE.md)** - Complete developer onboarding (prerequisites → first contribution)
+  - Installation, setup, testing, debugging, contributing
+  - Adding new tools, endpoints, UI panels with examples
+  - First contribution ideas (easy → advanced)
+- **[Project Overview](docs/PROJECT_OVERVIEW.md)** - Project need, inspiration, vision, and design philosophy
+  - Why MY-Manus exists, Manus AI inspiration, design philosophy
+- **[CLAUDE.md](CLAUDE.md)** - Development instructions for Claude Code
 
-### Architecture
-- [Frontend Architecture](docs/architecture/FRONTEND_ARCHITECTURE.md) - Complete UI layout and component structure
-- [Sandbox Architecture](docs/architecture/SANDBOX_ARCHITECTURE.md) - Docker sandbox design
+### 🏗️ Architecture & Design
+- **[System Architecture](docs/architecture/ARCHITECTURE.md)** - Complete system architecture with 10+ diagrams
+  - Component architecture, data flow, deployment models
+  - Security architecture (5 layers)
+  - Performance optimizations, caching strategies
+  - MY-Manus vs Manus AI detailed comparison
+- **[Database Schema](docs/architecture/DATABASE_SCHEMA.md)** - Full ERD and schema documentation for all 12 tables
+  - Complete ERD diagrams with relationships
+  - JSONB usage patterns and examples
+  - Indexes, performance considerations, query examples
+- **[Event Stream Guide](docs/architecture/EVENT_STREAM_GUIDE.md)** - Deep dive into event stream architecture
+  - All 7 event types documented with code examples
+  - Implementation patterns and best practices
+  - Debugging with events, performance considerations
+- **[Frontend Architecture](docs/architecture/FRONTEND_ARCHITECTURE.md)** - React components, state management, WebSocket integration
+  - Eight-panel UI architecture (Chat, Terminal, Editor, Browser, Events, Files, Replay, Knowledge, Plan)
+  - Zustand store patterns, real-time event streaming
+- **[Sandbox Architecture](docs/architecture/SANDBOX_ARCHITECTURE.md)** - Docker sandbox design and security
 
-### Project Documentation
-- [Differential Analysis](docs/project/DIFFERENTIAL_ANALYSIS.md) - Comparison with Manus AI
-- [Implementation Status](docs/project/IMPLEMENTATION_STATUS.md) - Feature completion tracking
-- [Final Summary](docs/project/FINAL_SUMMARY.md) - Project completion summary
+### 🔥 Advanced Features
+- **[Multi-Turn Conversations](docs/guides/MULTI_TURN_SCENARIOS.md)** - TASK/QUERY/ADJUSTMENT classification
+  - Real-world examples with flow diagrams (5 scenarios)
+  - LLM-based classification logic implementation
+  - Edge cases and best practices
+- **[Observability](docs/guides/OBSERVABILITY.md)** - Prometheus/Grafana monitoring setup
+  - Complete metrics documentation (JVM, HTTP, DB, Spring AI, custom business metrics)
+  - PromQL query examples for common scenarios
+  - Example Grafana dashboard configurations
+  - Alerting rules and troubleshooting guide
+- **[API Reference](docs/guides/API_REFERENCE.md)** - Complete REST and WebSocket API documentation
+  - All 40+ REST endpoints documented with examples
+  - All 6 WebSocket topics with subscription examples
+  - Request/response formats, error handling, rate limiting
 
-### Research
-- [Manus AI Research Report](docs/research/MANUS_AI_RESEARCH_REPORT.md) - Original research and analysis
+### 📖 Implementation Guides
+- **[Agent Guide](docs/guides/AGENT_GUIDE.md)** - CodeAct implementation details
+- **[UI Guide](docs/guides/UI_GUIDE.md)** - Frontend development patterns
+- **[Sandbox Guide](docs/guides/SANDBOX_GUIDE.md)** - Environment setup and configuration
+- **[Tools Guide](docs/guides/TOOLS_GUIDE.md)** - Adding and customizing tools
+- **[Deployment Guide](docs/guides/DEPLOYMENT.md)** - Production deployment strategies
+
+### 📊 Project Status
+- **[Implementation Status](IMPLEMENTATION_STATUS.md)** - Current implementation status
+- **[Final Summary](docs/project/FINAL_SUMMARY.md)** - Complete differential analysis
+- **[Differential Analysis](docs/project/DIFFERENTIAL_ANALYSIS.md)** - Comparison with Manus AI
+
+### 🔬 Research
+- **[Manus AI Research Report](docs/research/MANUS_AI_RESEARCH_REPORT.md)** - Original research and analysis
 
 ## 🧪 Testing
 

@@ -270,17 +270,64 @@ MY-Manus/
 4. **Test Agent Loop**: End-to-end agent execution
 5. **Deploy**: Production deployment with authentication
 
-## Additional Resources
+## 📚 Comprehensive Documentation
 
-- [CLAUDE.md](CLAUDE.md) - Instructions for Claude Code
-- [Agent Guide](docs/AGENT_GUIDE.md) - CodeAct implementation details
-- [UI Guide](docs/UI_GUIDE.md) - Frontend development patterns
-- [Sandbox Guide](docs/SANDBOX_GUIDE.md) - Environment setup
-- [Tools Guide](docs/TOOLS_GUIDE.md) - Adding new tools
-- [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment
+### Getting Started
+- **[Quick Start](QUICKSTART.md)** - Get started in 5 minutes
+- **[Development Guide](docs/guides/DEVELOPMENT_GUIDE.md)** - Complete developer onboarding (prerequisites → first contribution)
+- **[Project Overview](docs/PROJECT_OVERVIEW.md)** - Project need, inspiration, vision, and design philosophy
 
-## Support
+### Architecture & Design
+- **[System Architecture](docs/architecture/ARCHITECTURE.md)** - Complete system architecture with 10+ diagrams
+  - Component architecture, data flow, deployment models
+  - Security architecture (5 layers)
+  - Performance optimizations
+  - MY-Manus vs Manus AI comparison
+- **[Database Schema](docs/architecture/DATABASE_SCHEMA.md)** - Full ERD and schema documentation for all 12 tables
+  - Complete ERD diagrams
+  - JSONB usage patterns
+  - Indexes and query examples
+- **[Event Stream Guide](docs/architecture/EVENT_STREAM_GUIDE.md)** - Deep dive into event stream architecture
+  - All 7 event types documented with examples
+  - Implementation patterns and best practices
+  - Debugging with events
+- **[Frontend Architecture](docs/architecture/FRONTEND_ARCHITECTURE.md)** - React components, state management, WebSocket integration
+  - Three-panel UI architecture
+  - Zustand store patterns
+  - Real-time event streaming
 
-- GitHub Issues: [Report bugs](https://github.com/yourusername/my-manus/issues)
-- Documentation: [docs/](docs/)
-- Email: support@mymanus.ai
+### Advanced Features
+- **[Multi-Turn Conversations](docs/guides/MULTI_TURN_SCENARIOS.md)** - TASK/QUERY/ADJUSTMENT classification
+  - Real-world examples with flow diagrams
+  - LLM-based classification logic
+  - Edge cases and best practices
+- **[Observability](docs/guides/OBSERVABILITY.md)** - Prometheus/Grafana setup
+  - Complete metrics documentation (JVM, HTTP, DB, Spring AI, custom)
+  - PromQL query examples
+  - Example Grafana dashboard configurations
+  - Alerting rules and troubleshooting
+- **[API Reference](docs/guides/API_REFERENCE.md)** - Complete REST and WebSocket API documentation
+  - All 40+ REST endpoints documented
+  - All 6 WebSocket topics
+  - Request/response examples
+  - Error handling and rate limiting
+
+### Implementation Guides
+- **[Agent Guide](docs/guides/AGENT_GUIDE.md)** - CodeAct implementation details
+- **[UI Guide](docs/guides/UI_GUIDE.md)** - Frontend development patterns
+- **[Sandbox Guide](docs/guides/SANDBOX_GUIDE.md)** - Docker environment setup
+- **[Tools Guide](docs/guides/TOOLS_GUIDE.md)** - Adding new tools
+- **[Deployment Guide](docs/guides/DEPLOYMENT.md)** - Production deployment
+
+### Project Status
+- **[Implementation Status](IMPLEMENTATION_STATUS.md)** - Current implementation status
+- **[Final Summary](docs/project/FINAL_SUMMARY.md)** - Complete differential analysis
+
+### For Claude Code
+- **[CLAUDE.md](CLAUDE.md)** - Instructions for Claude Code development
+
+## 🆘 Support
+
+- **Documentation**: See comprehensive docs above
+- **GitHub Issues**: [Report bugs](https://github.com/yourusername/my-manus/issues)
+- **Quick Reference**: See [Development Guide - Quick Reference](docs/guides/DEVELOPMENT_GUIDE.md#quick-reference)
