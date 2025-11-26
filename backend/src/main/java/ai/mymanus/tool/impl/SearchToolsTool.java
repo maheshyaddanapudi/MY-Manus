@@ -1,29 +1,51 @@
 package ai.mymanus.tool.impl;
 
 import ai.mymanus.tool.Tool;
-import ai.mymanus.tool.ToolRegistry;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
- * Tool for searching available tools by capability
+ * Tool for searching external MCP (Model Context Protocol) tool servers
  *
- * Searches across all registered tools (22 core tools) and returns
- * the most relevant tools based on the query.
+ * This tool discovers tools from EXTERNAL MCP servers, not the 22 core infrastructure tools.
+ * Core infrastructure tools (file operations, browser, shell, etc.) are ALWAYS pre-registered
+ * with the LLM and do not need to be searched.
  *
- * Uses keyword matching and semantic similarity to find tools that
- * match the requested capability.
+ * MCP Tool Discovery:
+ * - Connects to configured MCP tool servers
+ * - Searches for tools matching the capability query
+ * - Returns tool definitions that can be dynamically loaded
+ * - Returns empty list if no MCP servers are configured
+ *
+ * Example MCP servers:
+ * - Email MCP Server: send_email, read_inbox, search_emails
+ * - Calendar MCP Server: create_event, list_events, update_event
+ * - Database MCP Server: query_postgres, query_mysql, run_migration
+ *
+ * Configuration:
+ * mcp:
+ *   servers:
+ *     - url: http://email-mcp-server:8080
+ *       name: Email Tools
+ *     - url: http://calendar-mcp-server:8080
+ *       name: Calendar Tools
  */
-@Component
 @Slf4j
-@RequiredArgsConstructor
+@Component
 public class SearchToolsTool implements Tool {
 
-    private final ToolRegistry toolRegistry;
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    @Value("${mcp.servers:}")
+    private List<String> mcpServerUrls;
+
+    @Value("${mcp.enabled:false}")
+    private boolean mcpEnabled;
 
     @Override
     public String getName() {
@@ -33,22 +55,36 @@ public class SearchToolsTool implements Tool {
     @Override
     public String getDescription() {
         return """
-            Search for available tools by capability description.
-            Use this when you need to find tools for a specific task.
+            Search for additional tools from external MCP (Model Context Protocol) servers.
+            Use this when you need capabilities beyond the core infrastructure tools.
+
+            The 22 core infrastructure tools (file ops, browser, shell, etc.) are always available
+            and do NOT need to be searched. This tool discovers EXTERNAL tools from MCP servers.
 
             Parameters:
-            - query: Natural language description of needed capability (e.g., "read files", "browser automation")
+            - query: Natural language description of needed capability (e.g., "send email", "book flight")
             - top_k: Number of tools to return (default: 5, max: 10)
 
-            Returns: List of matching tools with their descriptions and signatures
+            Returns: List of available MCP tools with their descriptions and usage
 
             Examples:
-            search_tools(query="read files", top_k=3)
-            search_tools(query="browser automation")
-            search_tools(query="execute python code")
+            search_tools(query="send email", top_k=3)
+            # Returns: send_email, read_inbox, search_emails from Email MCP Server
 
-            This searches across all 22 core infrastructure tools.
+            search_tools(query="flight booking API")
+            # Returns: search_flights, book_flight, cancel_booking from Travel MCP Server
+
+            search_tools(query="database operations")
+            # Returns: query_postgres, run_migration, backup_db from Database MCP Server
+
+            Note: Returns empty list if no MCP servers are configured.
+            Core infrastructure tools are always available without searching.
             """;
+    }
+
+    @Override
+    public String getPythonSignature() {
+        return "search_tools(query: str, top_k: int = 5) -> dict";
     }
 
     @Override
@@ -57,98 +93,113 @@ public class SearchToolsTool implements Tool {
         int topK = params.containsKey("top_k") ?
             Math.min(((Number) params.get("top_k")).intValue(), 10) : 5;
 
-        log.info("🔍 Searching for tools: query='{}', top_k={}", query, topK);
+        log.info("🔍 Searching MCP servers for tools: query='{}', top_k={}", query, topK);
 
-        // Get all available tools
-        List<Tool> allTools = toolRegistry.getAllTools();
+        // Check if MCP is enabled and servers are configured
+        if (!mcpEnabled || mcpServerUrls == null || mcpServerUrls.isEmpty()) {
+            log.info("No MCP servers configured - returning empty list");
+            return Map.of(
+                "success", true,
+                "query", query,
+                "tools_found", 0,
+                "mcp_servers_queried", 0,
+                "tools", Collections.emptyList(),
+                "message", "No MCP servers configured. Configure MCP servers in application.yml to discover external tools."
+            );
+        }
 
-        // Score and rank tools by relevance
-        List<ToolScore> scoredTools = allTools.stream()
-            .map(tool -> new ToolScore(tool, calculateRelevance(tool, query)))
-            .sorted(Comparator.comparingDouble(ToolScore::score).reversed())
+        // Search all configured MCP servers
+        List<Map<String, String>> allDiscoveredTools = new ArrayList<>();
+        int serversQueried = 0;
+
+        for (String serverUrl : mcpServerUrls) {
+            try {
+                List<Map<String, String>> serverTools = queryMCPServer(serverUrl, query, topK);
+                allDiscoveredTools.addAll(serverTools);
+                serversQueried++;
+                log.debug("Found {} tools from MCP server: {}", serverTools.size(), serverUrl);
+            } catch (Exception e) {
+                log.warn("Failed to query MCP server {}: {}", serverUrl, e.getMessage());
+            }
+        }
+
+        // Sort by relevance and limit to top-k
+        List<Map<String, String>> topTools = allDiscoveredTools.stream()
             .limit(topK)
-            .collect(Collectors.toList());
+            .toList();
 
-        // Build response
-        List<Map<String, String>> matchingTools = scoredTools.stream()
-            .map(ts -> {
-                Map<String, String> toolInfo = new HashMap<>();
-                toolInfo.put("name", ts.tool().getName());
-                toolInfo.put("description", ts.tool().getDescription());
-                toolInfo.put("signature", ts.tool().getPythonSignature());
-                toolInfo.put("relevance_score", String.format("%.2f", ts.score()));
-                return toolInfo;
-            })
-            .collect(Collectors.toList());
-
-        log.info("✅ Found {} matching tools (top score: {})",
-            matchingTools.size(),
-            scoredTools.isEmpty() ? 0 : scoredTools.get(0).score());
+        log.info("✅ Found {} MCP tools from {} servers", topTools.size(), serversQueried);
 
         return Map.of(
             "success", true,
             "query", query,
-            "tools_found", matchingTools.size(),
-            "total_tools", allTools.size(),
-            "tools", matchingTools
+            "tools_found", topTools.size(),
+            "mcp_servers_queried", serversQueried,
+            "tools", topTools
         );
     }
 
     /**
-     * Calculate relevance score between query and tool
-     * Uses keyword matching with term frequency weighting
+     * Query a single MCP server for tools matching the query
+     *
+     * MCP Protocol expects:
+     * POST /tools/search
+     * {
+     *   "query": "send email",
+     *   "top_k": 5
+     * }
+     *
+     * Response:
+     * {
+     *   "tools": [
+     *     {
+     *       "name": "send_email",
+     *       "description": "Send an email message",
+     *       "signature": "send_email(to: str, subject: str, body: str) -> dict",
+     *       "server": "email-mcp-server"
+     *     }
+     *   ]
+     * }
      */
-    private double calculateRelevance(Tool tool, String query) {
-        String queryLower = query.toLowerCase();
-        String toolName = tool.getName().toLowerCase();
-        String toolDesc = tool.getDescription().toLowerCase();
-        String toolSig = tool.getPythonSignature().toLowerCase();
+    private List<Map<String, String>> queryMCPServer(String serverUrl, String query, int topK) {
+        try {
+            String url = serverUrl + "/tools/search";
 
-        double score = 0.0;
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("query", query);
+            requestBody.put("top_k", topK);
 
-        // Extract query terms
-        String[] queryTerms = queryLower
-            .replaceAll("[^a-z0-9\\s]", " ")
-            .split("\\s+");
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
-        // Score based on term matches
-        for (String term : queryTerms) {
-            if (term.length() < 3) continue; // Skip very short words
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-            // Exact name match (highest weight)
-            if (toolName.contains(term)) {
-                score += 10.0;
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, String>> tools =
+                    (List<Map<String, String>>) response.getBody().get("tools");
+
+                if (tools != null) {
+                    // Add server URL to each tool for tracking
+                    for (Map<String, String> tool : tools) {
+                        tool.putIfAbsent("mcp_server", serverUrl);
+                    }
+                    return tools;
+                }
             }
 
-            // Signature match (high weight)
-            if (toolSig.contains(term)) {
-                score += 5.0;
-            }
+            return Collections.emptyList();
 
-            // Description match (medium weight)
-            if (toolDesc.contains(term)) {
-                score += 2.0;
-            }
+        } catch (Exception e) {
+            log.error("Failed to query MCP server {}: {}", serverUrl, e.getMessage());
+            return Collections.emptyList();
         }
-
-        // Bonus for multiple term matches (phrase matching)
-        if (queryTerms.length > 1) {
-            String queryPhrase = String.join(" ", queryTerms);
-            if (toolDesc.contains(queryPhrase)) {
-                score += 15.0; // Strong bonus for exact phrase match
-            }
-        }
-
-        // Normalize by query length
-        if (queryTerms.length > 0) {
-            score = score / Math.sqrt(queryTerms.length);
-        }
-
-        return score;
     }
 
-    /**
-     * Helper record for tool scoring
-     */
-    private record ToolScore(Tool tool, double score) {}
+    @Override
+    public boolean requiresNetwork() {
+        return true; // Requires network to connect to MCP servers
+    }
 }
