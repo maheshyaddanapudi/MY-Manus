@@ -15,12 +15,18 @@ MY Manus is an open-source implementation of an autonomous AI agent platform tha
 ### Key Features
 
 - **🧠 CodeAct Architecture**: Agents write Python code instead of calling JSON APIs, achieving 20% better performance
-- **👁️ Transparent Execution**: Three-panel interface showing Browser, Terminal, and Code Editor views in real-time
+- **👁️ Transparent Execution**: Eight-panel interface with real-time visualization (Chat, Terminal, Editor, Browser, Events, Files, Replay, Knowledge, Plan)
 - **🔒 Secure Sandboxing**: All code runs in isolated Docker containers with strict resource limits
-- **🔧 Extensible Tools**: Easy-to-add Python tools for web search, file operations, data analysis, and more
+- **🔧 Extensible Tools**: 22 built-in tools with hybrid system (core infrastructure tools + dynamic MCP tool discovery)
 - **💾 State Persistence**: Variables and context persist between code executions
 - **🚀 Production Ready**: Configurable authentication, rate limiting, and horizontal scaling
-- **🎬 Session Replay**: Record and replay agent sessions for debugging and learning
+- **🎬 Session Replay**: Record and replay agent sessions with time-travel debugging
+- **🧠 RAG/Knowledge Base**: Upload documents for semantic search and context augmentation
+- **🌐 Enhanced Browser**: Multi-tab browsing with console logs and network monitoring
+- **🔔 Real-Time Notifications**: Browser notifications and in-app notification center with priority levels
+- **📋 Live Plan Visualization**: Real-time task tracking synchronized with todo.md files
+- **💬 Multi-Turn Conversations**: Intelligent LLM-based message classification for parallel query handling
+- **📊 Observability**: Comprehensive Prometheus metrics for monitoring and analytics
 
 ## 🏗️ Architecture Overview
 
@@ -189,12 +195,67 @@ rate-limit:
 
 ## 📚 Documentation
 
-- [CLAUDE.md](docs/CLAUDE.md) - Instructions for Claude Code
-- [Agent Guide](docs/AGENT_GUIDE.md) - CodeAct implementation
-- [UI Guide](docs/UI_GUIDE.md) - Frontend development
-- [Sandbox Guide](docs/SANDBOX_GUIDE.md) - Environment setup
-- [Tools Guide](docs/TOOLS_GUIDE.md) - Adding new tools
-- [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment
+> **Comprehensive documentation suite enabling new developers to understand everything A-Z without reading code first.**
+
+### 🚀 Getting Started
+- **[QUICKSTART.md](QUICKSTART.md)** - Get started in 5 minutes
+- **[SETUP.md](SETUP.md)** - Detailed installation and configuration
+- **[Development Guide](docs/guides/DEVELOPMENT_GUIDE.md)** - Complete developer onboarding (prerequisites → first contribution)
+  - Installation, setup, testing, debugging, contributing
+  - Adding new tools, endpoints, UI panels with examples
+  - First contribution ideas (easy → advanced)
+- **[Project Overview](docs/PROJECT_OVERVIEW.md)** - Project need, inspiration, vision, and design philosophy
+  - Why MY-Manus exists, Manus AI inspiration, design philosophy
+- **[CLAUDE.md](CLAUDE.md)** - Development instructions for Claude Code
+
+### 🏗️ Architecture & Design
+- **[System Architecture](docs/architecture/ARCHITECTURE.md)** - Complete system architecture with 10+ diagrams
+  - Component architecture, data flow, deployment models
+  - Security architecture (5 layers)
+  - Performance optimizations, caching strategies
+  - MY-Manus vs Manus AI detailed comparison
+- **[Database Schema](docs/architecture/DATABASE_SCHEMA.md)** - Full ERD and schema documentation for all 9 tables
+  - Complete ERD diagrams with relationships
+  - JSONB usage patterns and examples
+  - Indexes, performance considerations, query examples
+- **[Event Stream Guide](docs/architecture/EVENT_STREAM_GUIDE.md)** - Deep dive into event stream architecture
+  - All 7 event types documented with code examples
+  - Implementation patterns and best practices
+  - Debugging with events, performance considerations
+- **[Frontend Architecture](docs/architecture/FRONTEND_ARCHITECTURE.md)** - React components, state management, WebSocket integration
+  - Eight-panel UI architecture (Chat, Terminal, Editor, Browser, Events, Files, Replay, Knowledge, Plan)
+  - Zustand store patterns, real-time event streaming
+- **[Sandbox Architecture](docs/architecture/SANDBOX_ARCHITECTURE.md)** - Docker sandbox design and security
+
+### 🔥 Advanced Features
+- **[Multi-Turn Conversations](docs/guides/MULTI_TURN_SCENARIOS.md)** - TASK/QUERY/ADJUSTMENT classification
+  - Real-world examples with flow diagrams (5 scenarios)
+  - LLM-based classification logic implementation
+  - Edge cases and best practices
+- **[Observability](docs/guides/OBSERVABILITY.md)** - Prometheus/Grafana monitoring setup
+  - Complete metrics documentation (JVM, HTTP, DB, Spring AI, custom business metrics)
+  - PromQL query examples for common scenarios
+  - Example Grafana dashboard configurations
+  - Alerting rules and troubleshooting guide
+- **[API Reference](docs/guides/API_REFERENCE.md)** - Complete REST and WebSocket API documentation
+  - All 40+ REST endpoints documented with examples
+  - All 6 WebSocket topics with subscription examples
+  - Request/response formats, error handling, rate limiting
+
+### 📖 Implementation Guides
+- **[Agent Guide](docs/guides/AGENT_GUIDE.md)** - CodeAct implementation details
+- **[UI Guide](docs/guides/UI_GUIDE.md)** - Frontend development patterns
+- **[Sandbox Guide](docs/guides/SANDBOX_GUIDE.md)** - Environment setup and configuration
+- **[Tools Guide](docs/guides/TOOLS_GUIDE.md)** - Adding and customizing tools
+- **[Deployment Guide](docs/guides/DEPLOYMENT.md)** - Production deployment strategies
+
+### 📊 Project Status
+- **[Implementation Status](IMPLEMENTATION_STATUS.md)** - Current implementation status
+- **[Final Summary](docs/project/FINAL_SUMMARY.md)** - Complete differential analysis
+- **[Differential Analysis](docs/project/DIFFERENTIAL_ANALYSIS.md)** - Comparison with Manus AI
+
+### 🔬 Research
+- **[Manus AI Research Report](docs/research/MANUS_AI_RESEARCH_REPORT.md)** - Original research and analysis
 
 ## 🧪 Testing
 
@@ -265,23 +326,34 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 
 ## 🗺️ Roadmap
 
-### Phase 1 (Current)
+### Phase 1 - Core Infrastructure ✅ Complete
 - ✅ Basic CodeAct loop
 - ✅ Docker sandboxing
-- ✅ Three-panel UI
-- ✅ Core tools
+- ✅ Eight-panel UI (Chat, Terminal, Editor, Browser, Events, Files, Replay, Knowledge, Plan)
+- ✅ 22 core tools
 
-### Phase 2 (Q2 2024)
-- ⏳ Multi-agent orchestration
-- ⏳ Browser automation
-- ⏳ Advanced media tools
-- ⏳ Session replay
+### Phase 2 - Enhanced Features ✅ Complete
+- ✅ Multi-agent orchestration (6 specialized roles)
+- ✅ Browser automation with Playwright
+- ✅ Enhanced browser tabs (Console, Network monitoring)
+- ✅ Session replay with time-travel debugging
+- ✅ File tree visualization
 
-### Phase 3 (Q3 2024)
+### Phase 3 - Advanced Features ✅ Complete
+- ✅ RAG/Knowledge base integration
+- ✅ Real-time notifications (browser + in-app)
+- ✅ Live plan visualization
+- ✅ Multi-turn conversation support
+- ✅ Hybrid tool system (Core + MCP dynamic discovery)
+- ✅ Comprehensive observability (Prometheus metrics)
+
+### Phase 4 - Future Enhancements
 - ⏳ Plugin marketplace
 - ⏳ Custom tool creation UI
-- ⏳ Collaborative features
-- ⏳ Mobile support
+- ⏳ Team collaboration features
+- ⏳ Mobile app support
+- ⏳ Advanced analytics dashboards
+- ⏳ Cost tracking and optimization
 
 ## 🙏 Acknowledgments
 
