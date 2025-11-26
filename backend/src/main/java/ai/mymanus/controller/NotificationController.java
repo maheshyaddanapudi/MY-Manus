@@ -4,7 +4,10 @@ import ai.mymanus.model.Notification;
 import ai.mymanus.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +15,10 @@ import java.util.Map;
 
 /**
  * REST API for notification management
+ *
+ * User ID Handling:
+ * - Development Mode (auth.enabled=false): Uses "default-user" or query param
+ * - Production Mode (auth.enabled=true): Extracts from Security Context
  */
 @RestController
 @RequestMapping("/api/notifications")
@@ -22,18 +29,17 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
+    @Value("${auth.enabled:false}")
+    private boolean authEnabled;
+
     /**
      * Get all notifications for current user
-     * TODO: Extract userId from security context in production
      */
     @GetMapping
     public ResponseEntity<List<Notification>> getNotifications(
             @RequestParam(required = false) String userId) {
 
-        // For now, use userId from query param
-        // In production, get from SecurityContext
-        String effectiveUserId = userId != null ? userId : "default-user";
-
+        String effectiveUserId = getUserId(userId);
         List<Notification> notifications = notificationService.getUserNotifications(effectiveUserId);
         return ResponseEntity.ok(notifications);
     }
@@ -45,7 +51,7 @@ public class NotificationController {
     public ResponseEntity<List<Notification>> getUnreadNotifications(
             @RequestParam(required = false) String userId) {
 
-        String effectiveUserId = userId != null ? userId : "default-user";
+        String effectiveUserId = getUserId(userId);
         List<Notification> notifications = notificationService.getUnreadNotifications(effectiveUserId);
         return ResponseEntity.ok(notifications);
     }
@@ -57,7 +63,7 @@ public class NotificationController {
     public ResponseEntity<Map<String, Long>> getUnreadCount(
             @RequestParam(required = false) String userId) {
 
-        String effectiveUserId = userId != null ? userId : "default-user";
+        String effectiveUserId = getUserId(userId);
         long count = notificationService.getUnreadCount(effectiveUserId);
         return ResponseEntity.ok(Map.of("count", count));
     }
@@ -78,7 +84,7 @@ public class NotificationController {
     public ResponseEntity<Map<String, Integer>> markAllAsRead(
             @RequestParam(required = false) String userId) {
 
-        String effectiveUserId = userId != null ? userId : "default-user";
+        String effectiveUserId = getUserId(userId);
         int count = notificationService.markAllAsRead(effectiveUserId);
         return ResponseEntity.ok(Map.of("markedCount", count));
     }
@@ -91,7 +97,7 @@ public class NotificationController {
             @RequestParam String sessionId,
             @RequestParam(required = false) String userId) {
 
-        String effectiveUserId = userId != null ? userId : "default-user";
+        String effectiveUserId = getUserId(userId);
 
         Notification notification = notificationService.sendNotification(
             Notification.builder()
@@ -106,5 +112,42 @@ public class NotificationController {
         );
 
         return ResponseEntity.ok(notification);
+    }
+
+    /**
+     * Get effective user ID based on authentication mode
+     *
+     * Development Mode (auth.enabled=false):
+     * - Returns query param userId if provided
+     * - Otherwise returns "default-user"
+     *
+     * Production Mode (auth.enabled=true):
+     * - Extracts userId from SecurityContext
+     * - Falls back to "default-user" if not authenticated
+     */
+    private String getUserId(String requestUserId) {
+        // In production mode with auth enabled, extract from Security Context
+        if (authEnabled) {
+            try {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+                if (authentication != null && authentication.isAuthenticated()
+                        && !"anonymousUser".equals(authentication.getPrincipal())) {
+
+                    // Extract username from authentication
+                    String userId = authentication.getName();
+                    log.debug("Extracted userId from Security Context: {}", userId);
+                    return userId;
+                }
+            } catch (Exception e) {
+                log.warn("Failed to extract userId from Security Context: {}", e.getMessage());
+            }
+        }
+
+        // Development mode: use query param or default
+        String effectiveUserId = requestUserId != null ? requestUserId : "default-user";
+        log.debug("Using userId: {} (auth.enabled={})", effectiveUserId, authEnabled);
+
+        return effectiveUserId;
     }
 }
