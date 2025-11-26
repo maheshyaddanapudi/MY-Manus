@@ -314,7 +314,7 @@ Open http://localhost:8080/swagger-ui.html to:
 
 ### Architecture & Design
 - **[System Architecture](docs/architecture/ARCHITECTURE.md)** - Complete system architecture with 10+ diagrams
-- **[Database Schema](docs/architecture/DATABASE_SCHEMA.md)** - Full ERD and schema documentation for all 12 tables
+- **[Database Schema](docs/architecture/DATABASE_SCHEMA.md)** - Full ERD and schema documentation for all 9 tables
 - **[Event Stream Guide](docs/architecture/EVENT_STREAM_GUIDE.md)** - Deep dive into event stream architecture (7 event types)
 - **[Frontend Architecture](docs/architecture/FRONTEND_ARCHITECTURE.md)** - React components, state management, WebSocket integration
 

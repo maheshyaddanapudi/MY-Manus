@@ -283,7 +283,7 @@ MY-Manus/
   - Security architecture (5 layers)
   - Performance optimizations
   - MY-Manus vs Manus AI comparison
-- **[Database Schema](docs/architecture/DATABASE_SCHEMA.md)** - Full ERD and schema documentation for all 12 tables
+- **[Database Schema](docs/architecture/DATABASE_SCHEMA.md)** - Full ERD and schema documentation for all 9 tables
   - Complete ERD diagrams
   - JSONB usage patterns
   - Indexes and query examples

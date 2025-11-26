@@ -36,10 +36,10 @@ MY-Manus uses **PostgreSQL 15** with extensive **JSONB** columns for flexible sc
 
 ### Database Statistics
 
-- **Total Tables**: 12 core tables
+- **Total Tables**: 9 core tables
 - **JSONB Columns**: 8 columns across 5 tables
 - **Indexes**: 15+ indexes (including GIN indexes for JSONB)
-- **Relationships**: 10 foreign key relationships
+- **Relationships**: 8 foreign key relationships
 - **Storage**: Efficient with JSONB compression
 
 ---

@@ -251,7 +251,7 @@ MY-Manus/
 
 **Backend:**
 - **service/** - Core business logic, agent loop lives here
-- **tool/** - All 24 tools (PythonExecutor, WebBrowser, etc.)
+- **tool/** - All 22 tools (file operations, browser automation, etc.)
 - **model/** - Database entities with JPA annotations
 - **controller/** - REST API endpoints exposed to frontend
 

@@ -22,7 +22,7 @@ A production-grade Manus AI clone that implements a **CodeAct agent platform** w
 
 - **Total Java Files**: 85
 - **Total React Components**: 24
-- **Tool Implementations**: 24 tools across 6 categories
+- **Tool Implementations**: 22 tools across 6 categories
 - **Test Files**: 210+ comprehensive tests
 - **Lines of Code**: ~15,000+ (backend + frontend)
 
@@ -114,14 +114,14 @@ while (iteration < maxIterations) {
 
 ## Implemented Features
 
-### 1. Tool System (24 Tools)
+### 1. Tool System (22 Tools)
 
-**File Operations (7 tools)**:
+**File Operations (6 tools)**:
 - `file_read`, `file_write`, `file_list`
 - `file_find_by_name`, `file_find_content`
 - `file_replace_string`
 
-**Browser Automation (9 tools)**:
+**Browser Automation (8 tools)**:
 - `browser_navigate`, `browser_view`, `browser_click`
 - `browser_input`, `browser_scroll_up`, `browser_scroll_down`
 - `browser_press_key`, `browser_refresh`
@@ -390,7 +390,7 @@ spring.datasource.url=jdbc:postgresql://localhost:5432/mymanus
 **Coverage**:
 - Model tests (Event, AgentState, Message)
 - Service tests (EventService, AgentStateService, CodeActAgent)
-- Tool tests (all 24 tools)
+- Tool tests (all 22 tools)
 - Controller tests (REST APIs)
 - Integration tests (full agent loop, event stream, browser, file ops)
 
@@ -502,7 +502,7 @@ Enterprise-ready session management:
 All documentation has been updated to match actual implementation:
 
 1. **AGENT_GUIDE.md**: Complete agent loop architecture
-2. **TOOLS_GUIDE.md**: Tool development and all 24 tools
+2. **TOOLS_GUIDE.md**: Tool development and all 22 tools
 3. **UI_GUIDE.md**: Frontend architecture and 8 panels
 4. **SANDBOX_GUIDE.md**: Docker sandbox setup and execution
 5. **DEPLOYMENT.md**: Production deployment guide

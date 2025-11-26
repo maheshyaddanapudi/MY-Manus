@@ -696,7 +696,7 @@ Work on multiple tasks simultaneously:
 **Goal:** Match Manus AI core capabilities
 
 **Delivered:**
-- All 24 tools implemented
+- All 22 tools implemented
 - Browser automation (Playwright)
 - Multi-session management
 - State persistence in JSONB

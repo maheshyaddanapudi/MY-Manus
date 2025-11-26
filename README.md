@@ -17,7 +17,7 @@ MY Manus is an open-source implementation of an autonomous AI agent platform tha
 - **🧠 CodeAct Architecture**: Agents write Python code instead of calling JSON APIs, achieving 20% better performance
 - **👁️ Transparent Execution**: Eight-panel interface with real-time visualization (Chat, Terminal, Editor, Browser, Events, Files, Replay, Knowledge, Plan)
 - **🔒 Secure Sandboxing**: All code runs in isolated Docker containers with strict resource limits
-- **🔧 Extensible Tools**: 20 built-in tools with hybrid system (core infrastructure tools + dynamic MCP tool discovery)
+- **🔧 Extensible Tools**: 22 built-in tools with hybrid system (core infrastructure tools + dynamic MCP tool discovery)
 - **💾 State Persistence**: Variables and context persist between code executions
 - **🚀 Production Ready**: Configurable authentication, rate limiting, and horizontal scaling
 - **🎬 Session Replay**: Record and replay agent sessions with time-travel debugging
@@ -214,7 +214,7 @@ rate-limit:
   - Security architecture (5 layers)
   - Performance optimizations, caching strategies
   - MY-Manus vs Manus AI detailed comparison
-- **[Database Schema](docs/architecture/DATABASE_SCHEMA.md)** - Full ERD and schema documentation for all 12 tables
+- **[Database Schema](docs/architecture/DATABASE_SCHEMA.md)** - Full ERD and schema documentation for all 9 tables
   - Complete ERD diagrams with relationships
   - JSONB usage patterns and examples
   - Indexes, performance considerations, query examples
@@ -330,7 +330,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 - ✅ Basic CodeAct loop
 - ✅ Docker sandboxing
 - ✅ Eight-panel UI (Chat, Terminal, Editor, Browser, Events, Files, Replay, Knowledge, Plan)
-- ✅ 20 core tools
+- ✅ 22 core tools
 
 ### Phase 2 - Enhanced Features ✅ Complete
 - ✅ Multi-agent orchestration (6 specialized roles)
