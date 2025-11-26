@@ -571,11 +571,51 @@ void testAgentLoop() {
 **Problem**: Container runs out of memory
 **Solution**: Increase `sandbox.docker.memory-limit` or reduce data size
 
-## Future Enhancements
+## Enhancements Status
 
-- Multi-agent collaboration (planner/executor/verifier roles)
-- Parallel tool execution
-- Enhanced error recovery with retry strategies
-- Streaming LLM responses
-- Code validation before execution
-- Resource usage analytics
+### ✅ Implemented (Ready to Use)
+
+**1. Code Validation Before Execution**
+- **Status**: ✅ Implemented in `PythonValidationService.java`
+- **Features**:
+  - Python syntax validation using `ast.parse`
+  - Safety checks for dangerous patterns (rm -rf, eval, exec)
+  - Warning system for risky operations
+- **Integration**: Ready to inject into CodeActAgentService before execution
+- **Location**: `/backend/src/main/java/ai/mymanus/service/PythonValidationService.java`
+
+**2. Streaming LLM Responses**
+- **Status**: ✅ Implemented in `AnthropicService.generateStream()`
+- **Features**:
+  - Real-time token streaming from Claude API
+  - WebSocket-ready for frontend real-time updates
+  - Reactive Flux-based implementation
+- **Integration**: Ready to wire into agent loop for improved UX
+- **Location**: `/backend/src/main/java/ai/mymanus/service/AnthropicService.java` (line 64)
+
+### 🔄 Future Enhancements (Not Yet Implemented)
+
+**3. Enhanced Error Recovery with Retry Strategies**
+- **Scope**: Automatic retry logic for transient failures (network, timeout, etc.)
+- **Complexity**: Medium
+- **Value**: High for production reliability
+- **Status**: Not implemented
+
+**4. Multi-Agent Collaboration (Planner/Executor/Verifier Roles)**
+- **Scope**: Role-based agent architecture for complex tasks
+- **Complexity**: High (requires architectural changes)
+- **Value**: High for complex multi-step workflows
+- **Note**: Multi-agent infrastructure exists (`MultiAgentController`), but not role-based delegation
+- **Status**: Infrastructure ready, roles not implemented
+
+**5. Parallel Tool Execution**
+- **Scope**: Execute multiple independent tools concurrently
+- **Complexity**: High (async execution framework needed)
+- **Value**: Medium (faster execution for parallelizable tasks)
+- **Status**: Not implemented
+
+**6. Resource Usage Analytics**
+- **Scope**: Track CPU, memory, execution time per tool/iteration
+- **Complexity**: Medium
+- **Value**: Medium (useful for optimization and debugging)
+- **Status**: Not implemented
