@@ -32,6 +32,7 @@ public class CodeActAgentService {
     private final AgentStateService stateService;
     private final EventService eventService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final PythonValidationService validationService;
 
     @Value("${agent.max-iterations:20}")
     private Integer maxIterations;
@@ -108,17 +109,47 @@ public class CodeActAgentService {
             // Combine system prompt with event stream history
             String fullContext = systemPrompt + "\n\n" + eventStreamContext;
 
-            // Generate LLM response
-            String llmResponse = anthropicService.generate(sessionId, fullContext, "");
-            log.info("🤔 LLM Response: {}", llmResponse.substring(0, Math.min(200, llmResponse.length())) + "...");
+            // Generate LLM response with streaming
+            StringBuilder llmResponseBuilder = new StringBuilder();
+            StringBuilder chunkBuffer = new StringBuilder();
+
+            log.info("🌊 Starting streaming LLM response...");
+
+            // Stream response and send chunks to frontend in real-time
+            anthropicService.generateStream(sessionId, fullContext, "")
+                .doOnNext(chunk -> {
+                    llmResponseBuilder.append(chunk);
+                    chunkBuffer.append(chunk);
+
+                    // Send chunk to frontend for real-time display
+                    sendEvent(sessionId, "thought_chunk", chunk, Map.of("iteration", iteration));
+
+                    // Send accumulated response periodically (every ~50 chars)
+                    if (chunkBuffer.length() > 50) {
+                        sendEvent(sessionId, "thought", chunkBuffer.toString(),
+                            Map.of("iteration", iteration, "streaming", true));
+                        chunkBuffer.setLength(0);
+                    }
+                })
+                .blockLast(); // Wait for stream to complete
+
+            String llmResponse = llmResponseBuilder.toString();
+
+            // Send final thought if there's remaining buffer
+            if (chunkBuffer.length() > 0) {
+                sendEvent(sessionId, "thought", chunkBuffer.toString(),
+                    Map.of("iteration", iteration, "streaming", true, "final", true));
+            }
+
+            log.info("🤔 LLM Response complete: {} chars", llmResponse.length());
 
             // **Event Stream: Append AGENT_THOUGHT**
             eventService.appendAgentThought(sessionId, llmResponse, iteration);
 
             fullResponse.append(llmResponse).append("\n\n");
 
-            // Send thinking update to frontend
-            sendEvent(sessionId, "thought", llmResponse, Map.of("iteration", iteration));
+            // Send final complete thought to frontend
+            sendEvent(sessionId, "thought", llmResponse, Map.of("iteration", iteration, "complete", true));
 
             // Extract code blocks from response
             List<String> codeBlocks = promptBuilder.extractCodeBlocks(llmResponse);
@@ -141,10 +172,76 @@ public class CodeActAgentService {
 
             log.info("▶️ Executing action (code block)");
 
+            // **Validate code before execution**
+            log.info("🔍 Validating code syntax and safety...");
+
+            PythonValidationService.ValidationResult syntaxCheck = validationService.validateSyntax(code);
+            if (!syntaxCheck.isValid()) {
+                log.error("❌ Syntax validation failed: {}", syntaxCheck.error());
+
+                // Append validation error as OBSERVATION so LLM can fix it
+                String errorObs = "Code validation failed (syntax error):\n" + syntaxCheck.error() +
+                    "\n\nPlease fix the syntax errors and try again.";
+
+                eventService.appendObservation(
+                    sessionId,
+                    errorObs,
+                    Map.of("validationError", syntaxCheck.error(), "codeRejected", true),
+                    false,
+                    syntaxCheck.error(),
+                    0L,
+                    iteration
+                );
+
+                sendEvent(sessionId, "error", "Syntax validation failed: " + syntaxCheck.error(),
+                    Map.of("iteration", iteration, "validation", true));
+
+                // Continue to next iteration so LLM can fix the code
+                continue;
+            }
+
+            PythonValidationService.ValidationResult safetyCheck = validationService.checkSafety(code);
+            if (!safetyCheck.isValid()) {
+                log.error("❌ Safety validation failed: {}", safetyCheck.error());
+
+                // Append safety error as OBSERVATION
+                String errorObs = "Code rejected due to safety concerns:\n" + safetyCheck.error() +
+                    "\n\nThis operation is not allowed for security reasons.";
+
+                eventService.appendObservation(
+                    sessionId,
+                    errorObs,
+                    Map.of("safetyError", safetyCheck.error(), "codeRejected", true),
+                    false,
+                    safetyCheck.error(),
+                    0L,
+                    iteration
+                );
+
+                sendEvent(sessionId, "error", "Safety check failed: " + safetyCheck.error(),
+                    Map.of("iteration", iteration, "safety", true));
+
+                // Continue to next iteration so LLM can use safer approach
+                continue;
+            }
+
+            // Log warnings but allow execution
+            if (safetyCheck.warning() != null) {
+                log.warn("⚠️ Code safety warnings: {}", safetyCheck.warning());
+                sendEvent(sessionId, "warning", "Code contains risky operations: " + safetyCheck.warning(),
+                    Map.of("iteration", iteration));
+            }
+
+            log.info("✅ Code validation passed");
+
             // **Event Stream: Append AGENT_ACTION**
             Map<String, Object> actionData = new HashMap<>();
             actionData.put("codeLength", code.length());
             actionData.put("codePreview", code.substring(0, Math.min(100, code.length())));
+            actionData.put("validated", true);
+            if (safetyCheck.warning() != null) {
+                actionData.put("warnings", safetyCheck.warning());
+            }
             eventService.appendAgentAction(sessionId, "execute_code", code, actionData, iteration);
 
             // Send code event to frontend

@@ -573,25 +573,38 @@ void testAgentLoop() {
 
 ## Enhancements Status
 
-### ✅ Implemented (Ready to Use)
+### ✅ Implemented (Fully Integrated)
 
 **1. Code Validation Before Execution**
-- **Status**: ✅ Implemented in `PythonValidationService.java`
+- **Status**: ✅ Fully integrated into agent loop
 - **Features**:
   - Python syntax validation using `ast.parse`
   - Safety checks for dangerous patterns (rm -rf, eval, exec)
   - Warning system for risky operations
-- **Integration**: Ready to inject into CodeActAgentService before execution
+  - Validation errors sent to LLM for self-correction
+- **Integration**: Injected into `CodeActAgentService` and runs before every code execution
+- **Behavior**:
+  - Syntax errors prevent execution and return error to LLM
+  - Safety violations reject dangerous operations
+  - Warnings logged but execution allowed
 - **Location**: `/backend/src/main/java/ai/mymanus/service/PythonValidationService.java`
 
 **2. Streaming LLM Responses**
-- **Status**: ✅ Implemented in `AnthropicService.generateStream()`
+- **Status**: ✅ Fully integrated into agent loop
 - **Features**:
   - Real-time token streaming from Claude API
-  - WebSocket-ready for frontend real-time updates
-  - Reactive Flux-based implementation
-- **Integration**: Ready to wire into agent loop for improved UX
-- **Location**: `/backend/src/main/java/ai/mymanus/service/AnthropicService.java` (line 64)
+  - Sends `thought_chunk` events to frontend as tokens arrive
+  - Sends periodic accumulated updates (every ~50 chars)
+  - Final complete thought sent when streaming completes
+  - Reactive Flux-based implementation with blocking collection
+- **Integration**: Wired into `CodeActAgentService.executeAgentLoop()` replacing blocking calls
+- **WebSocket Events**:
+  - `thought_chunk`: Individual token chunks
+  - `thought` (streaming=true): Periodic accumulated updates
+  - `thought` (complete=true): Final complete response
+- **Location**:
+  - Service: `/backend/src/main/java/ai/mymanus/service/AnthropicService.java:64`
+  - Integration: `/backend/src/main/java/ai/mymanus/service/CodeActAgentService.java:119-152`
 
 ### 🔄 Future Enhancements (Not Yet Implemented)
 
