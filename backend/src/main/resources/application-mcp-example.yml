@@ -1,0 +1,85 @@
+# Example MCP (Model Context Protocol) Server Configuration
+#
+# This shows how to configure external MCP servers using Spring AI's built-in support.
+# MCP servers provide additional tools that are discovered dynamically (not in LLM context).
+#
+# To enable:
+# 1. Copy desired configuration to application.yml
+# 2. Set spring.profiles.active=mcp-example (or merge into main config)
+# 3. Restart application - Spring AI will auto-register MCP servers
+#
+# MCP servers must implement the MCP protocol:
+# - Server discovery
+# - Tool listing (listTools)
+# - Tool execution (callTool)
+# - Resource management
+
+spring:
+  ai:
+    mcp:
+      # Enable MCP support
+      enabled: true
+
+      # Configure MCP servers
+      # Each server is auto-discovered and registered at startup
+      servers:
+        # Email MCP Server
+        email:
+          url: http://email-mcp-server:8080
+          transport: http  # or stdio for local process
+          timeout: 30000   # milliseconds
+          description: "Email operations (send, read, search)"
+
+        # Calendar MCP Server
+        calendar:
+          url: http://calendar-mcp-server:8080
+          transport: http
+          timeout: 30000
+          description: "Calendar operations (create events, list schedule)"
+
+        # Database MCP Server
+        database:
+          url: http://database-mcp-server:8080
+          transport: http
+          timeout: 60000  # Longer timeout for queries
+          description: "Database operations (query, migration, backup)"
+
+        # Travel/Booking MCP Server
+        travel:
+          url: http://travel-mcp-server:8080
+          transport: http
+          timeout: 30000
+          description: "Travel booking (search flights, book hotels)"
+
+# How it works:
+#
+# 1. Application starts
+# 2. Spring AI reads spring.ai.mcp.servers configuration
+# 3. Creates McpClient beans for each server
+# 4. Connects to servers and caches tool definitions
+# 5. SearchToolsTool queries all McpClient beans when agent needs additional capabilities
+#
+# Example flow:
+#
+# Agent: search_tools(query="send email", top_k=3)
+#   ↓
+# SearchToolsTool:
+#   - Injects List<McpClient> from Spring AI
+#   - Loops through all clients
+#   - Calls client.listTools() for each
+#   - Performs keyword matching: "send email" vs tool descriptions
+#   - Returns: [send_email, read_inbox, search_emails]
+#   ↓
+# Agent: send_email(to="user@example.com", subject="Hi", body="Test")
+#   ↓
+# Spring AI:
+#   - Routes to email McpClient
+#   - Calls remote MCP server's callTool endpoint
+#   - Returns result to agent
+#
+# Benefits:
+# - Zero hardcoded MCP tools in our code
+# - Configuration-driven server registration
+# - Spring AI handles all MCP protocol details
+# - Automatic connection pooling and retry logic
+# - Health checking and failover

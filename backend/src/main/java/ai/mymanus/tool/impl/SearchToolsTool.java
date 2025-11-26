@@ -1,10 +1,10 @@
 package ai.mymanus.tool.impl;
 
-import ai.mymanus.service.mcp.MCPClientRegistry;
-import ai.mymanus.service.mcp.MCPToolDefinition;
 import ai.mymanus.tool.Tool;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.mcp.client.McpClient;
+import org.springframework.ai.mcp.spec.McpSchema;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -13,36 +13,48 @@ import java.util.stream.Collectors;
 /**
  * Tool for searching external MCP (Model Context Protocol) tools
  *
+ * This tool uses Spring AI's built-in MCP client support to discover tools from
+ * external MCP servers configured in application.yml.
+ *
  * Architecture:
  * - Core 22 infrastructure tools: ALWAYS pre-registered with LLM (always in context)
- * - MCP tools: Registered in application but NOT in LLM context
+ * - MCP tools: Registered in Spring AI's MCP registry, NOT sent to LLM context
  * - SearchToolsTool: Discovers MCP tools on-demand via intelligent local search
  *
+ * Configuration (application.yml):
+ * spring:
+ *   ai:
+ *     mcp:
+ *       enabled: true
+ *       servers:
+ *         email:
+ *           url: http://email-mcp-server:8080
+ *         calendar:
+ *           url: http://calendar-mcp-server:8080
+ *
  * How it works:
- * 1. MCP clients are registered in MCPClientRegistry at application startup
- * 2. Their tools are NOT sent to LLM (would bloat context)
- * 3. When agent needs additional capability, it calls search_tools(query)
- * 4. This tool queries all registered MCP clients for their tool definitions
- * 5. Performs intelligent keyword/semantic matching locally
- * 6. Returns top-k most relevant tools
- * 7. Agent can then use the discovered tools
+ * 1. Spring AI auto-discovers and registers MCP servers at startup
+ * 2. When agent calls search_tools(query), we query Spring AI's MCP registry
+ * 3. Perform intelligent keyword matching locally
+ * 4. Return top-k most relevant tools
+ * 5. When agent uses a tool, Spring AI handles execution seamlessly
  *
  * Example:
  * search_tools(query="send email", top_k=3)
- * # Searches all MCP clients (email, calendar, database, etc.)
- * # Returns: send_email, read_inbox, search_emails from email MCP client
+ * # Returns: send_email, read_inbox, search_emails from email MCP server
  *
  * Benefits:
  * - Zero context cost for unused MCP tools
- * - Infinite tool scalability
- * - Natural language tool discovery
+ * - Leverage Spring AI's robust MCP implementation
+ * - No custom MCP client code needed
+ * - Configuration-driven server registration
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class SearchToolsTool implements Tool {
 
-    private final MCPClientRegistry mcpClientRegistry;
+    @Autowired(required = false)
+    private List<McpClient> mcpClients;
 
     @Override
     public String getName() {
@@ -52,29 +64,29 @@ public class SearchToolsTool implements Tool {
     @Override
     public String getDescription() {
         return """
-            Search for additional tools from external MCP (Model Context Protocol) clients.
+            Search for additional tools from external MCP (Model Context Protocol) servers.
             Use this when you need capabilities beyond the core infrastructure tools.
 
             The 22 core infrastructure tools (file ops, browser, shell, etc.) are always available
-            and do NOT need to be searched. This tool discovers EXTERNAL tools from MCP clients.
+            and do NOT need to be searched. This tool discovers EXTERNAL tools from MCP servers.
 
             Parameters:
             - query: Natural language description of needed capability (e.g., "send email", "book flight")
             - top_k: Number of tools to return (default: 5, max: 10)
 
-            Returns: List of available MCP tools with their descriptions and usage
+            Returns: List of available MCP tools with their descriptions and signatures
 
             Examples:
             search_tools(query="send email", top_k=3)
-            # Returns: send_email, read_inbox, search_emails from Email MCP Client
+            # Returns: send_email, read_inbox, search_emails from Email MCP Server
 
-            search_tools(query="flight booking API")
-            # Returns: search_flights, book_flight, cancel_booking from Travel MCP Client
+            search_tools(query="flight booking")
+            # Returns: search_flights, book_flight, cancel_booking from Travel MCP Server
 
-            search_tools(query="database operations")
-            # Returns: query_postgres, run_migration, backup_db from Database MCP Client
+            search_tools(query="database query")
+            # Returns: query_postgres, run_migration, backup_db from Database MCP Server
 
-            Note: Returns empty list if no MCP clients are registered.
+            Note: Returns empty list if no MCP servers are configured.
             Core infrastructure tools are always available without searching.
             """;
     }
@@ -92,22 +104,41 @@ public class SearchToolsTool implements Tool {
 
         log.info("🔍 Searching MCP tools: query='{}', top_k={}", query, topK);
 
-        // Check if MCP is enabled
-        if (!mcpClientRegistry.isEnabled()) {
-            log.info("MCP is disabled - returning empty list");
-            return buildEmptyResponse(query, "MCP is disabled. Set mcp.enabled=true in application.yml");
+        // Check if Spring AI MCP clients are available
+        if (mcpClients == null || mcpClients.isEmpty()) {
+            log.info("No MCP clients configured - returning empty list");
+            return buildEmptyResponse(query,
+                "No MCP servers configured. Configure MCP servers in application.yml under spring.ai.mcp.servers");
         }
 
-        // Get all available tools from all registered MCP clients
-        List<MCPToolDefinition> allMcpTools = mcpClientRegistry.getAllAvailableTools();
+        // Collect all tools from all MCP clients
+        List<McpToolInfo> allMcpTools = new ArrayList<>();
+        for (McpClient client : mcpClients) {
+            try {
+                // Query the MCP server for its tools
+                List<McpSchema.Tool> tools = client.listTools();
+                log.debug("Found {} tools from MCP client: {}", tools.size(), client.getName());
+
+                // Convert to our internal format for scoring
+                for (McpSchema.Tool tool : tools) {
+                    allMcpTools.add(new McpToolInfo(
+                        tool.name(),
+                        tool.description() != null ? tool.description() : "",
+                        tool.inputSchema() != null ? formatSchema(tool.inputSchema()) : "",
+                        client.getName()
+                    ));
+                }
+            } catch (Exception e) {
+                log.warn("Failed to get tools from MCP client {}: {}", client.getName(), e.getMessage());
+            }
+        }
 
         if (allMcpTools.isEmpty()) {
-            log.info("No MCP tools available - no clients registered or clients have no tools");
-            return buildEmptyResponse(query, "No MCP clients registered or no tools available");
+            log.info("No MCP tools available from {} clients", mcpClients.size());
+            return buildEmptyResponse(query, "No tools available from MCP servers");
         }
 
-        log.debug("Searching across {} MCP tools from {} clients",
-            allMcpTools.size(), mcpClientRegistry.getClientCount());
+        log.debug("Searching across {} MCP tools from {} clients", allMcpTools.size(), mcpClients.size());
 
         // Score and rank tools by relevance to query
         List<ScoredTool> scoredTools = allMcpTools.stream()
@@ -121,10 +152,10 @@ public class SearchToolsTool implements Tool {
         List<Map<String, String>> matchingTools = scoredTools.stream()
             .map(st -> {
                 Map<String, String> toolInfo = new HashMap<>();
-                toolInfo.put("name", st.tool.getName());
-                toolInfo.put("description", st.tool.getDescription());
-                toolInfo.put("signature", st.tool.getSignature());
-                toolInfo.put("source_client", st.tool.getSourceClient());
+                toolInfo.put("name", st.tool.name);
+                toolInfo.put("description", st.tool.description);
+                toolInfo.put("signature", st.tool.signature);
+                toolInfo.put("mcp_server", st.tool.mcpServer);
                 toolInfo.put("relevance_score", String.format("%.2f", st.score));
                 return toolInfo;
             })
@@ -139,7 +170,7 @@ public class SearchToolsTool implements Tool {
             "query", query,
             "tools_found", matchingTools.size(),
             "total_mcp_tools", allMcpTools.size(),
-            "mcp_clients_available", mcpClientRegistry.getClientCount(),
+            "mcp_servers_available", mcpClients.size(),
             "tools", matchingTools
         );
     }
@@ -148,15 +179,48 @@ public class SearchToolsTool implements Tool {
      * Build empty response when no tools are available
      */
     private Map<String, Object> buildEmptyResponse(String query, String message) {
+        int serverCount = mcpClients != null ? mcpClients.size() : 0;
         return Map.of(
             "success", true,
             "query", query,
             "tools_found", 0,
             "total_mcp_tools", 0,
-            "mcp_clients_available", mcpClientRegistry.getClientCount(),
+            "mcp_servers_available", serverCount,
             "tools", Collections.emptyList(),
             "message", message
         );
+    }
+
+    /**
+     * Format MCP input schema into a function signature
+     */
+    private String formatSchema(McpSchema.ToolInputSchema schema) {
+        try {
+            // Extract parameters from schema
+            Map<String, Object> properties = schema.properties();
+            List<String> required = schema.required() != null ? schema.required() : List.of();
+
+            if (properties == null || properties.isEmpty()) {
+                return "() -> dict";
+            }
+
+            // Build parameter list
+            List<String> params = new ArrayList<>();
+            for (Map.Entry<String, Object> entry : properties.entrySet()) {
+                String paramName = entry.getKey();
+                boolean isRequired = required.contains(paramName);
+
+                if (isRequired) {
+                    params.add(paramName + ": str");
+                } else {
+                    params.add(paramName + ": str = None");
+                }
+            }
+
+            return "(" + String.join(", ", params) + ") -> dict";
+        } catch (Exception e) {
+            return "(...) -> dict";
+        }
     }
 
     /**
@@ -169,11 +233,11 @@ public class SearchToolsTool implements Tool {
      * - Phrase match bonus: 15x for exact multi-word phrase matches
      * - Normalized by query length for fair comparison
      */
-    private double calculateRelevance(MCPToolDefinition tool, String query) {
+    private double calculateRelevance(McpToolInfo tool, String query) {
         String queryLower = query.toLowerCase();
-        String toolName = tool.getName().toLowerCase();
-        String toolDesc = tool.getDescription().toLowerCase();
-        String toolSig = tool.getSignature().toLowerCase();
+        String toolName = tool.name.toLowerCase();
+        String toolDesc = tool.description.toLowerCase();
+        String toolSig = tool.signature.toLowerCase();
 
         double score = 0.0;
 
@@ -222,7 +286,12 @@ public class SearchToolsTool implements Tool {
     }
 
     /**
+     * Internal representation of an MCP tool for scoring
+     */
+    private record McpToolInfo(String name, String description, String signature, String mcpServer) {}
+
+    /**
      * Helper record for tool scoring
      */
-    private record ScoredTool(MCPToolDefinition tool, double score) {}
+    private record ScoredTool(McpToolInfo tool, double score) {}
 }
