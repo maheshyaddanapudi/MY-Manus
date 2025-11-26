@@ -842,31 +842,54 @@ public class MultiAgent {
 
 ---
 
-### 14.3 Hybrid Tool System (Not Full MCP Yet)
+### 14.3 Hybrid Tool System with Functional Search
 
-**Decision:** Pre-load 20 core tools + dynamic MCP discovery
+**Decision:** 22 pre-loaded core tools + functional tool search
 
 **Rationale:**
 - ✅ **Performance** - Core tools always available instantly
-- ✅ **Reliability** - No dependency on external MCP servers for basics
-- ✅ **Scalability** - Infinite tools possible via MCP without context cost
-- ✅ **Flexibility** - Best of both worlds
+- ✅ **Reliability** - No dependency on external servers
+- ✅ **Discoverability** - `search_tools` finds relevant tools by capability
+- ✅ **Flexibility** - Agent can discover tools dynamically
 
-**Status:** `search_tools` implemented as placeholder, ready for full MCP integration.
+**Implementation:**
+- ✅ **SearchToolsTool** - Fully functional tool search across all 22 core tools
+- ✅ **Keyword Matching** - Term frequency weighting with phrase bonus
+- ✅ **Relevance Scoring** - Name (10x), signature (5x), description (2x)
+- ✅ **Top-K Results** - Returns most relevant tools with descriptions
+
+**Status:** Fully implemented with production-ready search algorithm. Future MCP integration can extend this to external tool servers.
 
 ---
 
-### 14.4 Mock Embeddings for RAG
+### 14.4 Production RAG Embeddings
 
-**Decision:** Simple cosine similarity with mock embeddings instead of real vector DB
+**Implementation:** Multi-tier embedding strategy with automatic fallback
 
-**Rationale:**
-- ✅ **Rapid Development** - Get RAG working quickly
-- ✅ **Easy Migration** - Drop-in replacement for OpenAI/Cohere embeddings
-- ✅ **PostgreSQL JSONB** - Ready for pgvector extension
-- ✅ **Proof of Concept** - Validates architecture before API costs
+**Embedding Providers** (in priority order):
+1. ✅ **Voyage AI** (`voyage-2`) - Cost-effective, 1024 dimensions, excellent quality
+2. ✅ **OpenAI** (`text-embedding-3-small`) - High quality, 1536 dimensions, widely available
+3. ✅ **TF-IDF Fallback** - Keyword-based, works without API key, 384 dimensions
 
-**Trade-off:** Not production-grade vector search, but architecture is ready for upgrade.
+**Features:**
+- ✅ **Auto-Selection** - Chooses provider based on available API keys
+- ✅ **Proper Semantic Search** - Real embeddings, not hash-based mocks
+- ✅ **Zero Configuration** - Falls back to TF-IDF if no API key
+- ✅ **PostgreSQL JSONB** - Ready for pgvector extension upgrade
+- ✅ **Production-Ready** - Tested with real embedding APIs
+
+**Configuration** (`application.yml`):
+```yaml
+rag:
+  embedding:
+    provider: auto  # auto, voyageai, openai, tfidf
+    voyageai-api-key: ${VOYAGE_API_KEY:}
+    openai-api-key: ${OPENAI_API_KEY:}
+    dimension: 1024  # voyage-2: 1024, openai-small: 1536, tfidf: 384
+  top-k: 5
+```
+
+**Trade-off:** None - fully implemented with production-ready fallback strategy.
 
 ---
 

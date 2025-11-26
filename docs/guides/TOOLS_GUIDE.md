@@ -277,10 +277,42 @@ public class ShellExecTool implements Tool {
 
 **Location**: `/backend/src/main/java/ai/mymanus/tool/impl/WebSearchTool.java`
 
+Performs web searches using a multi-tier strategy with automatic fallback:
+
+**Search Strategies** (in priority order):
+
+1. **SerpAPI** (if `search.api.serp-api-key` configured)
+   - Most reliable commercial search API
+   - Costs money but provides high-quality results
+   - URL: https://serpapi.com
+
+2. **Google Custom Search API** (if `search.api.google-api-key` and `search.api.google-cx` configured)
+   - High-quality results from Google
+   - Free tier available
+   - URL: https://developers.google.com/custom-search
+
+3. **Browser Guidance Fallback** (always available)
+   - Intelligent fallback when no API key configured
+   - Provides multiple search engine options (Google, Bing, DuckDuckGo, Brave)
+   - Instructs agent to use browser tools to search ANY website
+   - Agent chooses search engine and uses `browser_navigate`, `browser_view`, etc.
+   - Not hardcoded scraping - true browser tool delegation
+
 ```java
 @Slf4j
 @Component
 public class WebSearchTool implements Tool {
+
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    @Value("${search.api.serp-api-key:}")
+    private String serpApiKey;
+
+    @Value("${search.api.google-api-key:}")
+    private String googleApiKey;
+
+    @Value("${search.api.google-cx:}")
+    private String googleCx;
 
     @Override
     public String getName() {
@@ -288,41 +320,62 @@ public class WebSearchTool implements Tool {
     }
 
     @Override
-    public String getDescription() {
-        return "Search the web for information";
-    }
-
-    @Override
     public String getPythonSignature() {
-        return "search_web(query: str, max_results: int = 5)";
+        return "search_web(query: str, max_results: int = 5) -> dict";
     }
 
     @Override
     public Map<String, Object> execute(Map<String, Object> parameters) {
-        String query = (String) parameters.get("query");
-        Integer maxResults = parameters.containsKey("max_results")
-            ? ((Number) parameters.get("max_results")).intValue()
-            : 5;
-
-        // TODO: Integrate with real search API (Google, Bing, SearXNG)
-        List<Map<String, String>> results = new ArrayList<>();
-        // ... placeholder implementation
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("query", query);
-        response.put("results", results);
-        return response;
+        // Try SerpAPI → Google API → Browser Guidance
+        // Returns search results or guidance for using browser tools
     }
 
-    @Override
-    public boolean requiresNetwork() {
-        return true;
+    private Map<String, Object> provideBrowserGuidance(String query, int maxResults) {
+        // Returns multiple search engine URLs and browser tool sequence
+        // Lets agent choose which search engine to use
     }
 }
 ```
 
-**Note**: Currently a placeholder. In production, integrate with search APIs.
+**Configuration** (`application.yml`):
+
+```yaml
+search:
+  api:
+    serp-api-key: ${SERP_API_KEY:}         # Optional: SerpAPI key
+    google-api-key: ${GOOGLE_API_KEY:}     # Optional: Google Custom Search key
+    google-cx: ${GOOGLE_CX:}               # Optional: Google Custom Search CX
+```
+
+**Usage Examples**:
+
+```python
+# With API key configured - returns direct results
+results = search_web(query="latest AI news", max_results=5)
+# Returns: {"success": true, "method": "serpapi", "results": [...]}
+
+# Without API key - provides browser guidance
+results = search_web(query="Python tutorials")
+# Returns: {
+#   "success": true,
+#   "method": "browser-guidance",
+#   "search_engine_options": [
+#     {"engine": "Google", "url": "https://www.google.com/search?q=..."},
+#     {"engine": "DuckDuckGo", "url": "https://duckduckgo.com/?q=..."},
+#     {"engine": "Bing", "url": "https://www.bing.com/search?q=..."},
+#     {"engine": "Brave Search", "url": "https://search.brave.com/search?q=..."}
+#   ],
+#   "browser_tool_sequence": [
+#     "1. Choose a search engine from the options above",
+#     "2. Use browser_navigate(url) to navigate to the search engine URL",
+#     "3. Use browser_view() to see the search results page",
+#     "4. Use browser_click() or browser_extract() to interact with results",
+#     "5. Extract the information you need"
+#   ]
+# }
+```
+
+**Note**: Fully implemented with production-ready fallback strategy. Always works even without API keys.
 
 ### Communication Tools
 
@@ -372,13 +425,133 @@ Sends a question to the user and waits for a response via WebSocket.
 
 **Location**: `/backend/src/main/java/ai/mymanus/tool/impl/DataVisualizationTool.java`
 
-Generates charts and visualizations (placeholder for matplotlib/plotly integration).
+Provides guidance for creating data visualizations using Python libraries.
+
+**Design**: This is a guidance tool (similar to web search browser guidance) that directs the agent to write Python code using matplotlib, seaborn, or plotly. The actual visualization is created by the agent's Python code execution in the sandbox.
+
+**Supported Chart Types**:
+- Line charts (`matplotlib.pyplot.plot()` or `seaborn.lineplot()`)
+- Bar charts (`matplotlib.pyplot.bar()` or `seaborn.barplot()`)
+- Scatter plots (`matplotlib.pyplot.scatter()` or `seaborn.scatterplot()`)
+- Histograms (`matplotlib.pyplot.hist()` or `seaborn.histplot()`)
+- Heatmaps (`seaborn.heatmap()`)
+
+**Usage Example**:
+
+```python
+# Agent calls visualize_data to get guidance
+guidance = visualize_data(chart_type="line", data_description="sales over time")
+# Returns: {
+#   "success": true,
+#   "chartType": "line",
+#   "guidance": "Use matplotlib.pyplot.plot() or seaborn.lineplot()..."
+# }
+
+# Then agent writes Python code based on guidance
+# execute_python("""
+# import matplotlib.pyplot as plt
+# plt.plot(months, sales)
+# plt.xlabel('Month')
+# plt.ylabel('Sales')
+# plt.title('Sales Over Time')
+# plt.savefig('/workspace/sales_chart.png')
+# """)
+```
+
+**Note**: Fully implemented as a CodeAct guidance tool. Works seamlessly with the Python sandbox.
 
 ### Utility Tools
 
 **PrintTool**: Simple console output tool
 **TodoTool**: Task list management
-**SearchToolsTool**: Search available tools by name/description
+
+### Tool Search
+
+**Location**: `/backend/src/main/java/ai/mymanus/tool/impl/SearchToolsTool.java`
+
+Searches across all 22 core infrastructure tools to find relevant tools by capability description.
+
+**Features**:
+- Keyword matching with term frequency weighting
+- Scores tools by relevance to query
+- Returns top-k most relevant tools with descriptions and signatures
+- Useful for discovering which tools to use for a specific task
+
+**Scoring Algorithm**:
+- **Name match**: 10x weight (highest priority)
+- **Signature match**: 5x weight (high priority)
+- **Description match**: 2x weight (medium priority)
+- **Phrase match bonus**: 15x for exact multi-word phrase matches
+- Normalized by query length for fair comparison
+
+```java
+@Component
+@Slf4j
+@RequiredArgsConstructor
+public class SearchToolsTool implements Tool {
+
+    private final ToolRegistry toolRegistry;
+
+    @Override
+    public String getName() {
+        return "search_tools";
+    }
+
+    @Override
+    public String getPythonSignature() {
+        return "search_tools(query: str, top_k: int = 5) -> dict";
+    }
+
+    @Override
+    public Map<String, Object> execute(Map<String, Object> params) {
+        // Get all tools from registry
+        // Score by relevance to query
+        // Return top-k matches with descriptions
+    }
+
+    private double calculateRelevance(Tool tool, String query) {
+        // Keyword matching with weighted scoring
+    }
+}
+```
+
+**Usage Examples**:
+
+```python
+# Find file-related tools
+results = search_tools(query="read files", top_k=3)
+# Returns: {
+#   "success": true,
+#   "query": "read files",
+#   "tools_found": 3,
+#   "total_tools": 22,
+#   "tools": [
+#     {
+#       "name": "file_read",
+#       "description": "Read file contents...",
+#       "signature": "file_read(path: str) -> str",
+#       "relevance_score": "15.21"
+#     },
+#     {
+#       "name": "file_list",
+#       "description": "List files in directory...",
+#       "signature": "file_list(path: str) -> list",
+#       "relevance_score": "8.94"
+#     },
+#     ...
+#   ]
+# }
+
+# Find browser automation tools
+results = search_tools(query="browser automation")
+# Returns tools like browser_navigate, browser_view, browser_click, etc.
+
+# Find code execution tools
+results = search_tools(query="execute python code")
+# Returns tools like execute_python, code_executor, etc.
+```
+
+**Note**: Fully implemented with production-ready keyword matching algorithm.
 
 ## Tool Registry
 
@@ -733,13 +906,13 @@ Currently implemented tools by category:
 - message_notify_user, message_ask_user
 
 ### Web Search (1 tool)
-- search_web (placeholder)
+- search_web (SerpAPI/Google API/browser guidance)
 
 ### Utilities (3 tools)
 - print, todo, search_tools
 
 ### Data Visualization (1 tool)
-- data_visualization (placeholder)
+- visualize_data (matplotlib/seaborn/plotly guidance)
 
 ## Future Tool Ideas
 
