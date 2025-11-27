@@ -64,6 +64,13 @@
             <version>${spring-ai.version}</version>
         </dependency>
 
+        <!-- Spring AI MCP (Model Context Protocol) Support -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-mcp-spring-boot-starter</artifactId>
+            <version>${spring-ai.version}</version>
+        </dependency>
+
         <!-- Docker Java Client -->
         <dependency>
             <groupId>com.github.docker-java</groupId>

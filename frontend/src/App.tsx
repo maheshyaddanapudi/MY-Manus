@@ -33,17 +33,19 @@ function App() {
         await loadSessions();
         console.log('Loaded sessions');
 
+        // Get fresh sessions from store (not from hook closure)
+        const { sessions: loadedSessions, switchSession } = useAgentStore.getState();
+
         // If no sessions exist, create one
-        if (sessions.length === 0) {
+        if (loadedSessions.length === 0) {
           console.log('No sessions found, creating new session');
           await createNewSession();
         } else {
           // Use the most recent session (first in the list)
-          const mostRecentSession = sessions[0];
+          const mostRecentSession = loadedSessions[0];
           console.log('Using most recent session:', mostRecentSession.sessionId);
 
-          // Load the session via store action
-          const { switchSession } = useAgentStore.getState();
+          // Load the session (this loads messages from backend)
           await switchSession(mostRecentSession.sessionId);
           setSessionId(mostRecentSession.sessionId);
         }

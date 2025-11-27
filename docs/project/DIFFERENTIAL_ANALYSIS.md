@@ -842,23 +842,45 @@ public class MultiAgent {
 
 ---
 
-### 14.3 Hybrid Tool System with Functional Search
+### 14.3 Hybrid Tool System with Spring AI MCP Integration
 
-**Decision:** 22 pre-loaded core tools + functional tool search
+**Decision:** 22 pre-loaded core tools + MCP (Model Context Protocol) tool discovery
 
 **Rationale:**
-- ✅ **Performance** - Core tools always available instantly
-- ✅ **Reliability** - No dependency on external servers
-- ✅ **Discoverability** - `search_tools` finds relevant tools by capability
-- ✅ **Flexibility** - Agent can discover tools dynamically
+- ✅ **Performance** - Core tools always pre-registered with LLM (instant access)
+- ✅ **Zero Context Cost** - MCP tools NOT sent to LLM until needed
+- ✅ **Discoverability** - `search_tools` finds external tools by natural language query
+- ✅ **Infinite Scalability** - Add unlimited MCP servers via configuration
 
 **Implementation:**
-- ✅ **SearchToolsTool** - Fully functional tool search across all 22 core tools
-- ✅ **Keyword Matching** - Term frequency weighting with phrase bonus
-- ✅ **Relevance Scoring** - Name (10x), signature (5x), description (2x)
-- ✅ **Top-K Results** - Returns most relevant tools with descriptions
+- ✅ **Spring AI MCP Support** - Using `spring-ai-mcp-spring-boot-starter`
+- ✅ **Configuration-Driven** - MCP servers configured in `application.yml`
+- ✅ **Auto-Discovery** - Spring AI auto-registers MCP clients at startup
+- ✅ **SearchToolsTool** - Queries Spring AI's McpClient registry
+- ✅ **Intelligent Matching** - Keyword scoring: name (10x), signature (5x), description (2x)
 
-**Status:** Fully implemented with production-ready search algorithm. Future MCP integration can extend this to external tool servers.
+**Configuration Example:**
+```yaml
+spring:
+  ai:
+    mcp:
+      enabled: true
+      servers:
+        email:
+          url: http://email-mcp-server:8080
+        calendar:
+          url: http://calendar-mcp-server:8080
+```
+
+**How It Works:**
+1. MCP servers configured in yml → Spring AI creates McpClient beans
+2. SearchToolsTool injects `List<McpClient>` from Spring AI
+3. Agent calls `search_tools(query="send email")`
+4. Queries all MCP clients, performs keyword matching
+5. Returns top-k external tools (send_email, read_inbox, etc.)
+6. Agent uses discovered tools seamlessly
+
+**Status:** Fully implemented using Spring AI's native MCP support. Zero custom MCP infrastructure code.
 
 ---
 

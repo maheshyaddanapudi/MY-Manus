@@ -465,93 +465,116 @@ guidance = visualize_data(chart_type="line", data_description="sales over time")
 **PrintTool**: Simple console output tool
 **TodoTool**: Task list management
 
-### Tool Search
+### Tool Search (MCP Tool Discovery)
 
 **Location**: `/backend/src/main/java/ai/mymanus/tool/impl/SearchToolsTool.java`
 
-Searches across all 22 core infrastructure tools to find relevant tools by capability description.
+Discovers external tools from MCP (Model Context Protocol) servers configured in `application.yml`.
 
-**Features**:
-- Keyword matching with term frequency weighting
-- Scores tools by relevance to query
-- Returns top-k most relevant tools with descriptions and signatures
-- Useful for discovering which tools to use for a specific task
+**Architecture**:
+- **Core 22 infrastructure tools**: ALWAYS pre-registered with LLM (always in context)
+- **MCP tools**: Registered in Spring AI, NOT sent to LLM context
+- **SearchToolsTool**: Discovers MCP tools on-demand via intelligent search
+
+**How It Works**:
+1. MCP servers configured in `application.yml` under `spring.ai.mcp.servers`
+2. Spring AI auto-registers MCP clients at startup
+3. When agent calls `search_tools(query)`, we query all MCP clients
+4. Perform intelligent keyword matching locally
+5. Return top-k most relevant external tools
+6. Agent can then use discovered tools seamlessly
+
+**Configuration** (`application.yml`):
+```yaml
+spring:
+  ai:
+    mcp:
+      enabled: true
+      servers:
+        email:
+          url: http://email-mcp-server:8080
+          transport: http
+          timeout: 30000
+        calendar:
+          url: http://calendar-mcp-server:8080
+          transport: http
+```
+
+**Implementation**:
+```java
+@Component
+@Slf4j
+public class SearchToolsTool implements Tool {
+
+    @Autowired(required = false)
+    private List<McpClient> mcpClients;  // Spring AI provides these!
+
+    @Override
+    public Map<String, Object> execute(Map<String, Object> params) {
+        // Query all MCP clients for their tools
+        for (McpClient client : mcpClients) {
+            List<McpSchema.Tool> tools = client.listTools();
+            // ... intelligent keyword matching ...
+        }
+        return topKTools;
+    }
+}
+```
 
 **Scoring Algorithm**:
 - **Name match**: 10x weight (highest priority)
 - **Signature match**: 5x weight (high priority)
 - **Description match**: 2x weight (medium priority)
-- **Phrase match bonus**: 15x for exact multi-word phrase matches
+- **Phrase match bonus**: 15-20x for exact multi-word phrase matches
 - Normalized by query length for fair comparison
-
-```java
-@Component
-@Slf4j
-@RequiredArgsConstructor
-public class SearchToolsTool implements Tool {
-
-    private final ToolRegistry toolRegistry;
-
-    @Override
-    public String getName() {
-        return "search_tools";
-    }
-
-    @Override
-    public String getPythonSignature() {
-        return "search_tools(query: str, top_k: int = 5) -> dict";
-    }
-
-    @Override
-    public Map<String, Object> execute(Map<String, Object> params) {
-        // Get all tools from registry
-        // Score by relevance to query
-        // Return top-k matches with descriptions
-    }
-
-    private double calculateRelevance(Tool tool, String query) {
-        // Keyword matching with weighted scoring
-    }
-}
-```
 
 **Usage Examples**:
 
 ```python
-# Find file-related tools
-results = search_tools(query="read files", top_k=3)
+# Discover email tools from Email MCP server
+results = search_tools(query="send email", top_k=3)
 # Returns: {
 #   "success": true,
-#   "query": "read files",
+#   "query": "send email",
 #   "tools_found": 3,
-#   "total_tools": 22,
+#   "total_mcp_tools": 12,
+#   "mcp_servers_available": 3,
 #   "tools": [
 #     {
-#       "name": "file_read",
-#       "description": "Read file contents...",
-#       "signature": "file_read(path: str) -> str",
-#       "relevance_score": "15.21"
+#       "name": "send_email",
+#       "description": "Send an email message to recipients",
+#       "signature": "send_email(to: str, subject: str, body: str) -> dict",
+#       "mcp_server": "email",
+#       "relevance_score": "25.32"
 #     },
 #     {
-#       "name": "file_list",
-#       "description": "List files in directory...",
-#       "signature": "file_list(path: str) -> list",
-#       "relevance_score": "8.94"
+#       "name": "read_inbox",
+#       "description": "Read emails from inbox",
+#       "signature": "read_inbox(folder: str, limit: int) -> list",
+#       "mcp_server": "email",
+#       "relevance_score": "12.45"
 #     },
 #     ...
 #   ]
 # }
 
-# Find browser automation tools
-results = search_tools(query="browser automation")
-# Returns tools like browser_navigate, browser_view, browser_click, etc.
+# Discover calendar tools
+results = search_tools(query="create calendar event")
+# Returns: create_event, update_event, list_schedule from Calendar MCP server
 
-# Find code execution tools
-results = search_tools(query="execute python code")
-# Returns tools like execute_python, code_executor, etc.
+# Discover database tools
+results = search_tools(query="database query")
+# Returns: query_postgres, run_migration, backup_db from Database MCP server
 ```
 
-**Note**: Fully implemented with production-ready keyword matching algorithm.
+**Benefits**:
+- ✅ Zero context cost for unused MCP tools
+- ✅ Leverages Spring AI's robust MCP implementation
+- ✅ Configuration-driven (no code changes to add servers)
+- ✅ Automatic server discovery and registration
+- ✅ Infinite tool scalability
+
+**Note**: Fully implemented using Spring AI's native MCP client support (`spring-ai-mcp-spring-boot-starter`).
 
 ## Tool Registry
 
