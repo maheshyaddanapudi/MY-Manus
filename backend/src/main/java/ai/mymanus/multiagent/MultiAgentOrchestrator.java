@@ -128,12 +128,12 @@ public class MultiAgentOrchestrator {
             // Get effective system prompt
             String systemPrompt = config.getEffectiveSystemPrompt();
 
-            // Build messages
-            List<Map<String, String>> messages = new ArrayList<>();
-            messages.add(Map.of("role", "user", "content", task));
-
             // Generate response using configured or fallback LLM
-            String response = anthropicService.generateResponse(systemPrompt, messages);
+            String response = anthropicService.generate(
+                config.getAgentId(),  // conversationId
+                systemPrompt,
+                task                  // userMessage
+            );
 
             result.put("success", true);
             result.put("response", response);

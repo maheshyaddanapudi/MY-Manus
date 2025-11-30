@@ -64,11 +64,27 @@ public class AgentStateService {
     }
 
     /**
+     * Get or create state by session ID (alias for getOrCreateSession)
+     */
+    @Transactional
+    public AgentState getOrCreateState(String sessionId) {
+        return getOrCreateSession(sessionId);
+    }
+
+    /**
      * Get session by ID
      */
     public AgentState getSession(String sessionId) {
         return agentStateRepository.findBySessionId(sessionId)
                 .orElseThrow(() -> new RuntimeException("Session not found: " + sessionId));
+    }
+
+    /**
+     * Update agent state
+     */
+    @Transactional
+    public AgentState updateState(AgentState state) {
+        return agentStateRepository.save(state);
     }
 
     /**

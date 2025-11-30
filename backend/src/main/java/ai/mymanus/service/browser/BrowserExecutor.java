@@ -1,6 +1,7 @@
 package ai.mymanus.service.browser;
 
 import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.LoadState;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -133,22 +134,34 @@ public class BrowserExecutor {
         BrowserSession session = getOrCreateSession(sessionId);
         Page page = session.getPage();
 
-        log.info("🌳 Extracting accessibility tree...");
+        log.info("🌳 Extracting DOM structure...");
+        log.warn("⚠️ Accessibility tree API unavailable in Playwright 1.40.0 (requires 1.47+)");
 
         try {
-            // Get accessibility snapshot
-            var snapshot = page.accessibility().snapshot();
+            // Temporary workaround: Extract simplified DOM structure
+            // TODO: Upgrade Playwright to 1.47+ to use proper ariaSnapshot() API
+            String jsCode = "() => { " +
+                "const getStructure = (el, depth = 0) => { " +
+                "  if (depth > 5) return null; " +
+                "  const text = el.innerText || ''; " +
+                "  return { " +
+                "    tag: el.tagName, " +
+                "    role: el.getAttribute('role'), " +
+                "    text: text.substring(0, 100), " +
+                "    children: Array.from(el.children).slice(0, 10).map(c => getStructure(c, depth + 1)).filter(Boolean) " +
+                "  }; " +
+                "}; " +
+                "return JSON.stringify(getStructure(document.body)); " +
+            "}";
+            
+            String domStructure = page.evaluate(jsCode).toString();
 
-            // Convert to simplified tree structure
-            StringBuilder tree = new StringBuilder();
-            buildAccessibilityTree(snapshot, tree, 0);
-
-            log.info("✅ Accessibility tree extracted");
-            return tree.toString();
+            log.info("✅ DOM structure extracted (limited alternative to accessibility tree)");
+            return domStructure;
 
         } catch (Exception e) {
-            log.warn("⚠️ Failed to extract accessibility tree: {}", e.getMessage());
-            return "Accessibility tree unavailable";
+            log.error("❌ Failed to extract DOM structure: {}", e.getMessage());
+            return "{\"error\": \"DOM structure unavailable\"}";
         }
     }
 
@@ -172,29 +185,7 @@ public class BrowserExecutor {
         }
     }
 
-    /**
-     * Build accessibility tree string representation
-     */
-    private void buildAccessibilityTree(AccessibilityNode node, StringBuilder tree, int depth) {
-        if (node == null) return;
 
-        String indent = "  ".repeat(depth);
-        String role = node.role() != null ? node.role() : "unknown";
-        String name = node.name() != null ? node.name() : "";
-
-        tree.append(indent).append(role);
-        if (!name.isEmpty()) {
-            tree.append(": ").append(name);
-        }
-        tree.append("\n");
-
-        // Recursively build children
-        if (node.children() != null) {
-            for (AccessibilityNode child : node.children()) {
-                buildAccessibilityTree(child, tree, depth + 1);
-            }
-        }
-    }
 
     /**
      * Click element by selector

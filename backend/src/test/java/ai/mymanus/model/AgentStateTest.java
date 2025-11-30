@@ -35,17 +35,18 @@ class AgentStateTest {
 
     @Test
     void testPythonVariablesPersistence() {
+        // Note: pythonVariables are stored in executionContext
         Map<String, Object> variables = new HashMap<>();
         variables.put("count", 5);
         variables.put("message", "Hello");
         variables.put("is_ready", true);
 
-        agentState.setPythonVariables(variables);
+        agentState.setExecutionContext(variables);
 
-        assertEquals(3, agentState.getPythonVariables().size());
-        assertEquals(5, agentState.getPythonVariables().get("count"));
-        assertEquals("Hello", agentState.getPythonVariables().get("message"));
-        assertEquals(true, agentState.getPythonVariables().get("is_ready"));
+        assertEquals(3, agentState.getExecutionContext().size());
+        assertEquals(5, agentState.getExecutionContext().get("count"));
+        assertEquals("Hello", agentState.getExecutionContext().get("message"));
+        assertEquals(true, agentState.getExecutionContext().get("is_ready"));
     }
 
     @Test
@@ -112,13 +113,14 @@ class AgentStateTest {
 
     @Test
     void testNullPythonVariables() {
-        agentState.setPythonVariables(null);
-        assertNull(agentState.getPythonVariables());
+        // Note: pythonVariables are stored in executionContext
+        agentState.setExecutionContext(null);
+        assertNull(agentState.getExecutionContext());
 
         // Set to empty map
-        agentState.setPythonVariables(new HashMap<>());
-        assertNotNull(agentState.getPythonVariables());
-        assertTrue(agentState.getPythonVariables().isEmpty());
+        agentState.setExecutionContext(new HashMap<>());
+        assertNotNull(agentState.getExecutionContext());
+        assertTrue(agentState.getExecutionContext().isEmpty());
     }
 
     @Test
@@ -134,16 +136,17 @@ class AgentStateTest {
 
     @Test
     void testComplexDataTypes() {
+        // Note: pythonVariables are stored in executionContext
         Map<String, Object> variables = new HashMap<>();
         variables.put("list", java.util.Arrays.asList(1, 2, 3));
         variables.put("nested", Map.of("key", "value"));
         variables.put("number", 42.5);
 
-        agentState.setPythonVariables(variables);
+        agentState.setExecutionContext(variables);
 
-        assertTrue(agentState.getPythonVariables().get("list") instanceof java.util.List);
-        assertTrue(agentState.getPythonVariables().get("nested") instanceof Map);
-        assertEquals(42.5, agentState.getPythonVariables().get("number"));
+        assertTrue(agentState.getExecutionContext().get("list") instanceof java.util.List);
+        assertTrue(agentState.getExecutionContext().get("nested") instanceof Map);
+        assertEquals(42.5, agentState.getExecutionContext().get("number"));
     }
 
     @Test

@@ -187,37 +187,3 @@ public class TodoMdParser {
         return costs[s2.length()];
     }
 }
-
-/**
- * Structured representation of todo.md
- */
-@Data
-@Builder
-class TodoMdStructure {
-    private String title;
-    private List<TodoTask> tasks;
-    private Map<String, String> sections;  // e.g., "progress", "notes"
-    private LocalDateTime lastUpdated;
-}
-
-/**
- * Individual task from todo.md
- */
-@Data
-@Builder
-class TodoTask {
-    private int taskNumber;
-    private String description;
-    private boolean completed;
-    private TaskStatus status;
-    private String notes;
-}
-
-/**
- * Task status enum
- */
-enum TaskStatus {
-    PENDING,
-    IN_PROGRESS,
-    COMPLETED
-}

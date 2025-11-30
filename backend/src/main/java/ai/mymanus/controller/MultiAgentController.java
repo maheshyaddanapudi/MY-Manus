@@ -67,13 +67,15 @@ public class MultiAgentController {
         List<AgentConfig> configs = orchestrator.createDefaultAgentPipeline();
 
         List<Map<String, Object>> response = configs.stream()
-                .map(config -> Map.of(
-                        "agentId", config.getAgentId(),
-                        "role", config.getRole().name(),
-                        "description", config.getRole().getDescription(),
-                        "llmModel", config.getLlmModel() != null ? config.getLlmModel() : "primary",
-                        "maxIterations", config.getMaxIterations()
-                ))
+                .map(config -> {
+                    Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("agentId", config.getAgentId());
+                    map.put("role", config.getRole().name());
+                    map.put("description", config.getRole().getDescription());
+                    map.put("llmModel", config.getLlmModel() != null ? config.getLlmModel() : "primary");
+                    map.put("maxIterations", config.getMaxIterations());
+                    return map;
+                })
                 .toList();
 
         return ResponseEntity.ok(response);
@@ -85,10 +87,12 @@ public class MultiAgentController {
     @GetMapping("/roles")
     public ResponseEntity<List<Map<String, Object>>> getAvailableRoles() {
         List<Map<String, Object>> roles = java.util.Arrays.stream(AgentRole.values())
-                .map(role -> Map.of(
-                        "name", role.name(),
-                        "description", role.getDescription()
-                ))
+                .map(role -> {
+                    Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("name", role.name());
+                    map.put("description", role.getDescription());
+                    return map;
+                })
                 .toList();
 
         return ResponseEntity.ok(roles);

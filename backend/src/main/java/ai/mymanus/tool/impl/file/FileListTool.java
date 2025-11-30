@@ -32,12 +32,8 @@ public class FileListTool implements Tool {
     }
 
     @Override
-    public Map<String, String> getParameters() {
-        Map<String, String> params = new HashMap<>();
-        params.put("path", "string - Directory path to list (default: /workspace)");
-        params.put("maxDepth", "number - Maximum depth to traverse (default: 3)");
-        params.put("includeHidden", "boolean - Include hidden files (default: false)");
-        return params;
+    public String getPythonSignature() {
+        return "file_list(path: str = '/workspace', maxDepth: int = 3, includeHidden: bool = False) -> dict";
     }
 
     @Override

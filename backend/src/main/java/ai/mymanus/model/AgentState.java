@@ -30,6 +30,21 @@ public class AgentState {
     @Column(length = 500)
     private String title;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Status status = Status.IDLE;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer iteration = 0;
+
+    @Column(length = 500)
+    private String currentTask;
+
+    @Column(length = 2000)
+    private String lastError;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -53,5 +68,16 @@ public class AgentState {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Agent execution status
+     */
+    public enum Status {
+        IDLE,           // Session created, not started
+        RUNNING,        // Agent actively executing
+        WAITING_INPUT,  // Paused, waiting for user input
+        COMPLETED,      // Task finished successfully
+        ERROR           // Execution failed
     }
 }

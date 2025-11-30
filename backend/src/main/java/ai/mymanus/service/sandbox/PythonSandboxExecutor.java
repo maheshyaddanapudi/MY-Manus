@@ -14,9 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileWriter;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,6 +37,7 @@ public class PythonSandboxExecutor implements SandboxExecutor {
     private final DockerClient dockerClient;
     private final ToolRegistry toolRegistry;
     private final ObjectMapper objectMapper;
+    private final ToolRpcHandler rpcHandler;
 
     // Container cache: sessionId -> containerId
     private final Map<String, String> sessionContainers = new ConcurrentHashMap<>();
@@ -60,10 +59,12 @@ public class PythonSandboxExecutor implements SandboxExecutor {
 
     public PythonSandboxExecutor(DockerClient dockerClient,
                                   ToolRegistry toolRegistry,
-                                  ObjectMapper objectMapper) {
+                                  ObjectMapper objectMapper,
+                                  ToolRpcHandler rpcHandler) {
         this.dockerClient = dockerClient;
         this.toolRegistry = toolRegistry;
         this.objectMapper = objectMapper;
+        this.rpcHandler = rpcHandler;
     }
 
     /**
@@ -88,11 +89,11 @@ public class PythonSandboxExecutor implements SandboxExecutor {
             // Prepare Python code with state restoration and tool bindings
             String fullCode = buildExecutionScript(code, previousState);
 
-            // Write code to container
-            writeCodeToContainer(containerId, fullCode);
+            // Write code to container (session-specific workspace)
+            writeCodeToContainer(containerId, sessionId, fullCode);
 
-            // Execute Python code
-            ExecutionResult result = executeInContainer(containerId);
+            // Execute Python code with RPC support
+            ExecutionResult result = executeInContainer(containerId, sessionId);
             result.setExecutionTimeMs(System.currentTimeMillis() - startTime);
 
             log.info("Executed code in session {} in {}ms", sessionId, result.getExecutionTimeMs());
@@ -168,15 +169,15 @@ public class PythonSandboxExecutor implements SandboxExecutor {
                 .withNetworkMode(networkMode)
                 .withAutoRemove(false);
 
-        // Use session ID in container name for easy identification
-        String containerName = "manus-sandbox-" + sessionId.substring(0, Math.min(8, sessionId.length()));
+        // Use FULL session ID in container name for easy identification and uniqueness
+        String containerName = "manus-sandbox-" + sessionId;
 
         CreateContainerResponse container = dockerClient.createContainerCmd(sandboxImage)
                 .withName(containerName)
                 .withHostConfig(hostConfig)
                 .withUser("ubuntu")
-                .withWorkingDir("/home/ubuntu/workspace")
-                .withCmd("/bin/bash", "-c", "sleep infinity")
+                .withWorkingDir("/home/ubuntu/workspace/" + sessionId)  // Session-specific workspace
+                .withCmd("/bin/bash", "-c", "sleep infinity")  // Keep container alive
                 .exec();
 
         return container.getId();
@@ -188,14 +189,47 @@ public class PythonSandboxExecutor implements SandboxExecutor {
         // Add imports
         script.append("import json\n");
         script.append("import sys\n");
+        script.append("import uuid\n");
         script.append("import traceback\n\n");
 
-        // Tool execution function
-        script.append("# Tool execution bridge\n");
+        // Tool execution function (RPC bridge to Java)
+        script.append("# Tool execution bridge (RPC to Java)\n");
         script.append("def _execute_tool(tool_name, params):\n");
-        script.append("    # In real implementation, this calls back to Java\n");
-        script.append("    print(f'TOOL_CALL:{tool_name}:{json.dumps(params)}')\n");
-        script.append("    return {'status': 'pending'}\n\n");
+        script.append("    try:\n");
+        script.append("        # Generate unique request ID\n");
+        script.append("        request_id = str(uuid.uuid4())\n");
+        script.append("        \n");
+        script.append("        # Build request\n");
+        script.append("        request = {\n");
+        script.append("            'id': request_id,\n");
+        script.append("            'tool': tool_name,\n");
+        script.append("            'params': params\n");
+        script.append("        }\n");
+        script.append("        \n");
+        script.append("        # Send request to Java via stdout\n");
+        script.append("        request_json = json.dumps(request)\n");
+        script.append("        print(f'__TOOL_REQUEST__{request_json}__END__', flush=True)\n");
+        script.append("        \n");
+        script.append("        # Read response from Java via stdin\n");
+        script.append("        response_line = sys.stdin.readline().strip()\n");
+        script.append("        \n");
+        script.append("        # Parse response\n");
+        script.append("        if '__TOOL_RESPONSE__' in response_line:\n");
+        script.append("            response_json = response_line.split('__TOOL_RESPONSE__')[1].split('__END__')[0]\n");
+        script.append("            response = json.loads(response_json)\n");
+        script.append("            \n");
+        script.append("            # Check for errors\n");
+        script.append("            if response.get('error'):\n");
+        script.append("                raise Exception(f\"Tool error: {response['error']}\")\n");
+        script.append("            \n");
+        script.append("            # Return result\n");
+        script.append("            return response['result']\n");
+        script.append("        else:\n");
+        script.append("            raise Exception('Invalid tool response format')\n");
+        script.append("    except Exception as e:\n");
+        script.append("        print(f'ERROR: Tool execution failed: {str(e)}', file=sys.stderr)\n");
+        script.append("        traceback.print_exc()\n");
+        script.append("        return {'success': False, 'error': str(e)}\n\n");
 
         // Add tool function definitions
         script.append(toolRegistry.generatePythonBindings());
@@ -236,60 +270,94 @@ public class PythonSandboxExecutor implements SandboxExecutor {
         return script.toString();
     }
 
-    private void writeCodeToContainer(String containerId, String code) throws Exception {
+    private void writeCodeToContainer(String containerId, String sessionId, String code) throws Exception {
         // Create a temporary file with the code
         File tempFile = File.createTempFile("code", ".py");
         try (FileWriter writer = new FileWriter(tempFile)) {
             writer.write(code);
         }
 
-        // Copy file to container
+        // Copy file to session-specific workspace in container
+        String remotePath = "/home/ubuntu/workspace/" + sessionId + "/code.py";
         dockerClient.copyArchiveToContainerCmd(containerId)
                 .withHostResource(tempFile.getAbsolutePath())
-                .withRemotePath("/home/ubuntu/workspace/code.py")
+                .withRemotePath(remotePath)
                 .exec();
 
         tempFile.delete();
     }
 
-    private ExecutionResult executeInContainer(String containerId) throws Exception {
-        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+    private ExecutionResult executeInContainer(String containerId, String sessionId) throws Exception {
+        // Use shell-based docker exec for RPC support (stdin/stdout access)
+        String codePath = "/home/ubuntu/workspace/" + sessionId + "/code.py";
+        String workspaceDir = "/home/ubuntu/workspace/" + sessionId;
+        
+        ProcessBuilder pb = new ProcessBuilder(
+                "docker", "exec", "-i",
+                "-w", workspaceDir,
+                containerId,
+                "python3.11", codePath
+        );
 
-        ExecCreateCmdResponse execCreateCmdResponse = dockerClient
-                .execCreateCmd(containerId)
-                .withAttachStdout(true)
-                .withAttachStderr(true)
-                .withCmd("python3.11", "/home/ubuntu/workspace/code.py")
-                .exec();
-
-        boolean completed = dockerClient
-                .execStartCmd(execCreateCmdResponse.getId())
-                .exec(new ResultCallback.Adapter<Frame>() {
-                    @Override
-                    public void onNext(Frame frame) {
-                        try {
-                            if (frame.getStreamType() == StreamType.STDOUT) {
-                                stdout.write(frame.getPayload());
-                            } else if (frame.getStreamType() == StreamType.STDERR) {
-                                stderr.write(frame.getPayload());
-                            }
-                        } catch (Exception e) {
-                            log.error("Error capturing output", e);
-                        }
+        Process process = pb.start();
+        
+        // Set up RPC communication
+        PrintWriter stdinWriter = new PrintWriter(process.getOutputStream(), true);
+        StringBuilder stdoutBuilder = new StringBuilder();
+        StringBuilder stderrBuilder = new StringBuilder();
+        
+        // Read stdout in separate thread with RPC handling
+        Thread stdoutThread = new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains("__TOOL_REQUEST__")) {
+                        // Handle tool request via RPC handler
+                        String response = rpcHandler.handleToolRequest(line);
+                        stdinWriter.println(response);
+                        stdinWriter.flush();
+                    } else {
+                        stdoutBuilder.append(line).append("\n");
                     }
-                })
-                .awaitCompletion(timeoutSeconds, TimeUnit.SECONDS);
-
+                }
+            } catch (Exception e) {
+                log.error("Error reading stdout", e);
+            }
+        });
+        stdoutThread.start();
+        
+        // Read stderr in separate thread
+        Thread stderrThread = new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    stderrBuilder.append(line).append("\n");
+                }
+            } catch (Exception e) {
+                log.error("Error reading stderr", e);
+            }
+        });
+        stderrThread.start();
+        
+        // Wait for process to complete with timeout
+        boolean completed = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
+        
         if (!completed) {
+            process.destroyForcibly();
             return ExecutionResult.builder()
                     .success(false)
                     .error("Execution timeout after " + timeoutSeconds + " seconds")
                     .build();
         }
-
-        String stdoutStr = stdout.toString(StandardCharsets.UTF_8);
-        String stderrStr = stderr.toString(StandardCharsets.UTF_8);
+        
+        // Wait for threads to finish reading
+        stdoutThread.join(1000);
+        stderrThread.join(1000);
+        
+        String stdoutStr = stdoutBuilder.toString();
+        String stderrStr = stderrBuilder.toString();
 
         // Parse state from output
         Map<String, Object> variables = parseStateFromOutput(stdoutStr);

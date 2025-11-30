@@ -32,11 +32,8 @@ public class MessageAskUserTool implements Tool {
     }
 
     @Override
-    public Map<String, String> getParameters() {
-        Map<String, Object> params = new HashMap<>();
-        params.put("question", "string - The question to ask the user");
-        params.put("sessionId", "string - The current session ID");
-        return params;
+    public String getPythonSignature() {
+        return "message_ask_user(question: str, sessionId: str) -> dict";
     }
 
     @Override

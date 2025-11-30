@@ -35,6 +35,7 @@ public class HostPythonExecutor implements SandboxExecutor {
 
     private final ToolRegistry toolRegistry;
     private final ObjectMapper objectMapper;
+    private final ToolRpcHandler rpcHandler;
 
     @Value("${sandbox.host.python-executable:python3}")
     private String pythonExecutable;
@@ -45,9 +46,10 @@ public class HostPythonExecutor implements SandboxExecutor {
     @Value("${sandbox.host.timeout-seconds:30}")
     private Integer timeoutSeconds;
 
-    public HostPythonExecutor(ToolRegistry toolRegistry, ObjectMapper objectMapper) {
+    public HostPythonExecutor(ToolRegistry toolRegistry, ObjectMapper objectMapper, ToolRpcHandler rpcHandler) {
         this.toolRegistry = toolRegistry;
         this.objectMapper = objectMapper;
+        this.rpcHandler = rpcHandler;
     }
 
     /**
@@ -112,14 +114,47 @@ public class HostPythonExecutor implements SandboxExecutor {
         // Add imports
         script.append("import json\n");
         script.append("import sys\n");
+        script.append("import uuid\n");
         script.append("import traceback\n\n");
 
-        // Tool execution function
-        script.append("# Tool execution bridge\n");
+        // Tool execution function (RPC bridge to Java)
+        script.append("# Tool execution bridge (RPC to Java)\n");
         script.append("def _execute_tool(tool_name, params):\n");
-        script.append("    # In real implementation, this calls back to Java\n");
-        script.append("    print(f'TOOL_CALL:{tool_name}:{json.dumps(params)}')\n");
-        script.append("    return {'status': 'pending'}\n\n");
+        script.append("    try:\n");
+        script.append("        # Generate unique request ID\n");
+        script.append("        request_id = str(uuid.uuid4())\n");
+        script.append("        \n");
+        script.append("        # Build request\n");
+        script.append("        request = {\n");
+        script.append("            'id': request_id,\n");
+        script.append("            'tool': tool_name,\n");
+        script.append("            'params': params\n");
+        script.append("        }\n");
+        script.append("        \n");
+        script.append("        # Send request to Java via stdout\n");
+        script.append("        request_json = json.dumps(request)\n");
+        script.append("        print(f'__TOOL_REQUEST__{request_json}__END__', flush=True)\n");
+        script.append("        \n");
+        script.append("        # Read response from Java via stdin\n");
+        script.append("        response_line = sys.stdin.readline().strip()\n");
+        script.append("        \n");
+        script.append("        # Parse response\n");
+        script.append("        if '__TOOL_RESPONSE__' in response_line:\n");
+        script.append("            response_json = response_line.split('__TOOL_RESPONSE__')[1].split('__END__')[0]\n");
+        script.append("            response = json.loads(response_json)\n");
+        script.append("            \n");
+        script.append("            # Check for errors\n");
+        script.append("            if response.get('error'):\n");
+        script.append("                raise Exception(f\"Tool error: {response['error']}\")\n");
+        script.append("            \n");
+        script.append("            # Return result\n");
+        script.append("            return response['result']\n");
+        script.append("        else:\n");
+        script.append("            raise Exception('Invalid tool response format')\n");
+        script.append("    except Exception as e:\n");
+        script.append("        print(f'ERROR: Tool execution failed: {str(e)}', file=sys.stderr)\n");
+        script.append("        traceback.print_exc()\n");
+        script.append("        return {'success': False, 'error': str(e)}\n\n");
 
         // Add tool function definitions
         script.append(toolRegistry.generatePythonBindings());
@@ -161,7 +196,7 @@ public class HostPythonExecutor implements SandboxExecutor {
     }
 
     /**
-     * Execute Python process and capture output
+     * Execute Python process and capture output with RPC tool execution support
      */
     private ExecutionResult executeProcess(Path workspace, Path codeFile) throws Exception {
         ProcessBuilder processBuilder = new ProcessBuilder(
@@ -182,12 +217,20 @@ public class HostPythonExecutor implements SandboxExecutor {
         StringBuilder stdout = new StringBuilder();
         StringBuilder stderr = new StringBuilder();
 
-        // Read stdout
+        // Get stdin writer for sending tool responses
+        java.io.PrintWriter stdinWriter = new java.io.PrintWriter(process.getOutputStream(), true);
+
+        // Read stdout with tool request handling
         Thread stdoutThread = new Thread(() -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    stdout.append(line).append("\n");
+                    // Check for tool request
+                    if (line.contains("__TOOL_REQUEST__")) {
+                        handleToolRequest(line, stdinWriter);
+                    } else {
+                        stdout.append(line).append("\n");
+                    }
                 }
             } catch (Exception e) {
                 log.error("Error reading stdout", e);
@@ -240,6 +283,23 @@ public class HostPythonExecutor implements SandboxExecutor {
                 .variables(variables)
                 .exitCode(process.exitValue())
                 .build();
+    }
+
+    /**
+     * Handle tool execution request from Python (delegates to shared RPC handler)
+     */
+    private void handleToolRequest(String line, java.io.PrintWriter stdinWriter) {
+        try {
+            // Delegate to shared RPC handler
+            String response = rpcHandler.handleToolRequest(line);
+            
+            // Send response to Python
+            stdinWriter.println(response);
+            stdinWriter.flush();
+            
+        } catch (Exception e) {
+            log.error("❌ Error handling tool request", e);
+        }
     }
 
     /**

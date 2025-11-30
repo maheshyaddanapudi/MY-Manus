@@ -109,6 +109,9 @@ public class CodeActAgentService {
             // Combine system prompt with event stream history
             String fullContext = systemPrompt + "\n\n" + eventStreamContext;
 
+            // Capture iteration in final variable for lambda
+            final int currentIteration = iteration;
+
             // Generate LLM response with streaming
             StringBuilder llmResponseBuilder = new StringBuilder();
             StringBuilder chunkBuffer = new StringBuilder();
@@ -122,12 +125,12 @@ public class CodeActAgentService {
                     chunkBuffer.append(chunk);
 
                     // Send chunk to frontend for real-time display
-                    sendEvent(sessionId, "thought_chunk", chunk, Map.of("iteration", iteration));
+                    sendEvent(sessionId, "thought_chunk", chunk, Map.of("iteration", currentIteration));
 
                     // Send accumulated response periodically (every ~50 chars)
                     if (chunkBuffer.length() > 50) {
                         sendEvent(sessionId, "thought", chunkBuffer.toString(),
-                            Map.of("iteration", iteration, "streaming", true));
+                            Map.of("iteration", currentIteration, "streaming", true));
                         chunkBuffer.setLength(0);
                     }
                 })

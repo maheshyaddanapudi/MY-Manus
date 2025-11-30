@@ -25,14 +25,15 @@ public class SessionReplayService {
     /**
      * Get snapshot of session state at specific event
      */
-    public Map<String, Object> getStateAtEvent(String sessionId, Long eventId) {
+    public Map<String, Object> getStateAtEvent(String sessionId, java.util.UUID eventId) {
         log.info("📹 Reconstructing state at event {} for session {}", eventId, sessionId);
 
         List<Event> allEvents = eventService.getEventStream(sessionId);
 
         // Get events up to and including the target event
+        int targetSequence = getEventSequence(allEvents, eventId);
         List<Event> eventsUpToTarget = allEvents.stream()
-                .filter(e -> e.getId() <= eventId)
+                .filter(e -> e.getSequence() <= targetSequence)
                 .sorted(Comparator.comparing(Event::getSequence))
                 .collect(Collectors.toList());
 
@@ -112,13 +113,14 @@ public class SessionReplayService {
     /**
      * Step forward one event from current position
      */
-    public Map<String, Object> stepForward(String sessionId, Long currentEventId) {
+    public Map<String, Object> stepForward(String sessionId, java.util.UUID currentEventId) {
         List<Event> allEvents = eventService.getEventStream(sessionId);
 
         // Find next event
+        int currentSequence = getEventSequence(allEvents, currentEventId);
         Optional<Event> nextEvent = allEvents.stream()
-                .filter(e -> e.getId() > currentEventId)
-                .min(Comparator.comparing(Event::getId));
+                .filter(e -> e.getSequence() > currentSequence)
+                .min(Comparator.comparing(Event::getSequence));
 
         if (nextEvent.isEmpty()) {
             Map<String, Object> result = new HashMap<>();
@@ -133,13 +135,14 @@ public class SessionReplayService {
     /**
      * Step backward one event from current position
      */
-    public Map<String, Object> stepBackward(String sessionId, Long currentEventId) {
+    public Map<String, Object> stepBackward(String sessionId, java.util.UUID currentEventId) {
         List<Event> allEvents = eventService.getEventStream(sessionId);
 
         // Find previous event
+        int currentSequence = getEventSequence(allEvents, currentEventId);
         Optional<Event> prevEvent = allEvents.stream()
-                .filter(e -> e.getId() < currentEventId)
-                .max(Comparator.comparing(Event::getId));
+                .filter(e -> e.getSequence() < currentSequence)
+                .max(Comparator.comparing(Event::getSequence));
 
         if (prevEvent.isEmpty()) {
             Map<String, Object> result = new HashMap<>();
@@ -149,6 +152,17 @@ public class SessionReplayService {
         }
 
         return getStateAtEvent(sessionId, prevEvent.get().getId());
+    }
+
+    /**
+     * Helper method to get sequence number for an event ID
+     */
+    private int getEventSequence(List<Event> events, java.util.UUID eventId) {
+        return events.stream()
+                .filter(e -> e.getId().equals(eventId))
+                .findFirst()
+                .map(Event::getSequence)
+                .orElse(0);
     }
 
     /**

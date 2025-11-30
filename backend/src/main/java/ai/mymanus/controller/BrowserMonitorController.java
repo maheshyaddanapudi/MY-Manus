@@ -90,14 +90,14 @@ public class BrowserMonitorController {
     /**
      * Add console log (called by browser executor)
      */
-    @PostMapping("/{sessionId}/console-logs")
+    @PostMapping("/{sessionId}/console")
     public ResponseEntity<ConsoleLog> addConsoleLog(
             @PathVariable String sessionId,
-            @RequestBody ConsoleLog log) {
+            @RequestBody ConsoleLog consoleLog) {
 
         try {
-            log.setSessionId(sessionId);
-            ConsoleLog saved = consoleLogRepository.save(log);
+            consoleLog.setSessionId(sessionId);
+            ConsoleLog saved = consoleLogRepository.save(consoleLog);
             return ResponseEntity.ok(saved);
         } catch (Exception e) {
             log.error("Error adding console log", e);

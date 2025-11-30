@@ -27,7 +27,7 @@ public class SessionReplayController {
     @GetMapping("/{sessionId}/event/{eventId}")
     public ResponseEntity<Map<String, Object>> getStateAtEvent(
             @PathVariable String sessionId,
-            @PathVariable Long eventId) {
+            @PathVariable java.util.UUID eventId) {
 
         try {
             Map<String, Object> snapshot = replayService.getStateAtEvent(sessionId, eventId);
@@ -81,7 +81,7 @@ public class SessionReplayController {
     @GetMapping("/{sessionId}/step-forward/{currentEventId}")
     public ResponseEntity<Map<String, Object>> stepForward(
             @PathVariable String sessionId,
-            @PathVariable Long currentEventId) {
+            @PathVariable java.util.UUID currentEventId) {
 
         try {
             Map<String, Object> snapshot = replayService.stepForward(sessionId, currentEventId);
@@ -101,7 +101,7 @@ public class SessionReplayController {
     @GetMapping("/{sessionId}/step-backward/{currentEventId}")
     public ResponseEntity<Map<String, Object>> stepBackward(
             @PathVariable String sessionId,
-            @PathVariable Long currentEventId) {
+            @PathVariable java.util.UUID currentEventId) {
 
         try {
             Map<String, Object> snapshot = replayService.stepBackward(sessionId, currentEventId);

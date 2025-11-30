@@ -31,11 +31,8 @@ public class MessageNotifyUserTool implements Tool {
     }
 
     @Override
-    public Map<String, String> getParameters() {
-        Map<String, String> params = new HashMap<>();
-        params.put("message", "string - The notification message to send to the user");
-        params.put("level", "string - Notification level: info, warning, error (default: info)");
-        return params;
+    public String getPythonSignature() {
+        return "message_notify_user(message: str, level: str = 'info') -> dict";
     }
 
     @Override

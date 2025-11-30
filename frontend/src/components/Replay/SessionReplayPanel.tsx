@@ -4,15 +4,15 @@ import { apiService } from '../../services/api';
 interface ReplayPoint {
   iteration: number;
   eventCount: number;
-  firstEventId: number;
-  lastEventId: number;
+  firstEventId: string;  // UUID
+  lastEventId: string;   // UUID
   summary: string;
 }
 
 interface StateSnapshot {
   sessionId: string;
   eventCount: number;
-  currentEventId: number;
+  currentEventId: string;  // UUID
   currentSequence: number;
   iteration: number;
   pythonVariables: Record<string, any>;
