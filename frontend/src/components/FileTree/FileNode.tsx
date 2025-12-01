@@ -6,13 +6,14 @@ interface FileInfo {
   name: string;
   type: 'file' | 'directory';
   size: number;
+  lastModified: number;
   depth: number;
   extension?: string;
 }
 
 interface FileNodeProps {
   file: FileInfo;
-  onSelect: (file: FileInfo) => void;
+  onSelect: (file: FileInfo) => any; // Support both sync and async (void or Promise<void>)
   isSelected: boolean;
 }
 
@@ -48,7 +49,7 @@ export const FileNode: React.FC<FileNodeProps> = ({ file, onSelect, isSelected }
 
   return (
     <div
-      onClick={() => onSelect(file)}
+      onClick={async () => await onSelect(file)}
       className={`flex items-center px-2 py-1 cursor-pointer hover:bg-gray-800 rounded transition-colors ${
         isSelected ? 'bg-gray-700' : ''
       }`}

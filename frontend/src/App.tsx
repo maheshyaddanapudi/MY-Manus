@@ -16,7 +16,6 @@ function App() {
     handleAgentEvent,
     loadSessions,
     createNewSession,
-    sessions,
   } = useAgentStore();
 
   const [isInitializing, setIsInitializing] = useState(true);

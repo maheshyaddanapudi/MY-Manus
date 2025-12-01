@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAgentStore } from '../../stores/agentStore';
-import { Session } from '../../types';
+import type { Session } from '../../types';
 import { PlusIcon, TrashIcon, PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { ChatBubbleLeftIcon } from '@heroicons/react/24/solid';
 

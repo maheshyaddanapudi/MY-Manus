@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Event } from '../../types';
+import type { Event } from '../../types';
 import { apiService } from '../../services/api';
 import EventItem from './EventItem';
 

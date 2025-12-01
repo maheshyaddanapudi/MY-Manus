@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useWebSocket } from '../../hooks/useWebSocket';
+import { websocketService } from '../../services/websocket';
 
 interface TodoStructure {
   title: string;
@@ -24,14 +24,20 @@ export const PlanPanel: React.FC<PlanPanelProps> = ({ sessionId }) => {
   const [plan, setPlan] = useState<TodoStructure | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // WebSocket for live updates
-  useWebSocket(`/topic/plan/${sessionId}`, (updatedPlan: TodoStructure) => {
-    setPlan(updatedPlan);
-  });
-
   useEffect(() => {
     loadPlan();
     startWatching();
+    
+    // WebSocket for live updates
+    const subscription = websocketService.subscribe(
+      `/topic/plan/${sessionId}`,
+      (message: any) => {
+        const updatedPlan = message as TodoStructure;
+        setPlan(updatedPlan);
+      }
+    );
+    
+    return () => subscription?.unsubscribe();
   }, [sessionId]);
 
   const loadPlan = async () => {

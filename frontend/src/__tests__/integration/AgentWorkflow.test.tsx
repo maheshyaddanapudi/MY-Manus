@@ -60,7 +60,7 @@ describe('Agent Workflow Integration', () => {
     });
 
     // Send message
-    const input = screen.getByPlaceholder Text(/Type a message/);
+    const input = screen.getByPlaceholderText(/Type a message/);
     await user.type(input, 'Hello{Enter}');
 
     await waitFor(() => {

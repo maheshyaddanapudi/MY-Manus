@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { notificationService, Notification } from '../../services/notificationService';
+import { notificationService } from '../../services/notificationService';
+import type { Notification } from '../../services/notificationService';
 import { NotificationPanel } from './NotificationPanel';
 
 export const NotificationBell: React.FC = () => {

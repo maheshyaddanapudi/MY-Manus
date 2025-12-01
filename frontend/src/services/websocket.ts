@@ -1,19 +1,18 @@
-import { Client, StompSubscription } from '@stomp/stompjs';
+import { Client } from '@stomp/stompjs';
+import type { StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { AgentEvent } from '../types';
+import type { AgentEvent } from '../types';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:8080/ws';
 
 export class WebSocketService {
   private client: Client | null = null;
   private subscription: StompSubscription | null = null;
-  private sessionId: string | null = null;
   private onEventCallback: ((event: AgentEvent) => void) | null = null;
   private onConnectCallback: (() => void) | null = null;
   private onDisconnectCallback: (() => void) | null = null;
 
   connect(sessionId: string, onEvent: (event: AgentEvent) => void) {
-    this.sessionId = sessionId;
     this.onEventCallback = onEvent;
 
     // Create STOMP client with SockJS
@@ -79,7 +78,6 @@ export class WebSocketService {
       this.client = null;
     }
 
-    this.sessionId = null;
     this.onEventCallback = null;
   }
 
@@ -93,6 +91,47 @@ export class WebSocketService {
 
   isConnected(): boolean {
     return this.client?.connected || false;
+  }
+
+  /**
+   * Subscribe to a custom topic
+   * Ensures client is connected before subscribing
+   */
+  subscribe(topic: string, callback: (message: any) => void): StompSubscription | null {
+    if (!this.client) {
+      console.warn('WebSocket client not initialized. Call connect() first.');
+      return null;
+    }
+
+    if (!this.client.connected) {
+      console.warn('WebSocket not connected yet. Subscription will be delayed.');
+      // Wait for connection and then subscribe
+      const originalOnConnect = this.client.onConnect;
+      this.client.onConnect = (frame) => {
+        if (originalOnConnect) originalOnConnect(frame);
+        if (this.client) {
+          return this.client.subscribe(topic, (message) => {
+            try {
+              const data = JSON.parse(message.body);
+              callback(data);
+            } catch (error) {
+              console.error('Error parsing message:', error);
+            }
+          });
+        }
+        return null;
+      };
+      return null;
+    }
+
+    return this.client.subscribe(topic, (message) => {
+      try {
+        const data = JSON.parse(message.body);
+        callback(data);
+      } catch (error) {
+        console.error('Error parsing message:', error);
+      }
+    });
   }
 }
 

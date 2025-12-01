@@ -1,4 +1,4 @@
-import { Message } from '../../types';
+import type { Message } from '../../types';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -36,22 +36,23 @@ export const MessageItem = ({ message }: MessageItemProps) => {
           ) : (
             <ReactMarkdown
               components={{
-                code({ node, inline, className, children, ...props }) {
+                code(props: any) {
+                  const { node, inline, className, children, ...rest } = props;
                   const match = /language-(\w+)/.exec(className || '');
-                  return !inline && match ? (
-                    <SyntaxHighlighter
-                      style={vscDarkPlus as any}
-                      language={match[1]}
-                      PreTag="div"
-                      {...props}
-                    >
-                      {String(children).replace(/\n$/, '')}
-                    </SyntaxHighlighter>
-                  ) : (
-                    <code className={className} {...props}>
-                      {children}
-                    </code>
-                  );
+                  
+                  if (!inline && match) {
+                    return (
+                      <SyntaxHighlighter
+                        style={vscDarkPlus as any}
+                        language={match[1]}
+                        PreTag="div"
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    );
+                  }
+                  
+                  return <code className={className} {...rest}>{children}</code>;
                 },
               }}
             >

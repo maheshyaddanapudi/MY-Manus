@@ -1,5 +1,6 @@
-import axios, { AxiosInstance } from 'axios';
-import { ChatRequest, ChatResponse, SessionStatus, Message, ExecutionContext, Event } from '../types';
+import axios from 'axios';
+import type { AxiosInstance } from 'axios';
+import type { ChatRequest, ChatResponse, SessionStatus, Message, ExecutionContext, Event } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -100,6 +101,46 @@ class ApiService {
     );
     return response.data;
   }
+
+  // File browsing (read-only, extensible for editing later)
+  async listFiles(path: string = '/workspace', maxDepth: number = 3, includeHidden: boolean = false): Promise<any> {
+    const response = await this.client.get('/api/files/list', {
+      params: { path, maxDepth, includeHidden },
+    });
+    return response.data;
+  }
+
+  async readFile(path: string): Promise<any> {
+    const response = await this.client.get('/api/files/read', {
+      params: { path },
+    });
+    return response.data;
+  }
+
+  // FUTURE: File editing methods (uncomment when backend implements them)
+  /*
+  async writeFile(path: string, content: string): Promise<any> {
+    const response = await this.client.post('/api/files/write', content, {
+      params: { path },
+      headers: { 'Content-Type': 'text/plain' },
+    });
+    return response.data;
+  }
+
+  async deleteFile(path: string): Promise<any> {
+    const response = await this.client.delete('/api/files/delete', {
+      params: { path },
+    });
+    return response.data;
+  }
+
+  async createFile(path: string, type: 'file' | 'directory' = 'file'): Promise<any> {
+    const response = await this.client.post('/api/files/create', null, {
+      params: { path, type },
+    });
+    return response.data;
+  }
+  */
 }
 
 export const apiService = new ApiService();

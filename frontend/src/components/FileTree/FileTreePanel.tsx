@@ -31,12 +31,8 @@ export const FileTreePanel: React.FC<FileTreePanelProps> = ({ sessionId }) => {
   const loadFileTree = async () => {
     setLoading(true);
     try {
-      // Call file_list tool via sandbox
-      const result = await apiService.executeTool('file_list', {
-        path: rootPath,
-        maxDepth: 3,
-        includeHidden: false,
-      });
+      // Call file browsing API
+      const result = await apiService.listFiles(rootPath, 3, false);
 
       if (result.success) {
         setFiles(result.files || []);
@@ -57,7 +53,7 @@ export const FileTreePanel: React.FC<FileTreePanelProps> = ({ sessionId }) => {
       setSelectedFile(file.path);
       setLoading(true);
       try {
-        const result = await apiService.executeTool('file_read', { path: file.path });
+        const result = await apiService.readFile(file.path);
         if (result.success) {
           setFileContent(result.content);
         }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Event, EventType } from '../../types';
+import type { Event, EventType } from '../../types';
 
 interface EventItemProps {
   event: Event;

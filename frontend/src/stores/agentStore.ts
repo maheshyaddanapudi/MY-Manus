@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Message, AgentEvent, TerminalOutput, ExecutionContext, Session } from '../types';
+import type { Message, AgentEvent, TerminalOutput, ExecutionContext, Session } from '../types';
 import { apiService } from '../services/api';
 
 interface AgentState {
