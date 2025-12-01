@@ -8,12 +8,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -38,46 +37,69 @@ class ToolRegistryTest {
 
         when(fileReadTool.getName()).thenReturn("file_read");
         when(fileReadTool.getDescription()).thenReturn("Read a file from workspace");
-        when(fileReadTool.getParameters()).thenReturn(Map.of("path", "string"));
+        when(fileReadTool.getPythonSignature()).thenReturn("file_read(path: str)");
 
         when(browserNavigateTool.getName()).thenReturn("browser_navigate");
         when(browserNavigateTool.getDescription()).thenReturn("Navigate browser to URL");
-        when(browserNavigateTool.getParameters()).thenReturn(Map.of(
-            "url", "string",
-            "sessionId", "string"
-        ));
+        when(browserNavigateTool.getPythonSignature()).thenReturn("browser_navigate(url: str, session_id: str)");
     }
 
     @Test
     void testToolRegistration() {
         assertNotNull(toolRegistry);
 
-        Tool tool = toolRegistry.getTool("file_read");
-        assertNotNull(tool);
-        assertEquals("file_read", tool.getName());
+        Optional<Tool> tool = toolRegistry.getTool("file_read");
+        assertTrue(tool.isPresent());
+        assertEquals("file_read", tool.get().getName());
     }
 
     @Test
     void testGetTool() {
-        Tool tool = toolRegistry.getTool("file_read");
+        Optional<Tool> tool = toolRegistry.getTool("file_read");
 
-        assertNotNull(tool);
-        assertEquals("file_read", tool.getName());
+        assertTrue(tool.isPresent());
+        assertEquals("file_read", tool.get().getName());
+        assertEquals("Read a file from workspace", tool.get().getDescription());
     }
 
     @Test
     void testGetToolNotFound() {
-        Tool tool = toolRegistry.getTool("non_existent_tool");
+        Optional<Tool> tool = toolRegistry.getTool("non_existent_tool");
 
-        assertNull(tool);
+        assertFalse(tool.isPresent());
     }
 
     @Test
     void testGetAllTools() {
-        List<Tool> allTools = toolRegistry.getAllTools();
+        Collection<Tool> allTools = toolRegistry.getAllTools();
 
         assertNotNull(allTools);
         assertEquals(2, allTools.size());
+    }
+
+    @Test
+    void testRegisterAdditionalTool() {
+        Tool newTool = mock(Tool.class);
+        when(newTool.getName()).thenReturn("new_tool");
+        when(newTool.getDescription()).thenReturn("A new tool");
+        when(newTool.getPythonSignature()).thenReturn("new_tool()");
+
+        toolRegistry.registerTool(newTool);
+
+        Optional<Tool> retrievedTool = toolRegistry.getTool("new_tool");
+        assertTrue(retrievedTool.isPresent());
+        assertEquals("new_tool", retrievedTool.get().getName());
+    }
+
+    @Test
+    void testGetToolDescriptions() {
+        String descriptions = toolRegistry.getToolDescriptions();
+
+        assertNotNull(descriptions);
+        assertTrue(descriptions.contains("file_read"));
+        assertTrue(descriptions.contains("Read a file from workspace"));
+        assertTrue(descriptions.contains("browser_navigate"));
+        assertTrue(descriptions.contains("Navigate browser to URL"));
     }
 
     @Test
@@ -85,120 +107,105 @@ class ToolRegistryTest {
         String bindings = toolRegistry.generatePythonBindings();
 
         assertNotNull(bindings);
-        assertTrue(bindings.contains("file_read"));
-        assertTrue(bindings.contains("browser_navigate"));
+        assertTrue(bindings.contains("def file_read(path: str):"));
+        assertTrue(bindings.contains("def browser_navigate(url: str, session_id: str):"));
+        assertTrue(bindings.contains("_execute_tool"));
     }
 
     @Test
-    void testPythonBindingsContainAllTools() {
+    void testPythonBindingsContainDescriptions() {
         String bindings = toolRegistry.generatePythonBindings();
 
-        assertTrue(bindings.contains("file_read"));
-        assertTrue(bindings.contains("browser_navigate"));
-        assertTrue(bindings.contains("def ") || bindings.contains("function"));
+        assertTrue(bindings.contains("Read a file from workspace"));
+        assertTrue(bindings.contains("Navigate browser to URL"));
+    }
+
+    @Test
+    void testToolRegistryWithEmptyList() {
+        ToolRegistry emptyRegistry = new ToolRegistry(List.of());
+
+        Collection<Tool> tools = emptyRegistry.getAllTools();
+        assertNotNull(tools);
+        assertEquals(0, tools.size());
+    }
+
+    @Test
+    void testToolRegistryWithSingleTool() {
+        Tool singleTool = mock(Tool.class);
+        when(singleTool.getName()).thenReturn("single_tool");
+        when(singleTool.getDescription()).thenReturn("Single tool");
+        when(singleTool.getPythonSignature()).thenReturn("single_tool()");
+
+        ToolRegistry singleRegistry = new ToolRegistry(List.of(singleTool));
+
+        Collection<Tool> tools = singleRegistry.getAllTools();
+        assertEquals(1, tools.size());
+
+        Optional<Tool> retrieved = singleRegistry.getTool("single_tool");
+        assertTrue(retrieved.isPresent());
+    }
+
+    @Test
+    void testGetToolByName() {
+        Optional<Tool> fileRead = toolRegistry.getTool("file_read");
+        Optional<Tool> browserNav = toolRegistry.getTool("browser_navigate");
+
+        assertTrue(fileRead.isPresent());
+        assertTrue(browserNav.isPresent());
+
+        assertEquals("file_read", fileRead.get().getName());
+        assertEquals("browser_navigate", browserNav.get().getName());
+    }
+
+    @Test
+    void testToolDescriptionsFormat() {
+        String descriptions = toolRegistry.getToolDescriptions();
+
+        // Should contain tool name, description, and signature
+        assertTrue(descriptions.contains("file_read:"));
+        assertTrue(descriptions.contains("Signature:"));
+        assertTrue(descriptions.contains("file_read(path: str)"));
     }
 
     @Test
     void testPythonBindingsFormat() {
         String bindings = toolRegistry.generatePythonBindings();
 
-        // Should contain Python function definitions
-        assertTrue(bindings.contains("file_read"));
-        assertTrue(bindings.contains("path"));
+        // Should contain proper Python function definitions
+        assertTrue(bindings.contains("def "));
+        assertTrue(bindings.contains("'''"));  // Docstrings
+        assertTrue(bindings.contains("return _execute_tool("));
     }
 
     @Test
-    void testExecuteTool() throws Exception {
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put("path", "/workspace/test.txt");
+    void testRegisterToolOverwrite() {
+        // Register a tool with same name
+        Tool newFileRead = mock(Tool.class);
+        when(newFileRead.getName()).thenReturn("file_read");
+        when(newFileRead.getDescription()).thenReturn("New file read implementation");
+        when(newFileRead.getPythonSignature()).thenReturn("file_read(path: str)");
 
-        Map<String, Object> expectedResult = Map.of(
-            "success", true,
-            "content", "File content"
-        );
+        toolRegistry.registerTool(newFileRead);
 
-        when(fileReadTool.execute(parameters)).thenReturn(expectedResult);
-
-        Map<String, Object> result = toolRegistry.executeTool("file_read", parameters);
-
-        assertNotNull(result);
-        assertTrue((Boolean) result.get("success"));
-        assertEquals("File content", result.get("content"));
-        verify(fileReadTool, times(1)).execute(parameters);
-    }
-
-    @Test
-    void testExecuteToolNotFound() {
-        Map<String, Object> parameters = new HashMap<>();
-
-        assertThrows(IllegalArgumentException.class, () -> {
-            toolRegistry.executeTool("non_existent_tool", parameters);
-        });
+        Optional<Tool> tool = toolRegistry.getTool("file_read");
+        assertTrue(tool.isPresent());
+        assertEquals("New file read implementation", tool.get().getDescription());
     }
 
     @Test
     void testToolCount() {
-        List<Tool> allTools = toolRegistry.getAllTools();
+        Collection<Tool> tools = toolRegistry.getAllTools();
+        assertEquals(2, tools.size());
 
-        assertEquals(2, allTools.size());
-    }
+        // Add another tool
+        Tool additionalTool = mock(Tool.class);
+        when(additionalTool.getName()).thenReturn("additional_tool");
+        when(additionalTool.getDescription()).thenReturn("Additional");
+        when(additionalTool.getPythonSignature()).thenReturn("additional_tool()");
 
-    @Test
-    void testToolNames() {
-        List<Tool> allTools = toolRegistry.getAllTools();
+        toolRegistry.registerTool(additionalTool);
 
-        List<String> toolNames = allTools.stream()
-            .map(Tool::getName)
-            .toList();
-
-        assertTrue(toolNames.contains("file_read"));
-        assertTrue(toolNames.contains("browser_navigate"));
-    }
-
-    @Test
-    void testToolDescriptions() {
-        Tool fileReadToolInstance = toolRegistry.getTool("file_read");
-
-        assertEquals("Read a file from workspace", fileReadToolInstance.getDescription());
-    }
-
-    @Test
-    void testToolParameters() {
-        Tool fileReadToolInstance = toolRegistry.getTool("file_read");
-
-        Map<String, String> parameters = fileReadToolInstance.getParameters();
-
-        assertNotNull(parameters);
-        assertTrue(parameters.containsKey("path"));
-        assertEquals("string", parameters.get("path"));
-    }
-
-    @Test
-    void testMultipleParameters() {
-        Tool browserToolInstance = toolRegistry.getTool("browser_navigate");
-
-        Map<String, String> parameters = browserToolInstance.getParameters();
-
-        assertNotNull(parameters);
-        assertEquals(2, parameters.size());
-        assertTrue(parameters.containsKey("url"));
-        assertTrue(parameters.containsKey("sessionId"));
-    }
-
-    @Test
-    void testToolAutoRegistration() {
-        // In real Spring context, tools are auto-registered via dependency injection
-        // This test verifies the registry can handle multiple tools
-
-        List<Tool> allTools = toolRegistry.getAllTools();
-
-        assertNotNull(allTools);
-        assertFalse(allTools.isEmpty());
-
-        for (Tool tool : allTools) {
-            assertNotNull(tool.getName());
-            assertNotNull(tool.getDescription());
-            assertNotNull(tool.getParameters());
-        }
+        Collection<Tool> updatedTools = toolRegistry.getAllTools();
+        assertEquals(3, updatedTools.size());
     }
 }

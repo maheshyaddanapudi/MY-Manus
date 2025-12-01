@@ -2,6 +2,7 @@ package ai.mymanus.controller;
 
 import ai.mymanus.service.sandbox.PythonSandboxExecutor;
 import ai.mymanus.service.sandbox.ExecutionResult;
+import ai.mymanus.tool.Tool;
 import ai.mymanus.tool.ToolRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -44,6 +46,7 @@ class SandboxControllerTest {
     void testExecutePython() throws Exception {
         String requestJson = """
             {
+                "sessionId": "test-session",
                 "code": "print('Hello, World!')",
                 "context": {}
             }
@@ -53,9 +56,10 @@ class SandboxControllerTest {
             .stdout("Hello, World!\n")
             .stderr("")
             .exitCode(0)
+            .success(true)
             .build();
 
-        when(pythonSandboxExecutor.execute(anyString(), any()))
+        when(pythonSandboxExecutor.execute(anyString(), anyString(), any()))
             .thenReturn(executionResult);
 
         mockMvc.perform(post("/api/sandbox/execute")
@@ -66,13 +70,14 @@ class SandboxControllerTest {
             .andExpect(jsonPath("$.exitCode").value(0));
 
         verify(pythonSandboxExecutor, times(1))
-            .execute(eq("print('Hello, World!')"), any());
+            .execute(eq("test-session"), eq("print('Hello, World!')"), any());
     }
 
     @Test
     void testExecutePythonWithError() throws Exception {
         String requestJson = """
             {
+                "sessionId": "test-session",
                 "code": "1 / 0",
                 "context": {}
             }
@@ -82,9 +87,10 @@ class SandboxControllerTest {
             .stdout("")
             .stderr("ZeroDivisionError: division by zero")
             .exitCode(1)
+            .success(false)
             .build();
 
-        when(pythonSandboxExecutor.execute(anyString(), any()))
+        when(pythonSandboxExecutor.execute(anyString(), anyString(), any()))
             .thenReturn(executionResult);
 
         mockMvc.perform(post("/api/sandbox/execute")
@@ -95,13 +101,14 @@ class SandboxControllerTest {
             .andExpect(jsonPath("$.stderr").value("ZeroDivisionError: division by zero"));
 
         verify(pythonSandboxExecutor, times(1))
-            .execute(eq("1 / 0"), any());
+            .execute(eq("test-session"), eq("1 / 0"), any());
     }
 
     @Test
     void testExecutePythonWithContext() throws Exception {
         String requestJson = """
             {
+                "sessionId": "test-session",
                 "code": "print(x)",
                 "context": {"x": 42}
             }
@@ -111,9 +118,10 @@ class SandboxControllerTest {
             .stdout("42\n")
             .stderr("")
             .exitCode(0)
+            .success(true)
             .build();
 
-        when(pythonSandboxExecutor.execute(anyString(), any()))
+        when(pythonSandboxExecutor.execute(anyString(), anyString(), any()))
             .thenReturn(executionResult);
 
         mockMvc.perform(post("/api/sandbox/execute")
@@ -123,7 +131,7 @@ class SandboxControllerTest {
             .andExpect(jsonPath("$.stdout").value("42\n"));
 
         verify(pythonSandboxExecutor, times(1))
-            .execute(eq("print(x)"), any());
+            .execute(eq("test-session"), eq("print(x)"), any());
     }
 
     @Test
@@ -160,8 +168,9 @@ class SandboxControllerTest {
         toolResult.put("success", true);
         toolResult.put("content", "File content");
 
-        when(toolRegistry.executeTool(eq("file_read"), any()))
-            .thenReturn(toolResult);
+        Tool mockTool = mock(Tool.class);
+        when(mockTool.execute(any())).thenReturn(toolResult);
+        when(toolRegistry.getTool(eq("file_read"))).thenReturn(Optional.of(mockTool));
 
         mockMvc.perform(post("/api/sandbox/execute-tool")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -170,8 +179,8 @@ class SandboxControllerTest {
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.content").value("File content"));
 
-        verify(toolRegistry, times(1))
-            .executeTool(eq("file_read"), any());
+        verify(toolRegistry, times(1)).getTool(eq("file_read"));
+        verify(mockTool, times(1)).execute(any());
     }
 
     @Test
@@ -183,16 +192,15 @@ class SandboxControllerTest {
             }
             """;
 
-        when(toolRegistry.executeTool(eq("non_existent_tool"), any()))
-            .thenThrow(new IllegalArgumentException("Tool not found"));
+        when(toolRegistry.getTool(eq("non_existent_tool")))
+            .thenReturn(Optional.empty());
 
         mockMvc.perform(post("/api/sandbox/execute-tool")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestJson))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isNotFound());
 
-        verify(toolRegistry, times(1))
-            .executeTool(eq("non_existent_tool"), any());
+        verify(toolRegistry, times(1)).getTool(eq("non_existent_tool"));
     }
 
     @Test
@@ -216,6 +224,7 @@ class SandboxControllerTest {
     void testMissingCode() throws Exception {
         String requestJson = """
             {
+                "sessionId": "test-session",
                 "context": {}
             }
             """;
@@ -224,5 +233,54 @@ class SandboxControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestJson))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testMissingSessionId() throws Exception {
+        String requestJson = """
+            {
+                "code": "print('test')",
+                "context": {}
+            }
+            """;
+
+        mockMvc.perform(post("/api/sandbox/execute")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testExecuteWithVariables() throws Exception {
+        String requestJson = """
+            {
+                "sessionId": "test-session",
+                "code": "result = x + y",
+                "context": {"x": 10, "y": 20}
+            }
+            """;
+
+        Map<String, Object> newVariables = new HashMap<>();
+        newVariables.put("result", 30);
+
+        ExecutionResult executionResult = ExecutionResult.builder()
+            .stdout("")
+            .stderr("")
+            .exitCode(0)
+            .success(true)
+            .variables(newVariables)
+            .build();
+
+        when(pythonSandboxExecutor.execute(anyString(), anyString(), any()))
+            .thenReturn(executionResult);
+
+        mockMvc.perform(post("/api/sandbox/execute")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+
+        verify(pythonSandboxExecutor, times(1))
+            .execute(eq("test-session"), eq("result = x + y"), any());
     }
 }
