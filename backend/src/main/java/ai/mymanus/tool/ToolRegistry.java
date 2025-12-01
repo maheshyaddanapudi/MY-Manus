@@ -18,10 +18,16 @@ public class ToolRegistry {
     private final Map<String, Tool> tools = new ConcurrentHashMap<>();
 
     public ToolRegistry(List<Tool> toolList) {
-        toolList.forEach(tool -> {
-            tools.put(tool.getName(), tool);
-            log.info("Registered tool: {} - {}", tool.getName(), tool.getDescription());
-        });
+        toolList.forEach(this::registerTool);
+    }
+
+    /**
+     * Register a tool into the registry.
+     * Can be called during initialization or later for special cases.
+     */
+    public void registerTool(Tool tool) {
+        tools.put(tool.getName(), tool);
+        log.info("Registered tool: {} - {}", tool.getName(), tool.getDescription());
     }
 
     public Optional<Tool> getTool(String name) {

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Message, AgentEvent, TerminalOutput, ExecutionContext, Session } from '../types';
+import type { Message, AgentEvent, TerminalOutput, ExecutionContext, Session, Event } from '../types';
 import { apiService } from '../services/api';
 
 interface AgentState {
@@ -13,6 +13,9 @@ interface AgentState {
 
   // Messages
   messages: Message[];
+
+  // Events
+  events: Event[];
 
   // Agent status
   agentStatus: 'idle' | 'thinking' | 'executing' | 'done' | 'error';
@@ -38,6 +41,8 @@ interface AgentState {
   setConnected: (connected: boolean) => void;
   addMessage: (message: Message) => void;
   setMessages: (messages: Message[]) => void;
+  addEvent: (event: Event) => void;
+  setEvents: (events: Event[]) => void;
   handleAgentEvent: (event: AgentEvent) => void;
   addTerminalOutput: (output: TerminalOutput) => void;
   clearTerminal: () => void;
@@ -50,6 +55,10 @@ interface AgentState {
   resetSession: () => void;
 
   // Multi-session actions
+  setCurrentSession: (sessionId: string | null) => void;
+  addSession: (session: Session) => void;
+  setSessions: (sessions: Session[]) => void;
+  clearSession: () => void;
   loadSessions: () => Promise<void>;
   createNewSession: (title?: string) => Promise<string>;
   switchSession: (sessionId: string) => Promise<void>;
@@ -64,6 +73,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   sessionId: null, // Legacy
   isConnected: false,
   messages: [],
+  events: [],
   agentStatus: 'idle',
   currentIteration: 0,
   maxIterations: 20,
@@ -84,6 +94,12 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   })),
 
   setMessages: (messages) => set({ messages }),
+
+  addEvent: (event) => set((state) => ({
+    events: [...state.events, event],
+  })),
+
+  setEvents: (events) => set({ events }),
 
   handleAgentEvent: (event) => {
     const state = get();
@@ -165,6 +181,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
   resetSession: () => set({
     messages: [],
+    events: [],
     agentStatus: 'idle',
     currentIteration: 0,
     terminalOutput: [],
@@ -174,6 +191,27 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   }),
 
   // Multi-session actions
+  setCurrentSession: (sessionId) => set({ currentSessionId: sessionId, sessionId }),
+
+  addSession: (session) => set((state) => ({
+    sessions: [...state.sessions, session],
+  })),
+
+  setSessions: (sessions) => set({ sessions }),
+
+  clearSession: () => set({
+    currentSessionId: null,
+    sessionId: null,
+    events: [],
+    messages: [],
+    terminalOutput: [],
+    currentCode: '',
+    codeHistory: [],
+    executionContext: {},
+    agentStatus: 'idle',
+    currentIteration: 0,
+  }),
+
   loadSessions: async () => {
     try {
       const sessions = await apiService.listSessions();
@@ -225,6 +263,10 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       // Load execution context
       const context = await apiService.getExecutionContext(sessionId);
       set({ executionContext: context });
+
+      // Load events for this session
+      const events = await apiService.getEventStream(sessionId);
+      set({ events });
 
       console.log(`Switched to session: ${sessionId}`);
     } catch (error) {

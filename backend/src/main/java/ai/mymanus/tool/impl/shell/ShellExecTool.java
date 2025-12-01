@@ -22,7 +22,6 @@ import java.util.Map;
  * - Security: Runs in sandbox container
  */
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class ShellExecTool implements Tool {
 

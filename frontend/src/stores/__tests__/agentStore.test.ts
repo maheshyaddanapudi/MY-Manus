@@ -29,9 +29,9 @@ describe('agentStore', () => {
     const session = {
       sessionId: 'session-1',
       title: 'Test Session',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      active: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      messageCount: 0,
     };
 
     useAgentStore.getState().addSession(session);
@@ -41,8 +41,8 @@ describe('agentStore', () => {
 
   it('updates sessions list', () => {
     const sessions = [
-      { sessionId: 'session-1', title: 'Session 1', createdAt: new Date(), updatedAt: new Date(), active: true },
-      { sessionId: 'session-2', title: 'Session 2', createdAt: new Date(), updatedAt: new Date(), active: true },
+      { sessionId: 'session-1', title: 'Session 1', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), messageCount: 0 },
+      { sessionId: 'session-2', title: 'Session 2', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), messageCount: 0 },
     ];
 
     useAgentStore.getState().setSessions(sessions);
@@ -51,12 +51,12 @@ describe('agentStore', () => {
 
   it('adds event to store', () => {
     const event = {
-      id: 1,
-      sessionId: 'session-1',
+      id: '1',
       type: 'USER_MESSAGE' as const,
+      iteration: 1,
       sequence: 1,
-      data: { text: 'Hello' },
-      timestamp: new Date(),
+      content: 'Hello',
+      timestamp: new Date().toISOString(),
     };
 
     useAgentStore.getState().addEvent(event);
@@ -66,8 +66,8 @@ describe('agentStore', () => {
 
   it('sets events for session', () => {
     const events = [
-      { id: 1, sessionId: 'session-1', type: 'USER_MESSAGE' as const, sequence: 1, data: {}, timestamp: new Date() },
-      { id: 2, sessionId: 'session-1', type: 'AGENT_THOUGHT' as const, sequence: 2, data: {}, timestamp: new Date() },
+      { id: '1', type: 'USER_MESSAGE' as const, iteration: 1, sequence: 1, content: '', timestamp: new Date().toISOString() },
+      { id: '2', type: 'AGENT_THOUGHT' as const, iteration: 1, sequence: 2, content: '', timestamp: new Date().toISOString() },
     ];
 
     useAgentStore.getState().setEvents(events);
@@ -76,11 +76,10 @@ describe('agentStore', () => {
 
   it('adds message to store', () => {
     const message = {
-      id: 1,
-      sessionId: 'session-1',
-      role: 'USER' as const,
+      id: '1',
+      role: 'user' as const,
       content: 'Test message',
-      createdAt: new Date(),
+      timestamp: new Date(),
     };
 
     useAgentStore.getState().addMessage(message);
@@ -92,12 +91,12 @@ describe('agentStore', () => {
     // Add some data
     useAgentStore.getState().setCurrentSession('session-1');
     useAgentStore.getState().addEvent({
-      id: 1,
-      sessionId: 'session-1',
+      id: '1',
       type: 'USER_MESSAGE',
+      iteration: 1,
       sequence: 1,
-      data: {},
-      timestamp: new Date(),
+      content: '',
+      timestamp: new Date().toISOString(),
     });
 
     // Clear

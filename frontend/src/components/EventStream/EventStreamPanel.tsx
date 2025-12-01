@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import type { Event } from '../../types';
-import { apiService } from '../../services/api';
+import React, { useState, useMemo } from 'react';
+import { useAgentStore } from '../../stores/agentStore';
 import EventItem from './EventItem';
 
 interface EventStreamPanelProps {
@@ -16,45 +15,15 @@ interface EventStreamPanelProps {
  */
 const EventStreamPanel: React.FC<EventStreamPanelProps> = ({
   sessionId,
-  autoRefresh = false,
-  refreshInterval = 2000,
 }) => {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { events: allEvents } = useAgentStore();
   const [selectedIteration, setSelectedIteration] = useState<number | null>(null);
 
-  // Fetch event stream
-  const fetchEvents = async () => {
-    if (!sessionId) return;
-
-    try {
-      setLoading(true);
-      const data = selectedIteration !== null
-        ? await apiService.getEventsForIteration(sessionId, selectedIteration)
-        : await apiService.getEventStream(sessionId);
-      setEvents(data);
-      setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch events');
-      console.error('Error fetching events:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Initial fetch
-  useEffect(() => {
-    fetchEvents();
-  }, [sessionId, selectedIteration]);
-
-  // Auto-refresh
-  useEffect(() => {
-    if (!autoRefresh) return;
-
-    const interval = setInterval(fetchEvents, refreshInterval);
-    return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, sessionId, selectedIteration]);
+  // Filter events by iteration if selected
+  const events = useMemo(() => {
+    if (selectedIteration === null) return allEvents;
+    return allEvents.filter(e => e.iteration === selectedIteration);
+  }, [allEvents, selectedIteration]);
 
   // Get unique iterations
   const iterations = Array.from(new Set(events.map(e => e.iteration))).sort((a, b) => a - b);
@@ -88,26 +57,13 @@ const EventStreamPanel: React.FC<EventStreamPanelProps> = ({
             ))}
           </select>
 
-          <button
-            onClick={fetchEvents}
-            className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 rounded transition-colors"
-          >
-            Refresh
-          </button>
+          {/* Refresh button removed - events auto-update from store */}
         </div>
       </div>
 
       {/* Event Timeline */}
       <div className="flex-1 overflow-y-auto p-4">
-        {loading && events.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-gray-500">Loading events...</div>
-          </div>
-        ) : error ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-red-500">{error}</div>
-          </div>
-        ) : events.length === 0 ? (
+        {events.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-gray-500">No events yet</div>
           </div>
