@@ -84,37 +84,33 @@ class PromptBuilderTest {
 
     @Test
     void testBuildMessages() {
-        List<Event> events = new ArrayList<>();
+        List<Message> messages = new ArrayList<>();
 
-        // User message event
-        Map<String, Object> userData = new HashMap<>();
-        userData.put("text", "Read /workspace/test.txt");
-        Event userEvent = new Event();
-        userEvent.setType(Event.EventType.USER_MESSAGE);
-        userEvent.setData(userData);
-        events.add(userEvent);
+        // User message
+        Message userMessage = new Message();
+        userMessage.setRole(Message.MessageRole.USER);
+        userMessage.setContent("Read /workspace/test.txt");
+        messages.add(userMessage);
 
-        // Agent thought event
-        Map<String, Object> thoughtData = new HashMap<>();
-        thoughtData.put("thought", "I need to read the file");
-        Event thoughtEvent = new Event();
-        thoughtEvent.setType(Event.EventType.AGENT_THOUGHT);
-        thoughtEvent.setData(thoughtData);
-        events.add(thoughtEvent);
+        // Assistant message
+        Message assistantMessage = new Message();
+        assistantMessage.setRole(Message.MessageRole.ASSISTANT);
+        assistantMessage.setContent("I need to read the file");
+        messages.add(assistantMessage);
 
-        List<Map<String, String>> messages = promptBuilder.buildMessages(events);
+        String history = promptBuilder.buildConversationHistory(messages);
 
-        assertNotNull(messages);
-        assertFalse(messages.isEmpty());
+        assertNotNull(history);
+        assertTrue(history.contains("Read /workspace/test.txt"));
     }
 
     @Test
     void testBuildMessagesFromEmpty() {
-        List<Event> events = new ArrayList<>();
+        List<Message> messages = new ArrayList<>();
 
-        List<Map<String, String>> messages = promptBuilder.buildMessages(events);
+        String history = promptBuilder.buildConversationHistory(messages);
 
-        assertNotNull(messages);
+        assertNotNull(history);
         // Should return empty list or minimal messages
     }
 
@@ -170,24 +166,21 @@ class PromptBuilderTest {
     }
 
     @Test
-    void testMultipleEvents() {
-        List<Event> events = new ArrayList<>();
+    void testMultipleMessages() {
+        List<Message> messages = new ArrayList<>();
 
         for (int i = 0; i < 10; i++) {
-            Map<String, Object> data = new HashMap<>();
-            data.put("text", "Message " + i);
-
-            Event event = new Event();
-            event.setType(Event.EventType.USER_MESSAGE);
-            event.setData(data);
-            event.setSequence(i);
-
-            events.add(event);
+            Message message = new Message();
+            message.setRole(i % 2 == 0 ? Message.MessageRole.USER : Message.MessageRole.ASSISTANT);
+            message.setContent("Message " + i);
+            messages.add(message);
         }
 
-        assertEquals(10, events.size());
+        assertEquals(10, messages.size());
 
-        List<Map<String, String>> messages = promptBuilder.buildMessages(events);
-        assertNotNull(messages);
+        String history = promptBuilder.buildConversationHistory(messages);
+        assertNotNull(history);
+        assertTrue(history.contains("Message 0"));
+        assertTrue(history.contains("Message 9"));
     }
 }

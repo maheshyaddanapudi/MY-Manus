@@ -59,8 +59,16 @@ class DatabasePersistenceIntegrationTest {
 
     @Test
     void testMessagePersistence() {
+        // Create AgentState first
+        AgentState state = AgentState.builder()
+            .sessionId("db-test-" + System.currentTimeMillis())
+            .status(AgentState.Status.IDLE)
+            .iteration(0)
+            .build();
+        AgentState savedState = agentStateRepository.save(state);
+
         Message message = new Message();
-        message.setSessionId("db-test-" + System.currentTimeMillis());
+        message.setAgentState(savedState);
         message.setRole(Message.MessageRole.USER);
         message.setContent("Test content");
 
