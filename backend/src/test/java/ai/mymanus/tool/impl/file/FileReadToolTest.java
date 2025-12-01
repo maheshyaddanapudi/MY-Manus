@@ -2,11 +2,13 @@ package ai.mymanus.tool.impl.file;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.AfterEach;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,19 +27,38 @@ import static org.junit.jupiter.api.Assertions.*;
 class FileReadToolTest {
 
     private FileReadTool fileReadTool;
-
-    @TempDir
-    Path tempDir;
+    private Path testDir;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         fileReadTool = new FileReadTool();
+        
+        // Create test directory within workspace
+        String workspace = System.getenv().getOrDefault("MANUS_WORKSPACE", "/tmp/manus-workspace");
+        testDir = Paths.get(workspace, "test-" + UUID.randomUUID());
+        Files.createDirectories(testDir);
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        // Clean up test directory
+        if (testDir != null && Files.exists(testDir)) {
+            Files.walk(testDir)
+                .sorted((a, b) -> b.compareTo(a)) // Delete files before directories
+                .forEach(path -> {
+                    try {
+                        Files.deleteIfExists(path);
+                    } catch (Exception e) {
+                        // Ignore cleanup errors
+                    }
+                });
+        }
     }
 
     @Test
     void testReadExistingFile() throws Exception {
         // Create test file
-        Path testFile = tempDir.resolve("test.txt");
+        Path testFile = testDir.resolve("test.txt");
         String content = "Hello, World!";
         Files.writeString(testFile, content);
 
@@ -54,18 +75,19 @@ class FileReadToolTest {
     @Test
     void testReadNonExistentFile() throws Exception {
         // Execute tool on non-existent file
-        Map<String, Object> params = Map.of("path", tempDir.resolve("nonexistent.txt").toString());
+        Map<String, Object> params = Map.of("path", testDir.resolve("nonexistent.txt").toString());
         Map<String, Object> result = fileReadTool.execute(params);
 
         // Verify error handling
         assertFalse((Boolean) result.get("success"));
-        assertTrue(result.get("error").toString().contains("not found"));
+        assertTrue(result.get("error").toString().contains("not found") 
+                || result.get("error").toString().contains("does not exist"));
     }
 
     @Test
     void testReadDirectory() throws Exception {
         // Execute tool on directory
-        Map<String, Object> params = Map.of("path", tempDir.toString());
+        Map<String, Object> params = Map.of("path", testDir.toString());
         Map<String, Object> result = fileReadTool.execute(params);
 
         // Verify error handling

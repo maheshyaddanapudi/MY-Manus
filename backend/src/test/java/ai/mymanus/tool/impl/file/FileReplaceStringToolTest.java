@@ -2,9 +2,14 @@ package ai.mymanus.tool.impl.file;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -15,11 +20,32 @@ import static org.junit.jupiter.api.Assertions.*;
 class FileReplaceStringToolTest {
 
     private FileReplaceStringTool replaceStringTool;
+    private Path testDir;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
+        // Create test directory within workspace
+        String workspace = System.getenv().getOrDefault("MANUS_WORKSPACE", "/tmp/manus-workspace");
+        testDir = Paths.get(workspace, "test-" + UUID.randomUUID());
+        Files.createDirectories(testDir);
         replaceStringTool = new FileReplaceStringTool();
     }
+    @AfterEach
+    void tearDown() throws Exception {
+        // Clean up test directory
+        if (testDir != null && Files.exists(testDir)) {
+            Files.walk(testDir)
+                .sorted((a, b) -> b.compareTo(a)) // Delete files before directories
+                .forEach(path -> {
+                    try {
+                        Files.deleteIfExists(path);
+                    } catch (Exception e) {
+                        // Ignore cleanup errors
+                    }
+                });
+        }
+    }
+
 
     @Test
     void testReplaceString() throws Exception {
