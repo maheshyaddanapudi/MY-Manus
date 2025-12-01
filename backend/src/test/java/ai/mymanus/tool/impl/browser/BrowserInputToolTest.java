@@ -38,12 +38,12 @@ class BrowserInputToolTest {
         params.put("text", "testuser");
         params.put("sessionId", "session-123");
 
-        doNothing().when(browserExecutor).input(anyString(), anyString(), anyString());
+        doNothing().when(browserExecutor).type(anyString(), anyString(), anyString());
 
         Map<String, Object> result = browserInputTool.execute(params);
 
         assertTrue((Boolean) result.get("success"));
-        verify(browserExecutor, times(1)).input("session-123", "#username", "testuser");
+        verify(browserExecutor, times(1)).type("session-123", "#username", "testuser");
     }
 
     @Test
@@ -53,7 +53,7 @@ class BrowserInputToolTest {
         params.put("text", "secret123");
         params.put("sessionId", "session-123");
 
-        doNothing().when(browserExecutor).input(anyString(), anyString(), anyString());
+        doNothing().when(browserExecutor).type(anyString(), anyString(), anyString());
 
         Map<String, Object> result = browserInputTool.execute(params);
 
@@ -67,7 +67,7 @@ class BrowserInputToolTest {
         params.put("text", "");
         params.put("sessionId", "session-123");
 
-        doNothing().when(browserExecutor).input(anyString(), anyString(), anyString());
+        doNothing().when(browserExecutor).type(anyString(), anyString(), anyString());
 
         Map<String, Object> result = browserInputTool.execute(params);
 
@@ -101,9 +101,10 @@ class BrowserInputToolTest {
         assertEquals("browser_input", browserInputTool.getName());
         assertNotNull(browserInputTool.getDescription());
 
-        Map<String, String> params = browserInputTool.getParameters();
-        assertTrue(params.containsKey("selector"));
-        assertTrue(params.containsKey("text"));
-        assertTrue(params.containsKey("sessionId"));
+        String signature = browserInputTool.getPythonSignature();
+        assertNotNull(signature);
+        assertTrue(signature.contains("selector"));
+        assertTrue(signature.contains("text"));
+        assertTrue(signature.contains("sessionId"));
     }
 }

@@ -165,8 +165,9 @@ class FileWriteToolTest {
         assertTrue(fileWriteTool.getDescription().contains("write") ||
                    fileWriteTool.getDescription().contains("Write"));
 
-        Map<String, String> params = fileWriteTool.getParameters();
-        assertTrue(params.containsKey("path"));
-        assertTrue(params.containsKey("content"));
+        String signature = fileWriteTool.getPythonSignature();
+        assertNotNull(signature);
+        assertTrue(signature.contains("path"));
+        assertTrue(signature.contains("content"));
     }
 }

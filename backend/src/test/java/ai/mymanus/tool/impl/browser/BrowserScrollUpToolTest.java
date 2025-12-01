@@ -36,12 +36,12 @@ class BrowserScrollUpToolTest {
         Map<String, Object> params = new HashMap<>();
         params.put("sessionId", "session-123");
 
-        doNothing().when(browserExecutor).scrollUp(anyString());
+        doNothing().when(browserExecutor).scroll(anyString(), anyInt());
 
         Map<String, Object> result = browserScrollUpTool.execute(params);
 
         assertTrue((Boolean) result.get("success"));
-        verify(browserExecutor, times(1)).scrollUp("session-123");
+        verify(browserExecutor, times(1)).scroll(eq("session-123"), eq(-500));
     }
 
     @Test
@@ -58,7 +58,8 @@ class BrowserScrollUpToolTest {
         assertEquals("browser_scroll_up", browserScrollUpTool.getName());
         assertNotNull(browserScrollUpTool.getDescription());
 
-        Map<String, String> params = browserScrollUpTool.getParameters();
-        assertTrue(params.containsKey("sessionId"));
+        String signature = browserScrollUpTool.getPythonSignature();
+        assertNotNull(signature);
+        assertTrue(signature.contains("sessionId"));
     }
 }

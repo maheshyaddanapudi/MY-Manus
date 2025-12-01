@@ -86,8 +86,9 @@ class BrowserPressKeyToolTest {
         assertEquals("browser_press_key", browserPressKeyTool.getName());
         assertNotNull(browserPressKeyTool.getDescription());
 
-        Map<String, String> params = browserPressKeyTool.getParameters();
-        assertTrue(params.containsKey("key"));
-        assertTrue(params.containsKey("sessionId"));
+        String signature = browserPressKeyTool.getPythonSignature();
+        assertNotNull(signature);
+        assertTrue(signature.contains("key"));
+        assertTrue(signature.contains("sessionId"));
     }
 }

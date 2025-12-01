@@ -105,8 +105,9 @@ class FileFindContentToolTest {
         assertEquals("file_find_content", findContentTool.getName());
         assertNotNull(findContentTool.getDescription());
 
-        Map<String, String> params = findContentTool.getParameters();
-        assertTrue(params.containsKey("pattern"));
-        assertTrue(params.containsKey("path"));
+        String signature = findContentTool.getPythonSignature();
+        assertNotNull(signature);
+        assertTrue(signature.contains("pattern"));
+        assertTrue(signature.contains("path"));
     }
 }

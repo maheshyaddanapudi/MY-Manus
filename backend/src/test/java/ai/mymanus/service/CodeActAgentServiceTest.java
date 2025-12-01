@@ -52,138 +52,198 @@ class CodeActAgentServiceTest {
 
     @BeforeEach
     void setUp() {
-        testState = new AgentState();
-        testState.setSessionId(testSessionId);
-        testState.setIteration(1);
-        testState.setStatus(AgentState.Status.IDLE);
-        testState.setPythonVariables(new HashMap<>());
-        testState.setExecutionContext(new HashMap<>());
+        testState = AgentState.builder()
+            .sessionId(testSessionId)
+            .iteration(1)
+            .status(AgentState.Status.IDLE)
+            .executionContext(new HashMap<>())
+            .metadata(new HashMap<>())
+            .build();
     }
 
     @Test
-    void testProcessUserMessage() {
-        String userMessage = "Read /workspace/test.txt";
+    void testProcessQuery() {
+        String userQuery = "Read /workspace/test.txt";
 
         when(agentStateService.getOrCreateState(testSessionId))
             .thenReturn(testState);
-        when(eventService.appendUserMessage(eq(testSessionId), eq(userMessage), anyInt()))
+        when(eventService.appendUserMessage(eq(testSessionId), eq(userQuery), anyInt()))
             .thenReturn(new Event());
 
         // This would trigger the agent loop in real scenario
         // Testing the method exists and doesn't throw
         assertDoesNotThrow(() -> {
-            codeActAgentService.processUserMessage(testSessionId, userMessage);
+            codeActAgentService.processQuery(testSessionId, userQuery);
         });
 
-        verify(eventService, times(1)).appendUserMessage(eq(testSessionId), eq(userMessage), anyInt());
+        verify(eventService, times(1)).appendUserMessage(eq(testSessionId), eq(userQuery), anyInt());
         verify(agentStateService, atLeastOnce()).getOrCreateState(testSessionId);
     }
 
     @Test
     void testExecutePythonCode() {
         String pythonCode = "print('Hello, World!')";
+        Map<String, Object> context = new HashMap<>();
 
         ExecutionResult executionResult = ExecutionResult.builder()
             .stdout("Hello, World!\n")
             .stderr("")
             .exitCode(0)
+            .success(true)
+            .variables(new HashMap<>())
             .build();
 
-        when(sandboxExecutor.execute(eq(pythonCode), any()))
+        when(sandboxExecutor.execute(eq(testSessionId), eq(pythonCode), eq(context)))
             .thenReturn(executionResult);
 
-        ExecutionResult result = sandboxExecutor.execute(pythonCode, new HashMap<>());
+        ExecutionResult result = sandboxExecutor.execute(testSessionId, pythonCode, context);
 
         assertNotNull(result);
         assertEquals("Hello, World!\n", result.getStdout());
         assertEquals(0, result.getExitCode());
+        assertTrue(result.isSuccess());
     }
 
     @Test
-    void testExtractPythonCodeBlocks() {
-        String assistantMessage = """
-            I'll read the file for you.
+    void testProcessQueryWithEmptyMessage() {
+        String emptyQuery = "";
 
-            ```python
-            with open('/workspace/test.txt', 'r') as f:
-                content = f.read()
-            print(content)
-            ```
-
-            This code reads the file and prints its content.
-            """;
-
-        // Test code block extraction logic
-        assertTrue(assistantMessage.contains("```python"));
-        assertTrue(assistantMessage.contains("with open"));
-    }
-
-    @Test
-    void testOneActionPerIteration() {
-        String assistantMessage = """
-            I'll perform two actions:
-
-            ```python
-            print('First action')
-            ```
-
-            ```python
-            print('Second action')
-            ```
-            """;
-
-        // According to Manus AI pattern, only the FIRST code block should be executed
-        // This is a critical design pattern
-        long codeBlockCount = assistantMessage.split("```python").length - 1;
-        assertEquals(2, codeBlockCount);
-
-        // In real implementation, only first block would be executed
-        // Second block would be executed in next iteration
-    }
-
-    @Test
-    void testStateUpdate() {
-        when(agentStateService.updateState(any(AgentState.class)))
+        when(agentStateService.getOrCreateState(testSessionId))
             .thenReturn(testState);
 
-        AgentState updated = agentStateService.updateState(testState);
-
-        assertNotNull(updated);
-        verify(agentStateService, times(1)).updateState(testState);
+        assertDoesNotThrow(() -> {
+            codeActAgentService.processQuery(testSessionId, emptyQuery);
+        });
     }
 
     @Test
-    void testToolRegistryIntegration() {
-        String toolBindings = "# Tool functions\ndef file_read(path):\n    pass";
+    void testProcessQueryWithNullSessionId() {
+        String userQuery = "Test query";
 
-        when(toolRegistry.generatePythonBindings())
-            .thenReturn(toolBindings);
-
-        String bindings = toolRegistry.generatePythonBindings();
-
-        assertNotNull(bindings);
-        assertTrue(bindings.contains("file_read"));
-        verify(toolRegistry, times(1)).generatePythonBindings();
+        assertThrows(Exception.class, () -> {
+            codeActAgentService.processQuery(null, userQuery);
+        });
     }
 
     @Test
-    void testErrorHandling() {
-        String pythonCode = "1 / 0  # Division by zero";
+    void testAgentStateInitialization() {
+        when(agentStateService.getOrCreateState(testSessionId))
+            .thenReturn(testState);
+
+        AgentState state = agentStateService.getOrCreateState(testSessionId);
+
+        assertNotNull(state);
+        assertEquals(testSessionId, state.getSessionId());
+        assertEquals(AgentState.Status.IDLE, state.getStatus());
+        assertEquals(1, state.getIteration());
+    }
+
+    @Test
+    void testExecutePythonWithError() {
+        String pythonCode = "1 / 0";
+        Map<String, Object> context = new HashMap<>();
 
         ExecutionResult executionResult = ExecutionResult.builder()
             .stdout("")
             .stderr("ZeroDivisionError: division by zero")
             .exitCode(1)
+            .success(false)
+            .error("ZeroDivisionError: division by zero")
             .build();
 
-        when(sandboxExecutor.execute(eq(pythonCode), any()))
+        when(sandboxExecutor.execute(eq(testSessionId), eq(pythonCode), eq(context)))
             .thenReturn(executionResult);
 
-        ExecutionResult result = sandboxExecutor.execute(pythonCode, new HashMap<>());
+        ExecutionResult result = sandboxExecutor.execute(testSessionId, pythonCode, context);
 
         assertNotNull(result);
         assertEquals(1, result.getExitCode());
+        assertFalse(result.isSuccess());
         assertTrue(result.getStderr().contains("ZeroDivisionError"));
+    }
+
+    @Test
+    void testExecutePythonWithContext() {
+        String pythonCode = "result = x + y";
+        Map<String, Object> context = new HashMap<>();
+        context.put("x", 10);
+        context.put("y", 20);
+
+        Map<String, Object> newVariables = new HashMap<>();
+        newVariables.put("result", 30);
+
+        ExecutionResult executionResult = ExecutionResult.builder()
+            .stdout("")
+            .stderr("")
+            .exitCode(0)
+            .success(true)
+            .variables(newVariables)
+            .build();
+
+        when(sandboxExecutor.execute(eq(testSessionId), eq(pythonCode), eq(context)))
+            .thenReturn(executionResult);
+
+        ExecutionResult result = sandboxExecutor.execute(testSessionId, pythonCode, context);
+
+        assertNotNull(result);
+        assertTrue(result.isSuccess());
+        assertEquals(30, result.getVariables().get("result"));
+    }
+
+    @Test
+    void testServiceDependencies() {
+        assertNotNull(codeActAgentService);
+        // Verify that all dependencies are injected
+    }
+
+    @Test
+    void testProcessQueryUpdatesState() {
+        String userQuery = "Test query";
+
+        when(agentStateService.getOrCreateState(testSessionId))
+            .thenReturn(testState);
+        when(eventService.appendUserMessage(eq(testSessionId), eq(userQuery), anyInt()))
+            .thenReturn(new Event());
+
+        assertDoesNotThrow(() -> {
+            codeActAgentService.processQuery(testSessionId, userQuery);
+        });
+
+        verify(agentStateService, atLeastOnce()).getOrCreateState(testSessionId);
+    }
+
+    @Test
+    void testMultipleQueries() {
+        String query1 = "First query";
+        String query2 = "Second query";
+
+        when(agentStateService.getOrCreateState(testSessionId))
+            .thenReturn(testState);
+        when(eventService.appendUserMessage(anyString(), anyString(), anyInt()))
+            .thenReturn(new Event());
+
+        assertDoesNotThrow(() -> {
+            codeActAgentService.processQuery(testSessionId, query1);
+            codeActAgentService.processQuery(testSessionId, query2);
+        });
+
+        verify(eventService, times(2)).appendUserMessage(eq(testSessionId), anyString(), anyInt());
+    }
+
+    @Test
+    void testExecutionContextPreserved() {
+        Map<String, Object> context = new HashMap<>();
+        context.put("previous_result", "test");
+
+        testState.setExecutionContext(context);
+
+        when(agentStateService.getOrCreateState(testSessionId))
+            .thenReturn(testState);
+
+        AgentState state = agentStateService.getOrCreateState(testSessionId);
+
+        assertNotNull(state.getExecutionContext());
+        assertEquals("test", state.getExecutionContext().get("previous_result"));
     }
 
     @Test
@@ -196,9 +256,17 @@ class CodeActAgentServiceTest {
         AgentState state = agentStateService.getOrCreateState(testSessionId);
 
         assertEquals(5, state.getIteration());
+    }
 
-        // Simulate iteration increment
-        state.setIteration(state.getIteration() + 1);
-        assertEquals(6, state.getIteration());
+    @Test
+    void testStatusTransitions() {
+        testState.setStatus(AgentState.Status.RUNNING);
+
+        when(agentStateService.getOrCreateState(testSessionId))
+            .thenReturn(testState);
+
+        AgentState state = agentStateService.getOrCreateState(testSessionId);
+
+        assertEquals(AgentState.Status.RUNNING, state.getStatus());
     }
 }

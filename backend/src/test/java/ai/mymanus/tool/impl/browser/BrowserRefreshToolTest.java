@@ -58,7 +58,8 @@ class BrowserRefreshToolTest {
         assertEquals("browser_refresh", browserRefreshTool.getName());
         assertNotNull(browserRefreshTool.getDescription());
 
-        Map<String, String> params = browserRefreshTool.getParameters();
-        assertTrue(params.containsKey("sessionId"));
+        String signature = browserRefreshTool.getPythonSignature();
+        assertNotNull(signature);
+        assertTrue(signature.contains("sessionId"));
     }
 }

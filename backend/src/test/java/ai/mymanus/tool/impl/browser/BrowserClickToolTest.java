@@ -86,8 +86,9 @@ class BrowserClickToolTest {
         assertEquals("browser_click", browserClickTool.getName());
         assertNotNull(browserClickTool.getDescription());
 
-        Map<String, String> params = browserClickTool.getParameters();
-        assertTrue(params.containsKey("selector"));
-        assertTrue(params.containsKey("sessionId"));
+        String signature = browserClickTool.getPythonSignature();
+        assertNotNull(signature);
+        assertTrue(signature.contains("selector"));
+        assertTrue(signature.contains("sessionId"));
     }
 }

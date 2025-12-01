@@ -112,9 +112,10 @@ class FileReplaceStringToolTest {
         assertEquals("file_replace_string", replaceStringTool.getName());
         assertNotNull(replaceStringTool.getDescription());
 
-        Map<String, String> params = replaceStringTool.getParameters();
-        assertTrue(params.containsKey("path"));
-        assertTrue(params.containsKey("oldString"));
-        assertTrue(params.containsKey("newString"));
+        String signature = replaceStringTool.getPythonSignature();
+        assertNotNull(signature);
+        assertTrue(signature.contains("path"));
+        assertTrue(signature.contains("oldString"));
+        assertTrue(signature.contains("newString"));
     }
 }

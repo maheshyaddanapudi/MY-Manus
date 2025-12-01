@@ -97,8 +97,9 @@ class BrowserNavigateToolTest {
         assertEquals("browser_navigate", browserNavigateTool.getName());
         assertNotNull(browserNavigateTool.getDescription());
 
-        Map<String, String> params = browserNavigateTool.getParameters();
-        assertTrue(params.containsKey("url"));
-        assertTrue(params.containsKey("sessionId"));
+        String signature = browserNavigateTool.getPythonSignature();
+        assertNotNull(signature);
+        assertTrue(signature.contains("url"));
+        assertTrue(signature.contains("sessionId"));
     }
 }

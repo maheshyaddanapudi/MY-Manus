@@ -84,7 +84,8 @@ class BrowserViewToolTest {
         assertEquals("browser_view", browserViewTool.getName());
         assertNotNull(browserViewTool.getDescription());
 
-        Map<String, String> params = browserViewTool.getParameters();
-        assertTrue(params.containsKey("sessionId"));
+        String signature = browserViewTool.getPythonSignature();
+        assertNotNull(signature);
+        assertTrue(signature.contains("sessionId"));
     }
 }

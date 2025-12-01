@@ -164,8 +164,9 @@ class TodoToolTest {
         assertEquals("todo", todoTool.getName());
         assertNotNull(todoTool.getDescription());
 
-        Map<String, String> params = todoTool.getParameters();
-        assertTrue(params.containsKey("action"));
-        assertTrue(params.containsKey("content"));
+        String signature = todoTool.getPythonSignature();
+        assertNotNull(signature);
+        assertTrue(signature.contains("action"));
+        assertTrue(signature.contains("content"));
     }
 }

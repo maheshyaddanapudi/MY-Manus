@@ -103,8 +103,9 @@ class FileFindByNameToolTest {
         assertEquals("file_find_by_name", findByNameTool.getName());
         assertNotNull(findByNameTool.getDescription());
 
-        Map<String, String> params = findByNameTool.getParameters();
-        assertTrue(params.containsKey("name"));
-        assertTrue(params.containsKey("path"));
+        String signature = findByNameTool.getPythonSignature();
+        assertNotNull(signature);
+        assertTrue(signature.contains("name"));
+        assertTrue(signature.contains("path"));
     }
 }

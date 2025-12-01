@@ -128,8 +128,9 @@ class ShellExecToolTest {
         assertEquals("shell_exec", shellExecTool.getName());
         assertNotNull(shellExecTool.getDescription());
 
-        Map<String, String> params = shellExecTool.getParameters();
-        assertTrue(params.containsKey("command"));
-        assertTrue(params.containsKey("timeout"));
+        String signature = shellExecTool.getPythonSignature();
+        assertNotNull(signature);
+        assertTrue(signature.contains("command"));
+        assertTrue(signature.contains("timeout"));
     }
 }
