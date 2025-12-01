@@ -1,57 +1,60 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EventStreamPanel } from '../EventStream/EventStreamPanel';
-import { apiService } from '../../services/api';
+import EventStreamPanel from '../EventStream/EventStreamPanel';
+import { useAgentStore } from '../../stores/agentStore';
 
-// Mock API service
-vi.mock('../../services/api', () => ({
-  apiService: {
-    getEventStream: vi.fn(),
-    getEventsForIteration: vi.fn(),
-  },
+// Mock agentStore
+vi.mock('../../stores/agentStore');
+
+// Mock EventItem component to simplify testing
+vi.mock('../EventStream/EventItem', () => ({
+  default: ({ event }: any) => (
+    <div data-testid={`event-${event.id}`}>
+      {event.type}: {event.content}
+    </div>
+  ),
 }));
 
 /**
  * Test Suite for EventStreamPanel Component
- * Coverage Target: 100%
- *
- * Tests:
- * - Component rendering
- * - Event fetching
- * - Auto-refresh functionality
- * - Iteration filtering
- * - Event display
- * - Error handling
- * - Loading states
+ * 
+ * Tests the store-based EventStreamPanel that:
+ * - Reads events from agentStore
+ * - Filters events by iteration
+ * - Displays event count
+ * - Shows empty state when no events
  */
 describe('EventStreamPanel', () => {
   const mockSessionId = 'test-session-123';
 
   const mockEvents = [
     {
-      id: '1',
-      type: 'USER_MESSAGE',
+      id: 'event-1',
+      type: 'ITERATION_START',
       iteration: 1,
-      sequence: 0,
-      content: 'Test user message',
-      timestamp: new Date().toISOString(),
+      content: 'Starting iteration 1',
+      timestamp: '2024-01-01T10:00:00Z',
     },
     {
-      id: '2',
+      id: 'event-2',
       type: 'AGENT_THOUGHT',
       iteration: 1,
-      sequence: 1,
-      content: 'Agent thinking...',
-      timestamp: new Date().toISOString(),
+      content: 'Thinking about the task',
+      timestamp: '2024-01-01T10:00:01Z',
     },
     {
-      id: '3',
+      id: 'event-3',
+      type: 'ITERATION_START',
+      iteration: 2,
+      content: 'Starting iteration 2',
+      timestamp: '2024-01-01T10:01:00Z',
+    },
+    {
+      id: 'event-4',
       type: 'AGENT_ACTION',
-      iteration: 1,
-      sequence: 2,
-      content: 'file_read("test.txt")',
-      timestamp: new Date().toISOString(),
-      data: { tool: 'file_read' },
+      iteration: 2,
+      content: 'Executing action',
+      timestamp: '2024-01-01T10:01:01Z',
     },
   ];
 
@@ -60,87 +63,111 @@ describe('EventStreamPanel', () => {
   });
 
   it('renders without crashing', () => {
-    (apiService.getEventStream as any).mockResolvedValue([]);
+    (useAgentStore as any).mockReturnValue({ events: [] });
 
     render(<EventStreamPanel sessionId={mockSessionId} />);
 
     expect(screen.getByText('Event Stream')).toBeInTheDocument();
   });
 
-  it('fetches and displays events', async () => {
-    (apiService.getEventStream as any).mockResolvedValue(mockEvents);
+  it('displays events from store', () => {
+    (useAgentStore as any).mockReturnValue({ events: mockEvents });
 
     render(<EventStreamPanel sessionId={mockSessionId} />);
 
-    await waitFor(() => {
-      expect(apiService.getEventStream).toHaveBeenCalledWith(mockSessionId);
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText(/USER_MESSAGE/i)).toBeInTheDocument();
-      expect(screen.getByText(/AGENT_THOUGHT/i)).toBeInTheDocument();
-    });
+    // Check that all events are rendered
+    expect(screen.getByTestId('event-event-1')).toBeInTheDocument();
+    expect(screen.getByTestId('event-event-2')).toBeInTheDocument();
+    expect(screen.getByTestId('event-event-3')).toBeInTheDocument();
+    expect(screen.getByTestId('event-event-4')).toBeInTheDocument();
   });
 
-  it('displays event count', async () => {
-    (apiService.getEventStream as any).mockResolvedValue(mockEvents);
+  it('displays event count', () => {
+    (useAgentStore as any).mockReturnValue({ events: mockEvents });
 
     render(<EventStreamPanel sessionId={mockSessionId} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('3 events')).toBeInTheDocument();
-    });
+    expect(screen.getByText('4 events')).toBeInTheDocument();
   });
 
-  it('handles empty event stream', async () => {
-    (apiService.getEventStream as any).mockResolvedValue([]);
+  it('handles empty event stream', () => {
+    (useAgentStore as any).mockReturnValue({ events: [] });
 
     render(<EventStreamPanel sessionId={mockSessionId} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('No events yet')).toBeInTheDocument();
-    });
+    expect(screen.getByText('No events yet')).toBeInTheDocument();
+    expect(screen.getByText('0 events')).toBeInTheDocument();
   });
 
-  it('handles API errors gracefully', async () => {
-    (apiService.getEventStream as any).mockRejectedValue(new Error('API Error'));
+  it('filters events by iteration', () => {
+    (useAgentStore as any).mockReturnValue({ events: mockEvents });
 
     render(<EventStreamPanel sessionId={mockSessionId} />);
 
-    await waitFor(() => {
-      expect(screen.getByText(/API Error/i)).toBeInTheDocument();
-    });
+    // Initially shows all events
+    expect(screen.getByTestId('event-event-1')).toBeInTheDocument();
+    expect(screen.getByTestId('event-event-3')).toBeInTheDocument();
+
+    // Find and click the iteration filter dropdown
+    const select = screen.getByRole('combobox');
+    
+    // Filter to iteration 1
+    fireEvent.change(select, { target: { value: '1' } });
+
+    // Should show only iteration 1 events
+    expect(screen.getByTestId('event-event-1')).toBeInTheDocument();
+    expect(screen.getByTestId('event-event-2')).toBeInTheDocument();
+    expect(screen.queryByTestId('event-event-3')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('event-event-4')).not.toBeInTheDocument();
+
+    // Event count should update
+    expect(screen.getByText('2 events')).toBeInTheDocument();
   });
 
-  it('supports auto-refresh', async () => {
-    vi.useFakeTimers();
-    (apiService.getEventStream as any).mockResolvedValue(mockEvents);
+  it('shows iteration dropdown with correct options', () => {
+    (useAgentStore as any).mockReturnValue({ events: mockEvents });
 
-    render(<EventStreamPanel sessionId={mockSessionId} autoRefresh={true} refreshInterval={1000} />);
+    render(<EventStreamPanel sessionId={mockSessionId} />);
 
-    await waitFor(() => {
-      expect(apiService.getEventStream).toHaveBeenCalledTimes(1);
-    });
-
-    // Fast-forward 1 second
-    vi.advanceTimersByTime(1000);
-
-    await waitFor(() => {
-      expect(apiService.getEventStream).toHaveBeenCalledTimes(2);
-    });
-
-    vi.useRealTimers();
+    const select = screen.getByRole('combobox');
+    
+    // Should have "All" option and iteration options
+    expect(screen.getByText('All')).toBeInTheDocument();
+    expect(screen.getByText('Iteration 1')).toBeInTheDocument();
+    expect(screen.getByText('Iteration 2')).toBeInTheDocument();
   });
 
-  it('filters events by iteration', async () => {
-    (apiService.getEventStream as any).mockResolvedValue(mockEvents);
-    (apiService.getEventsForIteration as any).mockResolvedValue([mockEvents[0]]);
+  it('displays session ID in footer', () => {
+    (useAgentStore as any).mockReturnValue({ events: mockEvents });
 
-    const { rerender } = render(<EventStreamPanel sessionId={mockSessionId} />);
+    render(<EventStreamPanel sessionId={mockSessionId} />);
 
-    // TODO: Test iteration filter interaction
-    // This requires user interaction testing with fireEvent
+    // Should show truncated session ID
+    expect(screen.getByText(/Session: test-ses/)).toBeInTheDocument();
+  });
 
-    expect(apiService.getEventStream).toHaveBeenCalled();
+  it('displays iteration count in footer', () => {
+    (useAgentStore as any).mockReturnValue({ events: mockEvents });
+
+    render(<EventStreamPanel sessionId={mockSessionId} />);
+
+    // Should show 2 iterations
+    expect(screen.getByText(/Iterations: 2/)).toBeInTheDocument();
+  });
+
+  it('resets to all iterations when selecting "All"', () => {
+    (useAgentStore as any).mockReturnValue({ events: mockEvents });
+
+    render(<EventStreamPanel sessionId={mockSessionId} />);
+
+    const select = screen.getByRole('combobox');
+    
+    // Filter to iteration 1
+    fireEvent.change(select, { target: { value: '1' } });
+    expect(screen.getByText('2 events')).toBeInTheDocument();
+
+    // Reset to all
+    fireEvent.change(select, { target: { value: 'all' } });
+    expect(screen.getByText('4 events')).toBeInTheDocument();
   });
 });

@@ -1,8 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as apiService from '../api';
+import axios from 'axios';
 
-// Mock fetch
-global.fetch = vi.fn();
+// Mock axios BEFORE importing apiService
+vi.mock('axios', () => {
+  const mockAxiosInstance = {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  };
+  
+  return {
+    default: {
+      create: vi.fn(() => mockAxiosInstance),
+    },
+  };
+});
+
+import { apiService } from '../api';
+
+// Get the mocked axios instance for assertions
+const mockAxiosInstance = (axios.create as any)();
 
 describe('API Service', () => {
   beforeEach(() => {
@@ -10,20 +28,26 @@ describe('API Service', () => {
   });
 
   it('sends message to agent', async () => {
-    const mockResponse = { success: true };
+    const mockResponse = { 
+      sessionId: 'session-1',
+      response: 'Hello back!',
+      status: 'completed'
+    };
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse,
+    mockAxiosInstance.post.mockResolvedValueOnce({
+      data: mockResponse,
     });
 
-    const result = await apiService.sendMessage('session-1', 'Hello');
+    const result = await apiService.chat({
+      sessionId: 'session-1',
+      message: 'Hello',
+    });
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/agent/message'),
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+      '/api/agent/chat',
       expect.objectContaining({
-        method: 'POST',
-        body: expect.stringContaining('Hello'),
+        sessionId: 'session-1',
+        message: 'Hello',
       })
     );
 
@@ -32,18 +56,23 @@ describe('API Service', () => {
 
   it('fetches event stream', async () => {
     const mockEvents = [
-      { id: 1, type: 'USER_MESSAGE', data: { text: 'Hello' } },
+      { 
+        id: 'event-1',
+        type: 'ITERATION_START',
+        iteration: 1,
+        content: 'Starting iteration',
+        timestamp: new Date().toISOString()
+      },
     ];
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockEvents,
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: mockEvents,
     });
 
     const events = await apiService.getEventStream('session-1');
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/agent/events/session-1')
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      '/api/agent/session/session-1/events'
     );
 
     expect(events).toEqual(mockEvents);
@@ -51,18 +80,22 @@ describe('API Service', () => {
 
   it('fetches messages', async () => {
     const mockMessages = [
-      { id: 1, role: 'USER', content: 'Hello' },
+      { 
+        id: 'msg-1',
+        role: 'USER',
+        content: 'Hello',
+        timestamp: new Date()
+      },
     ];
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockMessages,
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: mockMessages,
     });
 
     const messages = await apiService.getMessages('session-1');
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/agent/messages/session-1')
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      '/api/agent/session/session-1/messages'
     );
 
     expect(messages).toEqual(mockMessages);
@@ -70,38 +103,47 @@ describe('API Service', () => {
 
   it('fetches sessions', async () => {
     const mockSessions = [
-      { sessionId: 'session-1', title: 'Conversation 1' },
+      { 
+        sessionId: 'session-1',
+        title: 'Conversation 1',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        messageCount: 5
+      },
     ];
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockSessions,
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: mockSessions,
     });
 
-    const sessions = await apiService.getSessions();
+    const sessions = await apiService.listSessions();
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/agent/sessions')
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      '/api/agent/sessions'
     );
 
     expect(sessions).toEqual(mockSessions);
   });
 
   it('creates new session', async () => {
-    const mockSession = { sessionId: 'new-session', title: 'New Conversation' };
+    const mockSession = { 
+      sessionId: 'new-session',
+      message: 'Session created successfully'
+    };
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockSession,
+    mockAxiosInstance.post.mockResolvedValueOnce({
+      data: mockSession,
     });
 
-    const session = await apiService.createSession('New Conversation');
+    const session = await apiService.createSession(undefined, 'New Conversation');
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/agent/sessions'),
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+      '/api/agent/session',
+      null,
       expect.objectContaining({
-        method: 'POST',
-        body: expect.stringContaining('New Conversation'),
+        params: expect.objectContaining({
+          title: 'New Conversation'
+        })
       })
     );
 
@@ -109,18 +151,19 @@ describe('API Service', () => {
   });
 
   it('deletes session', async () => {
-    const mockResponse = { success: true };
+    const mockResponse = { 
+      message: 'Session deleted successfully',
+      sessionId: 'session-1'
+    };
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse,
+    mockAxiosInstance.delete.mockResolvedValueOnce({
+      data: mockResponse,
     });
 
-    const result = await apiService.deleteSession('session-1');
+    const result = await apiService.clearSession('session-1');
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/agent/sessions/session-1'),
-      expect.objectContaining({ method: 'DELETE' })
+    expect(mockAxiosInstance.delete).toHaveBeenCalledWith(
+      '/api/agent/session/session-1'
     );
 
     expect(result).toEqual(mockResponse);
@@ -128,30 +171,46 @@ describe('API Service', () => {
 
   it('fetches tool executions', async () => {
     const mockExecutions = [
-      { id: 1, toolName: 'file_read', result: {} },
+      { 
+        id: 1,
+        toolName: 'file_read',
+        result: { content: 'file contents' }
+      },
     ];
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockExecutions,
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: mockExecutions,
     });
 
     const executions = await apiService.getToolExecutions('session-1');
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/agent/tool-executions/session-1')
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      '/api/agent/session/session-1/tools'
     );
 
     expect(executions).toEqual(mockExecutions);
   });
 
   it('handles API errors', async () => {
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-      statusText: 'Internal Server Error',
-    });
+    const errorResponse = {
+      response: {
+        status: 500,
+        statusText: 'Internal Server Error',
+        data: { error: 'Something went wrong' }
+      }
+    };
 
-    await expect(apiService.sendMessage('session-1', 'Hello')).rejects.toThrow();
+    mockAxiosInstance.post.mockRejectedValueOnce(errorResponse);
+
+    await expect(
+      apiService.chat({
+        sessionId: 'session-1',
+        message: 'Hello',
+      })
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        status: 500,
+      })
+    });
   });
 });
