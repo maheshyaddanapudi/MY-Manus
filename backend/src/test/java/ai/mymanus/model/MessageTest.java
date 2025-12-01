@@ -3,6 +3,8 @@ package ai.mymanus.model;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.time.LocalDateTime;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -12,122 +14,200 @@ import static org.junit.jupiter.api.Assertions.*;
 class MessageTest {
 
     private Message message;
+    private AgentState testAgentState;
 
     @BeforeEach
     void setUp() {
-        message = new Message();
+        testAgentState = AgentState.builder()
+            .sessionId("test-session")
+            .status(AgentState.Status.RUNNING)
+            .build();
+            
+        message = Message.builder()
+            .agentState(testAgentState)
+            .role(Message.MessageRole.USER)
+            .content("Hello, agent!")
+            .build();
     }
 
     @Test
     void testMessageCreation() {
-        message.setSessionId("test-session");
-        message.setRole(Message.Role.USER);
-        message.setContent("Hello, agent!");
-
         assertNotNull(message);
-        assertEquals("test-session", message.getSessionId());
-        assertEquals(Message.Role.USER, message.getRole());
+        assertEquals(testAgentState, message.getAgentState());
+        assertEquals(Message.MessageRole.USER, message.getRole());
         assertEquals("Hello, agent!", message.getContent());
     }
 
     @Test
     void testUserMessage() {
-        message.setRole(Message.Role.USER);
-        message.setContent("Please read the file");
+        Message userMsg = Message.builder()
+            .agentState(testAgentState)
+            .role(Message.MessageRole.USER)
+            .content("Please read the file")
+            .build();
 
-        assertEquals(Message.Role.USER, message.getRole());
-        assertEquals("Please read the file", message.getContent());
+        assertEquals(Message.MessageRole.USER, userMsg.getRole());
+        assertEquals("Please read the file", userMsg.getContent());
     }
 
     @Test
     void testAssistantMessage() {
-        message.setRole(Message.Role.ASSISTANT);
-        message.setContent("I'll read the file for you");
+        Message assistantMsg = Message.builder()
+            .agentState(testAgentState)
+            .role(Message.MessageRole.ASSISTANT)
+            .content("I'll read the file for you")
+            .build();
 
-        assertEquals(Message.Role.ASSISTANT, message.getRole());
-        assertEquals("I'll read the file for you", message.getContent());
+        assertEquals(Message.MessageRole.ASSISTANT, assistantMsg.getRole());
+        assertEquals("I'll read the file for you", assistantMsg.getContent());
     }
 
     @Test
     void testSystemMessage() {
-        message.setRole(Message.Role.SYSTEM);
-        message.setContent("You are a helpful AI agent");
+        Message systemMsg = Message.builder()
+            .agentState(testAgentState)
+            .role(Message.MessageRole.SYSTEM)
+            .content("You are a helpful AI agent")
+            .build();
 
-        assertEquals(Message.Role.SYSTEM, message.getRole());
-        assertEquals("You are a helpful AI agent", message.getContent());
+        assertEquals(Message.MessageRole.SYSTEM, systemMsg.getRole());
+        assertEquals("You are a helpful AI agent", systemMsg.getContent());
     }
 
     @Test
     void testAllRoles() {
-        Message.Role[] allRoles = Message.Role.values();
+        Message.MessageRole[] allRoles = Message.MessageRole.values();
 
         // Verify all 3 roles exist
         assertEquals(3, allRoles.length);
 
-        assertTrue(containsRole(allRoles, Message.Role.USER));
-        assertTrue(containsRole(allRoles, Message.Role.ASSISTANT));
-        assertTrue(containsRole(allRoles, Message.Role.SYSTEM));
+        assertTrue(containsRole(allRoles, Message.MessageRole.USER));
+        assertTrue(containsRole(allRoles, Message.MessageRole.ASSISTANT));
+        assertTrue(containsRole(allRoles, Message.MessageRole.SYSTEM));
     }
 
     @Test
     void testEmptyContent() {
-        message.setContent("");
-        assertEquals("", message.getContent());
+        Message msg = Message.builder()
+            .agentState(testAgentState)
+            .role(Message.MessageRole.USER)
+            .content("")
+            .build();
+            
+        assertEquals("", msg.getContent());
     }
 
     @Test
     void testNullContent() {
-        message.setContent(null);
-        assertNull(message.getContent());
+        Message msg = Message.builder()
+            .agentState(testAgentState)
+            .role(Message.MessageRole.USER)
+            .content(null)
+            .build();
+            
+        assertNull(msg.getContent());
     }
 
     @Test
     void testLongContent() {
         String longContent = "a".repeat(10000);
-        message.setContent(longContent);
-        assertEquals(10000, message.getContent().length());
+        Message msg = Message.builder()
+            .agentState(testAgentState)
+            .role(Message.MessageRole.USER)
+            .content(longContent)
+            .build();
+            
+        assertEquals(10000, msg.getContent().length());
     }
 
     @Test
     void testMessageWithNewlines() {
         String multilineContent = "Line 1\nLine 2\nLine 3";
-        message.setContent(multilineContent);
-        assertEquals(multilineContent, message.getContent());
-        assertTrue(message.getContent().contains("\n"));
+        Message msg = Message.builder()
+            .agentState(testAgentState)
+            .role(Message.MessageRole.USER)
+            .content(multilineContent)
+            .build();
+            
+        assertEquals(multilineContent, msg.getContent());
+        assertTrue(msg.getContent().contains("\n"));
     }
 
     @Test
     void testMessageWithSpecialCharacters() {
         String specialContent = "Hello 世界! 🌍 <>&\"'";
-        message.setContent(specialContent);
-        assertEquals(specialContent, message.getContent());
+        Message msg = Message.builder()
+            .agentState(testAgentState)
+            .role(Message.MessageRole.USER)
+            .content(specialContent)
+            .build();
+            
+        assertEquals(specialContent, msg.getContent());
     }
 
     @Test
-    void testSessionIdAssociation() {
-        message.setSessionId("session-123");
-        assertEquals("session-123", message.getSessionId());
+    void testAgentStateAssociation() {
+        AgentState state1 = AgentState.builder()
+            .sessionId("session-123")
+            .build();
+            
+        AgentState state2 = AgentState.builder()
+            .sessionId("session-456")
+            .build();
 
-        message.setSessionId("session-456");
-        assertEquals("session-456", message.getSessionId());
+        Message msg1 = Message.builder()
+            .agentState(state1)
+            .role(Message.MessageRole.USER)
+            .content("Message 1")
+            .build();
+            
+        Message msg2 = Message.builder()
+            .agentState(state2)
+            .role(Message.MessageRole.USER)
+            .content("Message 2")
+            .build();
+
+        assertEquals(state1, msg1.getAgentState());
+        assertEquals(state2, msg2.getAgentState());
+        assertNotEquals(msg1.getAgentState(), msg2.getAgentState());
     }
 
     @Test
     void testTimestampGeneration() {
-        long beforeTime = System.currentTimeMillis();
+        LocalDateTime beforeTime = LocalDateTime.now();
 
-        // Simulate timestamp setting (would be auto-generated by JPA)
-        message.setCreatedAt(new java.util.Date());
+        Message msg = Message.builder()
+            .agentState(testAgentState)
+            .role(Message.MessageRole.USER)
+            .content("Test")
+            .timestamp(LocalDateTime.now())
+            .build();
 
-        long afterTime = System.currentTimeMillis();
+        LocalDateTime afterTime = LocalDateTime.now();
 
-        assertNotNull(message.getCreatedAt());
-        assertTrue(message.getCreatedAt().getTime() >= beforeTime);
-        assertTrue(message.getCreatedAt().getTime() <= afterTime);
+        assertNotNull(msg.getTimestamp());
+        assertTrue(!msg.getTimestamp().isBefore(beforeTime));
+        assertTrue(!msg.getTimestamp().isAfter(afterTime));
     }
 
-    private boolean containsRole(Message.Role[] roles, Message.Role target) {
-        for (Message.Role role : roles) {
+    @Test
+    void testBuilderPattern() {
+        Message msg = Message.builder()
+            .agentState(testAgentState)
+            .role(Message.MessageRole.USER)
+            .content("Builder test")
+            .timestamp(LocalDateTime.now())
+            .build();
+
+        assertNotNull(msg);
+        assertEquals(testAgentState, msg.getAgentState());
+        assertEquals(Message.MessageRole.USER, msg.getRole());
+        assertEquals("Builder test", msg.getContent());
+        assertNotNull(msg.getTimestamp());
+    }
+
+    private boolean containsRole(Message.MessageRole[] roles, Message.MessageRole target) {
+        for (Message.MessageRole role : roles) {
             if (role == target) return true;
         }
         return false;

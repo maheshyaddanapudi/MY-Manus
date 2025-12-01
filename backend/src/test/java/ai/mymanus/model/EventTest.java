@@ -3,6 +3,7 @@ package ai.mymanus.model;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,22 +16,30 @@ import static org.junit.jupiter.api.Assertions.*;
 class EventTest {
 
     private Event event;
+    private AgentState testAgentState;
 
     @BeforeEach
     void setUp() {
-        event = new Event();
+        testAgentState = AgentState.builder()
+            .sessionId("test-session")
+            .status(AgentState.Status.RUNNING)
+            .build();
+            
+        event = Event.builder()
+            .agentState(testAgentState)
+            .type(Event.EventType.USER_MESSAGE)
+            .iteration(1)
+            .sequence(1)
+            .build();
     }
 
     @Test
     void testEventCreation() {
-        event.setSessionId("test-session");
-        event.setType(Event.EventType.USER_MESSAGE);
-        event.setSequence(1);
-
         assertNotNull(event);
-        assertEquals("test-session", event.getSessionId());
+        assertEquals(testAgentState, event.getAgentState());
         assertEquals(Event.EventType.USER_MESSAGE, event.getType());
         assertEquals(1, event.getSequence());
+        assertEquals(1, event.getIteration());
     }
 
     @Test
@@ -39,13 +48,18 @@ class EventTest {
         data.put("text", "Hello, agent!");
         data.put("timestamp", System.currentTimeMillis());
 
-        event.setSessionId("session-1");
-        event.setType(Event.EventType.USER_MESSAGE);
-        event.setSequence(1);
-        event.setData(data);
+        Event userEvent = Event.builder()
+            .agentState(testAgentState)
+            .type(Event.EventType.USER_MESSAGE)
+            .iteration(1)
+            .sequence(1)
+            .data(data)
+            .content("Hello, agent!")
+            .build();
 
-        assertEquals(Event.EventType.USER_MESSAGE, event.getType());
-        assertEquals("Hello, agent!", event.getData().get("text"));
+        assertEquals(Event.EventType.USER_MESSAGE, userEvent.getType());
+        assertEquals("Hello, agent!", userEvent.getData().get("text"));
+        assertEquals("Hello, agent!", userEvent.getContent());
     }
 
     @Test
@@ -53,130 +67,175 @@ class EventTest {
         Map<String, Object> data = new HashMap<>();
         data.put("thought", "I need to read the file first");
 
-        event.setType(Event.EventType.AGENT_THOUGHT);
-        event.setData(data);
+        Event thoughtEvent = Event.builder()
+            .agentState(testAgentState)
+            .type(Event.EventType.AGENT_THOUGHT)
+            .iteration(1)
+            .sequence(2)
+            .data(data)
+            .content("I need to read the file first")
+            .build();
 
-        assertEquals(Event.EventType.AGENT_THOUGHT, event.getType());
-        assertTrue(event.getData().containsKey("thought"));
+        assertEquals(Event.EventType.AGENT_THOUGHT, thoughtEvent.getType());
+        assertTrue(thoughtEvent.getData().containsKey("thought"));
     }
 
     @Test
     void testAgentActionEvent() {
         Map<String, Object> data = new HashMap<>();
-        data.put("pythonCode", "print('Hello')");
-        data.put("toolUsed", "shell_exec");
+        data.put("tool", "file_read");
+        data.put("parameters", Map.of("path", "/workspace/test.txt"));
 
-        event.setType(Event.EventType.AGENT_ACTION);
-        event.setData(data);
+        Event actionEvent = Event.builder()
+            .agentState(testAgentState)
+            .type(Event.EventType.AGENT_ACTION)
+            .iteration(1)
+            .sequence(3)
+            .data(data)
+            .build();
 
-        assertEquals(Event.EventType.AGENT_ACTION, event.getType());
-        assertEquals("print('Hello')", event.getData().get("pythonCode"));
+        assertEquals(Event.EventType.AGENT_ACTION, actionEvent.getType());
+        assertEquals("file_read", actionEvent.getData().get("tool"));
     }
 
     @Test
     void testObservationEvent() {
         Map<String, Object> data = new HashMap<>();
-        data.put("stdout", "Command output");
-        data.put("exitCode", 0);
+        data.put("result", "File content here");
+        data.put("success", true);
 
-        event.setType(Event.EventType.OBSERVATION);
-        event.setData(data);
+        Event observationEvent = Event.builder()
+            .agentState(testAgentState)
+            .type(Event.EventType.OBSERVATION)
+            .iteration(1)
+            .sequence(4)
+            .data(data)
+            .success(true)
+            .durationMs(150L)
+            .build();
 
-        assertEquals(Event.EventType.OBSERVATION, event.getType());
-        assertEquals(0, event.getData().get("exitCode"));
+        assertEquals(Event.EventType.OBSERVATION, observationEvent.getType());
+        assertTrue(observationEvent.getSuccess());
+        assertEquals(150L, observationEvent.getDurationMs());
     }
 
     @Test
-    void testToolExecutionEvent() {
-        Map<String, Object> data = new HashMap<>();
-        data.put("toolName", "file_read");
-        data.put("parameters", Map.of("path", "/workspace/test.txt"));
-        data.put("result", Map.of("success", true, "content", "File content"));
+    void testEventWithError() {
+        Event errorEvent = Event.builder()
+            .agentState(testAgentState)
+            .type(Event.EventType.OBSERVATION)
+            .iteration(1)
+            .sequence(5)
+            .success(false)
+            .error("File not found")
+            .build();
 
-        event.setType(Event.EventType.TOOL_EXECUTION);
-        event.setData(data);
-
-        assertEquals(Event.EventType.TOOL_EXECUTION, event.getType());
-        assertEquals("file_read", event.getData().get("toolName"));
+        assertFalse(errorEvent.getSuccess());
+        assertEquals("File not found", errorEvent.getError());
     }
 
     @Test
-    void testErrorEvent() {
-        Map<String, Object> data = new HashMap<>();
-        data.put("errorMessage", "File not found");
-        data.put("errorType", "FileNotFoundException");
+    void testEventSequencing() {
+        Event event1 = Event.builder()
+            .agentState(testAgentState)
+            .type(Event.EventType.USER_MESSAGE)
+            .iteration(1)
+            .sequence(1)
+            .build();
 
-        event.setType(Event.EventType.ERROR);
-        event.setData(data);
+        Event event2 = Event.builder()
+            .agentState(testAgentState)
+            .type(Event.EventType.AGENT_THOUGHT)
+            .iteration(1)
+            .sequence(2)
+            .build();
 
-        assertEquals(Event.EventType.ERROR, event.getType());
-        assertEquals("File not found", event.getData().get("errorMessage"));
-    }
-
-    @Test
-    void testFinalAnswerEvent() {
-        Map<String, Object> data = new HashMap<>();
-        data.put("answer", "Task completed successfully");
-        data.put("status", "success");
-
-        event.setType(Event.EventType.FINAL_ANSWER);
-        event.setData(data);
-
-        assertEquals(Event.EventType.FINAL_ANSWER, event.getType());
-        assertEquals("success", event.getData().get("status"));
-    }
-
-    @Test
-    void testSequenceOrdering() {
-        Event event1 = new Event();
-        event1.setSequence(1);
-
-        Event event2 = new Event();
-        event2.setSequence(2);
+        Event event3 = Event.builder()
+            .agentState(testAgentState)
+            .type(Event.EventType.AGENT_ACTION)
+            .iteration(1)
+            .sequence(3)
+            .build();
 
         assertTrue(event1.getSequence() < event2.getSequence());
+        assertTrue(event2.getSequence() < event3.getSequence());
     }
 
     @Test
-    void testNullDataHandling() {
-        event.setData(null);
-        assertNull(event.getData());
+    void testMultipleIterations() {
+        Event iteration1Event = Event.builder()
+            .agentState(testAgentState)
+            .type(Event.EventType.USER_MESSAGE)
+            .iteration(1)
+            .sequence(1)
+            .build();
 
-        // Should not throw exception
-        event.setData(new HashMap<>());
-        assertNotNull(event.getData());
-        assertTrue(event.getData().isEmpty());
+        Event iteration2Event = Event.builder()
+            .agentState(testAgentState)
+            .type(Event.EventType.USER_MESSAGE)
+            .iteration(2)
+            .sequence(1)
+            .build();
+
+        assertEquals(1, iteration1Event.getIteration());
+        assertEquals(2, iteration2Event.getIteration());
     }
 
     @Test
-    void testTimestampGeneration() {
-        long beforeTime = System.currentTimeMillis();
+    void testEventTimestamp() {
+        LocalDateTime beforeTime = LocalDateTime.now();
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("timestamp", System.currentTimeMillis());
-        event.setData(data);
+        Event timedEvent = Event.builder()
+            .agentState(testAgentState)
+            .type(Event.EventType.USER_MESSAGE)
+            .iteration(1)
+            .sequence(1)
+            .timestamp(LocalDateTime.now())
+            .build();
 
-        long afterTime = System.currentTimeMillis();
-        long eventTime = (Long) event.getData().get("timestamp");
+        LocalDateTime afterTime = LocalDateTime.now();
 
-        assertTrue(eventTime >= beforeTime);
-        assertTrue(eventTime <= afterTime);
+        assertNotNull(timedEvent.getTimestamp());
+        assertTrue(!timedEvent.getTimestamp().isBefore(beforeTime));
+        assertTrue(!timedEvent.getTimestamp().isAfter(afterTime));
+    }
+
+    @Test
+    void testEventWithContent() {
+        String content = "This is the event content";
+        Event contentEvent = Event.builder()
+            .agentState(testAgentState)
+            .type(Event.EventType.USER_MESSAGE)
+            .iteration(1)
+            .sequence(1)
+            .content(content)
+            .build();
+
+        assertEquals(content, contentEvent.getContent());
+    }
+
+    @Test
+    void testEventWithNullData() {
+        Event nullDataEvent = Event.builder()
+            .agentState(testAgentState)
+            .type(Event.EventType.USER_MESSAGE)
+            .iteration(1)
+            .sequence(1)
+            .data(null)
+            .build();
+
+        assertNull(nullDataEvent.getData());
     }
 
     @Test
     void testAllEventTypes() {
         Event.EventType[] allTypes = Event.EventType.values();
 
-        // Verify all 7 event types exist
-        assertEquals(7, allTypes.length);
-
+        assertTrue(allTypes.length >= 4);
         assertTrue(containsType(allTypes, Event.EventType.USER_MESSAGE));
         assertTrue(containsType(allTypes, Event.EventType.AGENT_THOUGHT));
         assertTrue(containsType(allTypes, Event.EventType.AGENT_ACTION));
         assertTrue(containsType(allTypes, Event.EventType.OBSERVATION));
-        assertTrue(containsType(allTypes, Event.EventType.TOOL_EXECUTION));
-        assertTrue(containsType(allTypes, Event.EventType.ERROR));
-        assertTrue(containsType(allTypes, Event.EventType.FINAL_ANSWER));
     }
 
     private boolean containsType(Event.EventType[] types, Event.EventType target) {

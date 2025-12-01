@@ -52,7 +52,7 @@ class PromptBuilderTest {
         when(toolRegistry.generatePythonBindings())
             .thenReturn(testToolBindings);
 
-        String systemPrompt = promptBuilder.buildSystemPrompt();
+        String systemPrompt = promptBuilder.buildSystemPrompt(new HashMap<>(), false);
 
         assertNotNull(systemPrompt);
         assertTrue(systemPrompt.contains("CodeAct"));
@@ -65,7 +65,7 @@ class PromptBuilderTest {
         when(toolRegistry.generatePythonBindings())
             .thenReturn(testToolBindings);
 
-        String systemPrompt = promptBuilder.buildSystemPrompt();
+        String systemPrompt = promptBuilder.buildSystemPrompt(new HashMap<>(), false);
 
         assertTrue(systemPrompt.contains("file_read"));
         assertTrue(systemPrompt.contains("browser_navigate"));
@@ -76,7 +76,7 @@ class PromptBuilderTest {
         when(toolRegistry.generatePythonBindings())
             .thenReturn(testToolBindings);
 
-        String systemPrompt = promptBuilder.buildSystemPrompt();
+        String systemPrompt = promptBuilder.buildSystemPrompt(new HashMap<>(), false);
 
         assertTrue(systemPrompt.contains("python") || systemPrompt.contains("code"));
         assertTrue(systemPrompt.contains("function") || systemPrompt.contains("tool"));

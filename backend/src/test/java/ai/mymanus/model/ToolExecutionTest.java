@@ -3,6 +3,7 @@ package ai.mymanus.model;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,22 +16,28 @@ import static org.junit.jupiter.api.Assertions.*;
 class ToolExecutionTest {
 
     private ToolExecution toolExecution;
+    private AgentState testAgentState;
 
     @BeforeEach
     void setUp() {
-        toolExecution = new ToolExecution();
+        testAgentState = AgentState.builder()
+            .sessionId("test-session")
+            .status(AgentState.Status.RUNNING)
+            .build();
+            
+        toolExecution = ToolExecution.builder()
+            .agentState(testAgentState)
+            .toolName("file_read")
+            .status(ToolExecution.ExecutionStatus.SUCCESS)
+            .build();
     }
 
     @Test
     void testToolExecutionCreation() {
-        toolExecution.setSessionId("test-session");
-        toolExecution.setToolName("file_read");
-        toolExecution.setIteration(1);
-
         assertNotNull(toolExecution);
-        assertEquals("test-session", toolExecution.getSessionId());
         assertEquals("file_read", toolExecution.getToolName());
-        assertEquals(1, toolExecution.getIteration());
+        assertEquals(testAgentState, toolExecution.getAgentState());
+        assertEquals(ToolExecution.ExecutionStatus.SUCCESS, toolExecution.getStatus());
     }
 
     @Test
@@ -42,13 +49,17 @@ class ToolExecutionTest {
         result.put("success", true);
         result.put("content", "File content here");
 
-        toolExecution.setToolName("file_read");
-        toolExecution.setParameters(parameters);
-        toolExecution.setResult(result);
+        ToolExecution execution = ToolExecution.builder()
+            .agentState(testAgentState)
+            .toolName("file_read")
+            .parameters(parameters)
+            .result(result)
+            .status(ToolExecution.ExecutionStatus.SUCCESS)
+            .build();
 
-        assertEquals("file_read", toolExecution.getToolName());
-        assertEquals("/workspace/test.txt", toolExecution.getParameters().get("path"));
-        assertTrue((Boolean) toolExecution.getResult().get("success"));
+        assertEquals("file_read", execution.getToolName());
+        assertEquals("/workspace/test.txt", execution.getParameters().get("path"));
+        assertTrue((Boolean) execution.getResult().get("success"));
     }
 
     @Test
@@ -61,12 +72,16 @@ class ToolExecutionTest {
         result.put("success", true);
         result.put("message", "Navigated successfully");
 
-        toolExecution.setToolName("browser_navigate");
-        toolExecution.setParameters(parameters);
-        toolExecution.setResult(result);
+        ToolExecution execution = ToolExecution.builder()
+            .agentState(testAgentState)
+            .toolName("browser_navigate")
+            .parameters(parameters)
+            .result(result)
+            .status(ToolExecution.ExecutionStatus.SUCCESS)
+            .build();
 
-        assertEquals("browser_navigate", toolExecution.getToolName());
-        assertEquals("https://example.com", toolExecution.getParameters().get("url"));
+        assertEquals("browser_navigate", execution.getToolName());
+        assertEquals("https://example.com", execution.getParameters().get("url"));
     }
 
     @Test
@@ -83,14 +98,18 @@ class ToolExecutionTest {
         result.put("accessibilityTree", "RootWebArea...");
         result.put("timestamp", System.currentTimeMillis());
 
-        toolExecution.setToolName("browser_view");
-        toolExecution.setParameters(parameters);
-        toolExecution.setResult(result);
+        ToolExecution execution = ToolExecution.builder()
+            .agentState(testAgentState)
+            .toolName("browser_view")
+            .parameters(parameters)
+            .result(result)
+            .status(ToolExecution.ExecutionStatus.SUCCESS)
+            .build();
 
-        assertEquals("browser_view", toolExecution.getToolName());
-        assertTrue(toolExecution.getResult().containsKey("screenshot"));
-        assertTrue(toolExecution.getResult().containsKey("htmlContent"));
-        assertTrue(toolExecution.getResult().containsKey("accessibilityTree"));
+        assertEquals("browser_view", execution.getToolName());
+        assertTrue(execution.getResult().containsKey("screenshot"));
+        assertTrue(execution.getResult().containsKey("htmlContent"));
+        assertTrue(execution.getResult().containsKey("accessibilityTree"));
     }
 
     @Test
@@ -105,12 +124,16 @@ class ToolExecutionTest {
         result.put("stderr", "");
         result.put("exitCode", 0);
 
-        toolExecution.setToolName("shell_exec");
-        toolExecution.setParameters(parameters);
-        toolExecution.setResult(result);
+        ToolExecution execution = ToolExecution.builder()
+            .agentState(testAgentState)
+            .toolName("shell_exec")
+            .parameters(parameters)
+            .result(result)
+            .status(ToolExecution.ExecutionStatus.SUCCESS)
+            .build();
 
-        assertEquals("shell_exec", toolExecution.getToolName());
-        assertEquals(0, toolExecution.getResult().get("exitCode"));
+        assertEquals("shell_exec", execution.getToolName());
+        assertEquals(0, execution.getResult().get("exitCode"));
     }
 
     @Test
@@ -122,50 +145,81 @@ class ToolExecutionTest {
         result.put("success", false);
         result.put("error", "File not found");
 
-        toolExecution.setToolName("file_read");
-        toolExecution.setParameters(parameters);
-        toolExecution.setResult(result);
+        ToolExecution execution = ToolExecution.builder()
+            .agentState(testAgentState)
+            .toolName("file_read")
+            .parameters(parameters)
+            .result(result)
+            .status(ToolExecution.ExecutionStatus.FAILED)
+            .build();
 
-        assertFalse((Boolean) toolExecution.getResult().get("success"));
-        assertEquals("File not found", toolExecution.getResult().get("error"));
+        assertFalse((Boolean) execution.getResult().get("success"));
+        assertEquals("File not found", execution.getResult().get("error"));
+        assertEquals(ToolExecution.ExecutionStatus.FAILED, execution.getStatus());
     }
 
     @Test
     void testExecutionDuration() {
-        toolExecution.setDurationMs(1500L);
-        assertEquals(1500L, toolExecution.getDurationMs());
+        ToolExecution execution = ToolExecution.builder()
+            .agentState(testAgentState)
+            .toolName("file_read")
+            .durationMs(1500)
+            .status(ToolExecution.ExecutionStatus.SUCCESS)
+            .build();
+            
+        assertEquals(1500, execution.getDurationMs());
     }
 
     @Test
-    void testIterationTracking() {
-        toolExecution.setIteration(5);
-        assertEquals(5, toolExecution.getIteration());
-
-        // Verify iteration can be incremented
-        toolExecution.setIteration(6);
-        assertEquals(6, toolExecution.getIteration());
+    void testExecutionStatus() {
+        // Test all status transitions
+        ToolExecution execution = ToolExecution.builder()
+            .agentState(testAgentState)
+            .toolName("test_tool")
+            .status(ToolExecution.ExecutionStatus.PENDING)
+            .build();
+            
+        assertEquals(ToolExecution.ExecutionStatus.PENDING, execution.getStatus());
+        
+        execution.setStatus(ToolExecution.ExecutionStatus.RUNNING);
+        assertEquals(ToolExecution.ExecutionStatus.RUNNING, execution.getStatus());
+        
+        execution.setStatus(ToolExecution.ExecutionStatus.SUCCESS);
+        assertEquals(ToolExecution.ExecutionStatus.SUCCESS, execution.getStatus());
     }
 
     @Test
     void testNullParameters() {
-        toolExecution.setParameters(null);
-        assertNull(toolExecution.getParameters());
+        ToolExecution execution = ToolExecution.builder()
+            .agentState(testAgentState)
+            .toolName("test_tool")
+            .parameters(null)
+            .status(ToolExecution.ExecutionStatus.SUCCESS)
+            .build();
+            
+        assertNull(execution.getParameters());
 
         // Set to empty map
-        toolExecution.setParameters(new HashMap<>());
-        assertNotNull(toolExecution.getParameters());
-        assertTrue(toolExecution.getParameters().isEmpty());
+        execution.setParameters(new HashMap<>());
+        assertNotNull(execution.getParameters());
+        assertTrue(execution.getParameters().isEmpty());
     }
 
     @Test
     void testNullResult() {
-        toolExecution.setResult(null);
-        assertNull(toolExecution.getResult());
+        ToolExecution execution = ToolExecution.builder()
+            .agentState(testAgentState)
+            .toolName("test_tool")
+            .result(null)
+            .status(ToolExecution.ExecutionStatus.SUCCESS)
+            .build();
+            
+        assertNull(execution.getResult());
 
         // Set to empty map
-        toolExecution.setResult(new HashMap<>());
-        assertNotNull(toolExecution.getResult());
-        assertTrue(toolExecution.getResult().isEmpty());
+        execution.setResult(new HashMap<>());
+        assertNotNull(execution.getResult());
+        assertTrue(execution.getResult().isEmpty());
     }
 
     @Test
@@ -176,26 +230,35 @@ class ToolExecutionTest {
         result.put("boolean", true);
         result.put("number", 42.5);
 
-        toolExecution.setResult(result);
+        ToolExecution execution = ToolExecution.builder()
+            .agentState(testAgentState)
+            .toolName("test_tool")
+            .result(result)
+            .status(ToolExecution.ExecutionStatus.SUCCESS)
+            .build();
 
-        assertTrue(toolExecution.getResult().get("nested") instanceof Map);
-        assertTrue(toolExecution.getResult().get("list") instanceof java.util.List);
-        assertEquals(true, toolExecution.getResult().get("boolean"));
-        assertEquals(42.5, toolExecution.getResult().get("number"));
+        assertTrue(execution.getResult().get("nested") instanceof Map);
+        assertTrue(execution.getResult().get("list") instanceof java.util.List);
+        assertEquals(true, execution.getResult().get("boolean"));
+        assertEquals(42.5, execution.getResult().get("number"));
     }
 
     @Test
     void testTimestampGeneration() {
-        long beforeTime = System.currentTimeMillis();
+        LocalDateTime beforeTime = LocalDateTime.now();
 
-        // Simulate timestamp setting (would be auto-generated by JPA)
-        toolExecution.setCreatedAt(new java.util.Date());
+        ToolExecution execution = ToolExecution.builder()
+            .agentState(testAgentState)
+            .toolName("test_tool")
+            .timestamp(LocalDateTime.now())
+            .status(ToolExecution.ExecutionStatus.SUCCESS)
+            .build();
 
-        long afterTime = System.currentTimeMillis();
+        LocalDateTime afterTime = LocalDateTime.now();
 
-        assertNotNull(toolExecution.getCreatedAt());
-        assertTrue(toolExecution.getCreatedAt().getTime() >= beforeTime);
-        assertTrue(toolExecution.getCreatedAt().getTime() <= afterTime);
+        assertNotNull(execution.getTimestamp());
+        assertTrue(!execution.getTimestamp().isBefore(beforeTime));
+        assertTrue(!execution.getTimestamp().isAfter(afterTime));
     }
 
     @Test
@@ -210,9 +273,30 @@ class ToolExecutionTest {
         };
 
         for (String toolName : toolNames) {
-            ToolExecution te = new ToolExecution();
-            te.setToolName(toolName);
+            ToolExecution te = ToolExecution.builder()
+                .agentState(testAgentState)
+                .toolName(toolName)
+                .status(ToolExecution.ExecutionStatus.SUCCESS)
+                .build();
             assertEquals(toolName, te.getToolName());
         }
+    }
+
+    @Test
+    void testAllExecutionStatuses() {
+        ToolExecution.ExecutionStatus[] allStatuses = ToolExecution.ExecutionStatus.values();
+        
+        assertEquals(4, allStatuses.length);
+        assertTrue(containsStatus(allStatuses, ToolExecution.ExecutionStatus.PENDING));
+        assertTrue(containsStatus(allStatuses, ToolExecution.ExecutionStatus.RUNNING));
+        assertTrue(containsStatus(allStatuses, ToolExecution.ExecutionStatus.SUCCESS));
+        assertTrue(containsStatus(allStatuses, ToolExecution.ExecutionStatus.FAILED));
+    }
+
+    private boolean containsStatus(ToolExecution.ExecutionStatus[] statuses, ToolExecution.ExecutionStatus target) {
+        for (ToolExecution.ExecutionStatus status : statuses) {
+            if (status == target) return true;
+        }
+        return false;
     }
 }

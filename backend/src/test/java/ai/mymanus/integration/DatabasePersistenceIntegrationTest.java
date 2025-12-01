@@ -37,11 +37,20 @@ class DatabasePersistenceIntegrationTest {
         Map<String, Object> data = new HashMap<>();
         data.put("text", "Test message");
 
-        Event event = new Event();
-        event.setSessionId("db-test-" + System.currentTimeMillis());
-        event.setType(Event.EventType.USER_MESSAGE);
-        event.setSequence(1);
-        event.setData(data);
+        // Create AgentState first (Event requires it)
+        AgentState agentState = AgentState.builder()
+            .sessionId("db-test-" + System.currentTimeMillis())
+            .status(AgentState.Status.RUNNING)
+            .build();
+        agentState = agentStateRepository.save(agentState);
+
+        Event event = Event.builder()
+            .agentState(agentState)
+            .type(Event.EventType.USER_MESSAGE)
+            .sequence(1)
+            .data(data)
+            .iteration(1)
+            .build();
 
         Event saved = eventRepository.save(event);
         assertNotNull(saved.getId());
@@ -52,7 +61,7 @@ class DatabasePersistenceIntegrationTest {
     void testMessagePersistence() {
         Message message = new Message();
         message.setSessionId("db-test-" + System.currentTimeMillis());
-        message.setRole(Message.Role.USER);
+        message.setRole(Message.MessageRole.USER);
         message.setContent("Test content");
 
         Message saved = messageRepository.save(message);
@@ -69,10 +78,10 @@ class DatabasePersistenceIntegrationTest {
         state.setSessionId("state-test-" + System.currentTimeMillis());
         state.setIteration(1);
         state.setStatus(AgentState.Status.RUNNING);
-        state.setPythonVariables(variables);
+        state.setExecutionContext(variables);
 
         AgentState saved = agentStateRepository.save(state);
         assertNotNull(saved.getId());
-        assertEquals(5, saved.getPythonVariables().get("counter"));
+        assertEquals(5, saved.getExecutionContext().get("counter"));
     }
 }

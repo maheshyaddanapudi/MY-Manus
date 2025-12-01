@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface AgentStateRepository extends JpaRepository<AgentState, UUID> {
     Optional<AgentState> findBySessionId(String sessionId);
+    void deleteBySessionId(String sessionId);
 }

@@ -28,7 +28,7 @@ class AgentLoopIntegrationTest {
         String userMessage = "Calculate 2 + 2";
 
         assertDoesNotThrow(() -> {
-            codeActAgentService.processUserMessage(sessionId, userMessage);
+            codeActAgentService.processQuery(sessionId, userMessage);
         });
 
         // Verify events were created

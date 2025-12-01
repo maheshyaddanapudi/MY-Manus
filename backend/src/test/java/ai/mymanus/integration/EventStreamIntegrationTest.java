@@ -32,7 +32,7 @@ class EventStreamIntegrationTest {
         // Retrieve events
         List<Event> events = eventService.getEventStream(sessionId);
         assertFalse(events.isEmpty());
-        assertEquals(sessionId, events.get(0).getSessionId());
+        assertEquals(sessionId, events.get(0).getAgentState().getSessionId());
     }
 
     @Test

@@ -1,7 +1,7 @@
 package ai.mymanus.integration;
 
-import ai.mymanus.model.Session;
-import ai.mymanus.repository.SessionRepository;
+import ai.mymanus.model.AgentState;
+import ai.mymanus.repository.AgentStateRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,24 +19,24 @@ import static org.junit.jupiter.api.Assertions.*;
 class SessionManagementIntegrationTest {
 
     @Autowired
-    private SessionRepository sessionRepository;
+    private AgentStateRepository agentStateRepository;
 
     @Test
     void testCreateMultipleSessions() {
-        Session session1 = new Session();
-        session1.setSessionId("session-1-" + System.currentTimeMillis());
-        session1.setTitle("Conversation 1");
-        session1.setActive(true);
+        AgentState session1 = AgentState.builder()
+            .sessionId("session-1-" + System.currentTimeMillis())
+            .title("Conversation 1")
+            .build();
 
-        Session session2 = new Session();
-        session2.setSessionId("session-2-" + System.currentTimeMillis());
-        session2.setTitle("Conversation 2");
-        session2.setActive(true);
+        AgentState session2 = AgentState.builder()
+            .sessionId("session-2-" + System.currentTimeMillis())
+            .title("Conversation 2")
+            .build();
 
-        sessionRepository.save(session1);
-        sessionRepository.save(session2);
+        agentStateRepository.save(session1);
+        agentStateRepository.save(session2);
 
-        List<Session> sessions = sessionRepository.findAll();
+        List<AgentState> sessions = agentStateRepository.findAll();
         assertTrue(sessions.size() >= 2);
     }
 
@@ -45,19 +45,19 @@ class SessionManagementIntegrationTest {
         String sessionId = "lifecycle-" + System.currentTimeMillis();
 
         // Create
-        Session session = new Session();
-        session.setSessionId(sessionId);
-        session.setTitle("Test Session");
-        session.setActive(true);
-        sessionRepository.save(session);
+        AgentState session = AgentState.builder()
+            .sessionId(sessionId)
+            .title("Test Session")
+            .build();
+        agentStateRepository.save(session);
 
         // Read
-        Session retrieved = sessionRepository.findBySessionId(sessionId).orElse(null);
+        AgentState retrieved = agentStateRepository.findBySessionId(sessionId).orElse(null);
         assertNotNull(retrieved);
         assertEquals("Test Session", retrieved.getTitle());
 
         // Delete
-        sessionRepository.deleteBySessionId(sessionId);
-        assertTrue(sessionRepository.findBySessionId(sessionId).isEmpty());
+        agentStateRepository.deleteBySessionId(sessionId);
+        assertTrue(agentStateRepository.findBySessionId(sessionId).isEmpty());
     }
 }

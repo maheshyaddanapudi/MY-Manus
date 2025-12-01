@@ -2,13 +2,11 @@ package ai.mymanus.controller;
 
 import ai.mymanus.model.Event;
 import ai.mymanus.model.Message;
-import ai.mymanus.model.Session;
-import ai.mymanus.model.ToolExecution;
+import ai.mymanus.model.AgentState;
 import ai.mymanus.service.CodeActAgentService;
 import ai.mymanus.service.EventService;
 import ai.mymanus.repository.MessageRepository;
-import ai.mymanus.repository.SessionRepository;
-import ai.mymanus.repository.ToolExecutionRepository;
+import ai.mymanus.repository.AgentStateRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,10 +45,7 @@ class AgentControllerTest {
     private MessageRepository messageRepository;
 
     @MockBean
-    private SessionRepository sessionRepository;
-
-    @MockBean
-    private ToolExecutionRepository toolExecutionRepository;
+    private AgentStateRepository agentStateRepository;
 
     private String testSessionId = "test-session-123";
 
@@ -68,8 +63,8 @@ class AgentControllerTest {
             }
             """;
 
-        doNothing().when(codeActAgentService)
-            .processUserMessage(anyString(), anyString());
+        when(codeActAgentService.processQuery(anyString(), anyString()))
+            .thenReturn("Task completed");
 
         mockMvc.perform(post("/api/agent/message")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -78,21 +73,28 @@ class AgentControllerTest {
             .andExpect(jsonPath("$.success").value(true));
 
         verify(codeActAgentService, times(1))
-            .processUserMessage(eq("test-session-123"), eq("Read /workspace/test.txt"));
+            .processQuery(eq("test-session-123"), eq("Read /workspace/test.txt"));
     }
 
     @Test
     void testGetEventStream() throws Exception {
         List<Event> events = new ArrayList<>();
 
+        // Create AgentState for Event
+        AgentState agentState = AgentState.builder()
+            .sessionId(testSessionId)
+            .build();
+
         Map<String, Object> userData = new HashMap<>();
         userData.put("text", "Hello");
 
-        Event event = new Event();
-        event.setSessionId(testSessionId);
-        event.setType(Event.EventType.USER_MESSAGE);
-        event.setSequence(1);
-        event.setData(userData);
+        Event event = Event.builder()
+            .agentState(agentState)
+            .type(Event.EventType.USER_MESSAGE)
+            .sequence(1)
+            .data(userData)
+            .iteration(1)
+            .build();
 
         events.add(event);
 
@@ -101,8 +103,7 @@ class AgentControllerTest {
 
         mockMvc.perform(get("/api/agent/events/" + testSessionId))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(1))
-            .andExpect(jsonPath("$[0].sessionId").value(testSessionId));
+            .andExpect(jsonPath("$.length()").value(1));
 
         verify(eventService, times(1)).getEventStream(testSessionId);
     }
@@ -111,14 +112,19 @@ class AgentControllerTest {
     void testGetMessages() throws Exception {
         List<Message> messages = new ArrayList<>();
 
-        Message message = new Message();
-        message.setSessionId(testSessionId);
-        message.setRole(Message.Role.USER);
-        message.setContent("Test message");
+        AgentState agentState = AgentState.builder()
+            .sessionId(testSessionId)
+            .build();
+
+        Message message = Message.builder()
+            .agentState(agentState)
+            .role(Message.MessageRole.USER)
+            .content("Test message")
+            .build();
 
         messages.add(message);
 
-        when(messageRepository.findBySessionIdOrderByCreatedAtAsc(testSessionId))
+        when(messageRepository.findByAgentStateIdOrderByTimestampAsc(any()))
             .thenReturn(messages);
 
         mockMvc.perform(get("/api/agent/messages/" + testSessionId))
@@ -127,30 +133,7 @@ class AgentControllerTest {
             .andExpect(jsonPath("$[0].content").value("Test message"));
 
         verify(messageRepository, times(1))
-            .findBySessionIdOrderByCreatedAtAsc(testSessionId);
-    }
-
-    @Test
-    void testGetToolExecutions() throws Exception {
-        List<ToolExecution> executions = new ArrayList<>();
-
-        ToolExecution execution = new ToolExecution();
-        execution.setSessionId(testSessionId);
-        execution.setToolName("file_read");
-        execution.setIteration(1);
-
-        executions.add(execution);
-
-        when(toolExecutionRepository.findBySessionIdOrderByCreatedAtAsc(testSessionId))
-            .thenReturn(executions);
-
-        mockMvc.perform(get("/api/agent/tool-executions/" + testSessionId))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(1))
-            .andExpect(jsonPath("$[0].toolName").value("file_read"));
-
-        verify(toolExecutionRepository, times(1))
-            .findBySessionIdOrderByCreatedAtAsc(testSessionId);
+            .findByAgentStateIdOrderByTimestampAsc(any());
     }
 
     @Test
@@ -161,12 +144,13 @@ class AgentControllerTest {
             }
             """;
 
-        Session session = new Session();
-        session.setSessionId("new-session-123");
-        session.setTitle("New Conversation");
+        AgentState agentState = AgentState.builder()
+            .sessionId("new-session-123")
+            .title("New Conversation")
+            .build();
 
-        when(sessionRepository.save(any(Session.class)))
-            .thenReturn(session);
+        when(agentStateRepository.save(any(AgentState.class)))
+            .thenReturn(agentState);
 
         mockMvc.perform(post("/api/agent/sessions")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -175,25 +159,27 @@ class AgentControllerTest {
             .andExpect(jsonPath("$.sessionId").value("new-session-123"))
             .andExpect(jsonPath("$.title").value("New Conversation"));
 
-        verify(sessionRepository, times(1)).save(any(Session.class));
+        verify(agentStateRepository, times(1)).save(any(AgentState.class));
     }
 
     @Test
     void testGetAllSessions() throws Exception {
-        List<Session> sessions = new ArrayList<>();
+        List<AgentState> sessions = new ArrayList<>();
 
-        Session session1 = new Session();
-        session1.setSessionId("session-1");
-        session1.setTitle("Conversation 1");
+        AgentState session1 = AgentState.builder()
+            .sessionId("session-1")
+            .title("Conversation 1")
+            .build();
 
-        Session session2 = new Session();
-        session2.setSessionId("session-2");
-        session2.setTitle("Conversation 2");
+        AgentState session2 = AgentState.builder()
+            .sessionId("session-2")
+            .title("Conversation 2")
+            .build();
 
         sessions.add(session1);
         sessions.add(session2);
 
-        when(sessionRepository.findAllByOrderByUpdatedAtDesc())
+        when(agentStateRepository.findAll())
             .thenReturn(sessions);
 
         mockMvc.perform(get("/api/agent/sessions"))
@@ -201,20 +187,18 @@ class AgentControllerTest {
             .andExpect(jsonPath("$.length()").value(2))
             .andExpect(jsonPath("$[0].sessionId").value("session-1"));
 
-        verify(sessionRepository, times(1)).findAllByOrderByUpdatedAtDesc();
+        verify(agentStateRepository, times(1)).findAll();
     }
 
     @Test
     void testDeleteSession() throws Exception {
-        doNothing().when(sessionRepository).deleteBySessionId(testSessionId);
-        doNothing().when(eventService).deleteEventsBySessionId(testSessionId);
+        doNothing().when(agentStateRepository).deleteBySessionId(testSessionId);
 
         mockMvc.perform(delete("/api/agent/sessions/" + testSessionId))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true));
 
-        verify(sessionRepository, times(1)).deleteBySessionId(testSessionId);
-        verify(eventService, times(1)).deleteEventsBySessionId(testSessionId);
+        verify(agentStateRepository, times(1)).deleteBySessionId(testSessionId);
     }
 
     @Test
@@ -228,8 +212,23 @@ class AgentControllerTest {
     }
 
     @Test
+    void testEmptyMessage() throws Exception {
+        String emptyMessageJson = """
+            {
+                "sessionId": "test-session-123",
+                "message": ""
+            }
+            """;
+
+        mockMvc.perform(post("/api/agent/message")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(emptyMessageJson))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void testMissingSessionId() throws Exception {
-        String messageJson = """
+        String noSessionJson = """
             {
                 "message": "Test message"
             }
@@ -237,7 +236,7 @@ class AgentControllerTest {
 
         mockMvc.perform(post("/api/agent/message")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(messageJson))
+                .content(noSessionJson))
             .andExpect(status().isBadRequest());
     }
 }

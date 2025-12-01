@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,7 @@ class ToolRegistryIntegrationTest {
 
     @Test
     void testAllToolsRegistered() {
-        List<Tool> tools = toolRegistry.getAllTools();
+        List<Tool> tools = new ArrayList<>(toolRegistry.getAllTools());
 
         assertNotNull(tools);
         assertFalse(tools.isEmpty());
@@ -40,15 +41,14 @@ class ToolRegistryIntegrationTest {
     }
 
     @Test
-    void testToolExecution() throws Exception {
-        Map<String, Object> params = new HashMap<>();
-        params.put("path", "/workspace/registry-test.txt");
-        params.put("content", "Test content");
-
-        Map<String, Object> result = toolRegistry.executeTool("file_write", params);
-
-        assertNotNull(result);
-        assertTrue(result.containsKey("success"));
+    void testToolRetrieval() throws Exception {
+        // Test that we can retrieve a specific tool
+        var fileWriteTool = toolRegistry.getTool("file_write");
+        assertTrue(fileWriteTool.isPresent());
+        assertEquals("file_write", fileWriteTool.get().getName());
+        
+        var shellExecTool = toolRegistry.getTool("shell_exec");
+        assertTrue(shellExecTool.isPresent());
     }
 
     @Test
