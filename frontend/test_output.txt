@@ -1,0 +1,1118 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.14 [39m[90m/home/ubuntu/MY-Manus/frontend[39m
+
+ [31m❯[39m src/components/__tests__/BrowserPanel.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 9[2mms[22m[39m
+[31m     [31m×[31m renders browser panel[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m fetches and displays snapshots[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m displays empty state when no snapshots[39m[32m 1[2mms[22m[39m
+ [31m❯[39m src/components/__tests__/EditorPanel.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 10[2mms[22m[39m
+[31m     [31m×[31m renders editor panel[39m[32m 6[2mms[22m[39m
+[31m     [31m×[31m displays Python code from agent actions[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m supports syntax highlighting[39m[32m 1[2mms[22m[39m
+ [31m❯[39m src/__tests__/integration/BrowserSnapshotFlow.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 9[2mms[22m[39m
+[31m     [31m×[31m displays browser snapshots from tool executions[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m switches between snapshot view modes[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m filters snapshots by iteration[39m[32m 1[2mms[22m[39m
+ [31m❯[39m src/components/__tests__/ChatInput.test.tsx [2m([22m[2m5 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[32m 10[2mms[22m[39m
+[31m     [31m×[31m renders chat input[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m calls onSend when clicking send button[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m clears input after sending[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m submits on Enter key[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m does not submit empty messages[39m[32m 1[2mms[22m[39m
+ [31m❯[39m src/components/__tests__/Header.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 8[2mms[22m[39m
+[31m     [31m×[31m renders header[39m[32m 4[2mms[22m[39m
+[31m     [31m×[31m displays logo[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m displays navigation items[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m applies correct styling[39m[32m 0[2mms[22m[39m
+ [31m❯[39m src/components/__tests__/SnapshotViewer.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 10[2mms[22m[39m
+[31m     [31m×[31m renders snapshot viewer[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m displays screenshot by default[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m switches to HTML view[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m switches to accessibility tree view[39m[32m 1[2mms[22m[39m
+ [31m❯[39m src/__tests__/integration/SessionSwitching.test.tsx [2m([22m[2m2 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 10[2mms[22m[39m
+[31m     [31m×[31m switches between multiple sessions[39m[32m 7[2mms[22m[39m
+[31m     [31m×[31m loads session-specific data when switching[39m[32m 1[2mms[22m[39m
+ [31m❯[39m src/components/__tests__/MainLayout.test.tsx [2m([22m[2m5 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[32m 16[2mms[22m[39m
+[31m     [31m×[31m renders main layout[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m renders all panel tabs[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m switches between panels[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m displays conversation list[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m creates new conversation[39m[32m 1[2mms[22m[39m
+ [31m❯[39m src/components/__tests__/ChatPanel.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 8[2mms[22m[39m
+[31m     [31m×[31m renders chat panel[39m[32m 4[2mms[22m[39m
+[31m     [31m×[31m submits message on send button click[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m submits message on Enter key[39m[32m 1[2mms[22m[39m
+ [31m❯[39m src/components/__tests__/EventStreamPanel.test.tsx [2m([22m[2m7 tests[22m[2m | [22m[31m7 failed[39m[2m)[22m[32m 12[2mms[22m[39m
+[31m     [31m×[31m renders without crashing[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m fetches and displays events[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m displays event count[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles empty event stream[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles API errors gracefully[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m supports auto-refresh[39m[32m 2[2mms[22m[39m
+[31m     [31m×[31m filters events by iteration[39m[32m 1[2mms[22m[39m
+ [31m❯[39m src/components/__tests__/EventItem.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 10[2mms[22m[39m
+[31m     [31m×[31m renders user message event[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m renders agent thought event[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m renders agent action event with code[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m renders observation event[39m[32m 1[2mms[22m[39m
+ [31m❯[39m src/__tests__/integration/AgentWorkflow.test.tsx [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 10[2mms[22m[39m
+[31m     [31m×[31m completes full agent workflow[39m[32m 8[2mms[22m[39m
+ [31m❯[39m src/components/__tests__/MessageItem.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 8[2mms[22m[39m
+[31m     [31m×[31m renders user message[39m[32m 4[2mms[22m[39m
+[31m     [31m×[31m renders assistant message[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m applies correct styling for user messages[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m applies correct styling for assistant messages[39m[32m 1[2mms[22m[39m
+ [31m❯[39m src/services/__tests__/websocket.test.ts [2m([22m[2m8 tests[22m[2m | [22m[31m8 failed[39m[2m)[22m[32m 15[2mms[22m[39m
+[31m     [31m×[31m creates WebSocket connection[39m[32m 6[2mms[22m[39m
+[31m     [31m×[31m handles connection open[39m[32m 3[2mms[22m[39m
+[31m     [31m×[31m handles incoming messages[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m sends messages[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles connection close[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles connection errors[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m closes connection[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m reconnects on connection loss[39m[32m 0[2mms[22m[39m
+ [31m❯[39m src/__tests__/integration/RealTimeUpdates.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 11[2mms[22m[39m
+[31m     [31m×[31m receives real-time event updates via WebSocket[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m handles auto-refresh for real-time updates[39m[32m 3[2mms[22m[39m
+[31m     [31m×[31m updates multiple panels simultaneously[39m[32m 1[2mms[22m[39m
+ [31m❯[39m src/__tests__/integration/EventStreamFlow.test.tsx [2m([22m[2m2 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 10[2mms[22m[39m
+[31m     [31m×[31m displays complete event stream[39m[32m 6[2mms[22m[39m
+[31m     [31m×[31m updates stream in real-time[39m[32m 2[2mms[22m[39m
+ [32m✓[39m src/stores/__tests__/agentStore.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [31m❯[39m src/components/__tests__/TerminalPanel.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 10[2mms[22m[39m
+[31m     [31m×[31m renders terminal panel[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m displays code execution output[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m displays error messages[39m[32m 1[2mms[22m[39m
+ [31m❯[39m src/components/__tests__/MessageList.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 9[2mms[22m[39m
+[31m     [31m×[31m renders message list[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m fetches and displays messages[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m displays empty state when no messages[39m[32m 1[2mms[22m[39m
+ [31m❯[39m src/services/__tests__/api.test.ts [2m([22m[2m8 tests[22m[2m | [22m[31m7 failed[39m[2m)[22m[33m 1793[2mms[22m[39m
+[31m     [31m×[31m sends message to agent[39m[33m 1136[2mms[22m[39m
+[31m     [31m×[31m fetches event stream[39m[32m 107[2mms[22m[39m
+[31m     [31m×[31m fetches messages[39m[32m 160[2mms[22m[39m
+[31m     [31m×[31m fetches sessions[39m[32m 34[2mms[22m[39m
+[31m     [31m×[31m creates new session[39m[32m 21[2mms[22m[39m
+[31m     [31m×[31m deletes session[39m[32m 247[2mms[22m[39m
+[31m     [31m×[31m fetches tool executions[39m[32m 20[2mms[22m[39m
+     [32m✓[39m handles API errors[32m 65[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/hooks/__tests__/useWebSocket.test.ts[2m [ src/hooks/__tests__/useWebSocket.test.ts ][22m
+[31m[1mError[22m: Cannot find module '../useWebSocket' imported from '/home/ubuntu/MY-Manus/frontend/src/hooks/__tests__/useWebSocket.test.ts'[39m
+[36m [2m❯[22m src/hooks/__tests__/useWebSocket.test.ts:[2m3:1[22m[39m
+    [90m  1| [39mimport { describe, it, expect, vi, beforeEach, afterEach } from 'vites…
+    [90m  2| [39m[35mimport[39m { renderHook } [35mfrom[39m [32m'@testing-library/react'[39m[33m;[39m
+    [90m  3| [39m[35mimport[39m { useWebSocket } [35mfrom[39m [32m'../useWebSocket'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  4| [39m
+    [90m  5| [39m[90m// Mock WebSocket[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/ConversationList.test.tsx[2m [ src/components/__tests__/ConversationList.test.tsx ][22m
+[31m[1mError[22m: Cannot find module '/src/components/Layout/ConversationList' imported from '/home/ubuntu/MY-Manus/frontend/src/components/__tests__/ConversationList.test.tsx'[39m
+[36m [2m❯[22m src/components/__tests__/ConversationList.test.tsx:[2m4:1[22m[39m
+    [90m  2| [39m[35mimport[39m { render[33m,[39m screen[33m,[39m waitFor } [35mfrom[39m [32m'@testing-library/react'[39m[33m;[39m
+    [90m  3| [39m[35mimport[39m userEvent [35mfrom[39m [32m'@testing-library/user-event'[39m[33m;[39m
+    [90m  4| [39m[35mimport[39m { [33mConversationList[39m } [35mfrom[39m [32m'../Layout/ConversationList'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  5| [39m[35mimport[39m [33m*[39m [35mas[39m apiService [35mfrom[39m [32m'../../services/api'[39m[33m;[39m
+    [90m  6| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/76]⎯[22m[39m
+
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 74 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/integration/AgentWorkflow.test.tsx[2m > [22mAgent Workflow Integration[2m > [22mcompletes full agent workflow
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'Symbol(Node prepared with document state workarounds)')[39m
+[90m [2m❯[22m prepareDocument node_modules/@testing-library/user-event/dist/esm/document/prepareDocument.js:[2m10:17[22m[39m
+[90m [2m❯[22m Object.setupMain [as setup] node_modules/@testing-library/user-event/dist/esm/setup/setup.js:[2m52:5[22m[39m
+[36m [2m❯[22m src/__tests__/integration/AgentWorkflow.test.tsx:[2m21:28[22m[39m
+    [90m 19| [39m
+    [90m 20| [39m  [34mit[39m([32m'completes full agent workflow'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 21| [39m    [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 22| [39m
+    [90m 23| [39m    [90m// Mock create session[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/integration/BrowserSnapshotFlow.test.tsx[2m > [22mBrowser Snapshot Flow Integration[2m > [22mdisplays browser snapshots from tool executions
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/__tests__/integration/BrowserSnapshotFlow.test.tsx:[2m46:5[22m[39m
+    [90m 44| [39m    (apiService.getToolExecutions as any).mockResolvedValue(mockToolEx…
+    [90m 45| [39m
+    [90m 46| [39m    [34mrender[39m([33m<[39m[33mBrowserPanel[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 47| [39m
+    [90m 48| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/integration/BrowserSnapshotFlow.test.tsx[2m > [22mBrowser Snapshot Flow Integration[2m > [22mswitches between snapshot view modes
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'Symbol(Node prepared with document state workarounds)')[39m
+[90m [2m❯[22m prepareDocument node_modules/@testing-library/user-event/dist/esm/document/prepareDocument.js:[2m10:17[22m[39m
+[90m [2m❯[22m Object.setupMain [as setup] node_modules/@testing-library/user-event/dist/esm/setup/setup.js:[2m52:5[22m[39m
+[36m [2m❯[22m src/__tests__/integration/BrowserSnapshotFlow.test.tsx:[2m55:28[22m[39m
+    [90m 53| [39m
+    [90m 54| [39m  [34mit[39m([32m'switches between snapshot view modes'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 55| [39m    [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 56| [39m
+    [90m 57| [39m    [35mconst[39m mockToolExecutions [33m=[39m [
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/integration/BrowserSnapshotFlow.test.tsx[2m > [22mBrowser Snapshot Flow Integration[2m > [22mfilters snapshots by iteration
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/__tests__/integration/BrowserSnapshotFlow.test.tsx:[2m115:5[22m[39m
+    [90m113| [39m    (apiService.getToolExecutions as any).mockResolvedValue(mockToolEx…
+    [90m114| [39m
+    [90m115| [39m    [34mrender[39m([33m<[39m[33mBrowserPanel[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m116| [39m
+    [90m117| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/integration/EventStreamFlow.test.tsx[2m > [22mEvent Stream Flow Integration[2m > [22mdisplays complete event stream
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/__tests__/integration/EventStreamFlow.test.tsx:[2m51:5[22m[39m
+    [90m 49| [39m    (apiService[33m.[39mgetEventStream [35mas[39m any)[33m.[39m[34mmockResolvedValue[39m(mockEvents)[33m;[39m
+    [90m 50| [39m
+    [90m 51| [39m    [34mrender[39m([33m<[39m[33mEventStreamPanel[39m [33msessionId[39m[33m=[39m[32m"session-1"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 52| [39m
+    [90m 53| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/integration/EventStreamFlow.test.tsx[2m > [22mEvent Stream Flow Integration[2m > [22mupdates stream in real-time
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/__tests__/integration/EventStreamFlow.test.tsx:[2m75:26[22m[39m
+    [90m 73| [39m    (apiService.getEventStream as any).mockResolvedValueOnce(initialEv…
+    [90m 74| [39m
+    [90m 75| [39m    const { rerender } = render(<EventStreamPanel sessionId="session-1…
+    [90m   | [39m                         [31m^[39m
+    [90m 76| [39m
+    [90m 77| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/integration/RealTimeUpdates.test.tsx[2m > [22mReal-Time Updates Integration[2m > [22mreceives real-time event updates via WebSocket
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/__tests__/integration/RealTimeUpdates.test.tsx:[2m41:5[22m[39m
+    [90m 39| [39m    (apiService.getEventStream as any).mockResolvedValue(initialEvents…
+    [90m 40| [39m
+    [90m 41| [39m    [34mrender[39m([33m<[39m[33mEventStreamPanel[39m [33msessionId[39m[33m=[39m[32m"session-1"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 42| [39m
+    [90m 43| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/integration/RealTimeUpdates.test.tsx[2m > [22mReal-Time Updates Integration[2m > [22mhandles auto-refresh for real-time updates
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/__tests__/integration/RealTimeUpdates.test.tsx:[2m85:5[22m[39m
+    [90m 83| [39m    (apiService[33m.[39mgetEventStream [35mas[39m any)[33m.[39m[34mmockResolvedValue[39m(mockEvents)[33m;[39m
+    [90m 84| [39m
+    [90m 85| [39m    render(<EventStreamPanel sessionId="session-1" autoRefresh={true} …
+    [90m   | [39m    [31m^[39m
+    [90m 86| [39m
+    [90m 87| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/integration/RealTimeUpdates.test.tsx[2m > [22mReal-Time Updates Integration[2m > [22mupdates multiple panels simultaneously
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/__tests__/integration/RealTimeUpdates.test.tsx:[2m124:27[22m[39m
+    [90m122| [39m    ])[33m;[39m
+    [90m123| [39m
+    [90m124| [39m    [35mconst[39m { container } [33m=[39m [34mrender[39m(
+    [90m   | [39m                          [31m^[39m
+    [90m125| [39m      [33m<[39m[33mdiv[39m[33m>[39m
+    [90m126| [39m        [33m<[39m[33mEventStreamPanel[39m [33msessionId[39m[33m=[39m[32m"session-1"[39m [33m/[39m[33m>[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/integration/SessionSwitching.test.tsx[2m > [22mSession Switching Integration[2m > [22mswitches between multiple sessions
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'Symbol(Node prepared with document state workarounds)')[39m
+[90m [2m❯[22m prepareDocument node_modules/@testing-library/user-event/dist/esm/document/prepareDocument.js:[2m10:17[22m[39m
+[90m [2m❯[22m Object.setupMain [as setup] node_modules/@testing-library/user-event/dist/esm/setup/setup.js:[2m52:5[22m[39m
+[36m [2m❯[22m src/__tests__/integration/SessionSwitching.test.tsx:[2m16:28[22m[39m
+    [90m 14| [39m
+    [90m 15| [39m  [34mit[39m([32m'switches between multiple sessions'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 16| [39m    [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 17| [39m
+    [90m 18| [39m    [35mconst[39m mockSessions [33m=[39m [
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/integration/SessionSwitching.test.tsx[2m > [22mSession Switching Integration[2m > [22mloads session-specific data when switching
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'Symbol(Node prepared with document state workarounds)')[39m
+[90m [2m❯[22m prepareDocument node_modules/@testing-library/user-event/dist/esm/document/prepareDocument.js:[2m10:17[22m[39m
+[90m [2m❯[22m Object.setupMain [as setup] node_modules/@testing-library/user-event/dist/esm/setup/setup.js:[2m52:5[22m[39m
+[36m [2m❯[22m src/__tests__/integration/SessionSwitching.test.tsx:[2m89:28[22m[39m
+    [90m 87| [39m
+    [90m 88| [39m  [34mit[39m([32m'loads session-specific data when switching'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 89| [39m    [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 90| [39m
+    [90m 91| [39m    [35mconst[39m mockSessions [33m=[39m [
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/BrowserPanel.test.tsx[2m > [22mBrowserPanel[2m > [22mrenders browser panel
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/BrowserPanel.test.tsx:[2m14:5[22m[39m
+    [90m 12| [39m
+    [90m 13| [39m  [34mit[39m([32m'renders browser panel'[39m[33m,[39m () [33m=>[39m {
+    [90m 14| [39m    [34mrender[39m([33m<[39m[33mBrowserPanel[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 15| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/Browser/[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 16| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/BrowserPanel.test.tsx[2m > [22mBrowserPanel[2m > [22mfetches and displays snapshots
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/BrowserPanel.test.tsx:[2m42:5[22m[39m
+    [90m 40| [39m    ])[33m;[39m
+    [90m 41| [39m
+    [90m 42| [39m    [34mrender[39m([33m<[39m[33mBrowserPanel[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 43| [39m
+    [90m 44| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/BrowserPanel.test.tsx[2m > [22mBrowserPanel[2m > [22mdisplays empty state when no snapshots
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/BrowserPanel.test.tsx:[2m52:5[22m[39m
+    [90m 50| [39m    (apiService[33m.[39mgetToolExecutions [35mas[39m any)[33m.[39m[34mmockResolvedValue[39m([])[33m;[39m
+    [90m 51| [39m
+    [90m 52| [39m    [34mrender[39m([33m<[39m[33mBrowserPanel[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 53| [39m
+    [90m 54| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/ChatInput.test.tsx[2m > [22mChatInput[2m > [22mrenders chat input
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/ChatInput.test.tsx:[2m8:5[22m[39m
+    [90m  6| [39m[34mdescribe[39m([32m'ChatInput'[39m[33m,[39m () [33m=>[39m {
+    [90m  7| [39m  [34mit[39m([32m'renders chat input'[39m[33m,[39m () [33m=>[39m {
+    [90m  8| [39m    [34mrender[39m([33m<[39m[33mChatInput[39m [33monSend[39m[33m=[39m[33m{[39mvi[33m.[39m[34mfn[39m()[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m  9| [39m    expect(screen.getByPlaceholderText(/Type a message/)).toBeInTheDoc…
+    [90m 10| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/ChatInput.test.tsx[2m > [22mChatInput[2m > [22mcalls onSend when clicking send button
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'Symbol(Node prepared with document state workarounds)')[39m
+[90m [2m❯[22m prepareDocument node_modules/@testing-library/user-event/dist/esm/document/prepareDocument.js:[2m10:17[22m[39m
+[90m [2m❯[22m Object.setupMain [as setup] node_modules/@testing-library/user-event/dist/esm/setup/setup.js:[2m52:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/ChatInput.test.tsx:[2m14:28[22m[39m
+    [90m 12| [39m  [34mit[39m([32m'calls onSend when clicking send button'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 13| [39m    [35mconst[39m onSend [33m=[39m vi[33m.[39m[34mfn[39m()[33m;[39m
+    [90m 14| [39m    [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 15| [39m
+    [90m 16| [39m    [34mrender[39m([33m<[39m[33mChatInput[39m [33monSend[39m[33m=[39m[33m{[39monSend[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/ChatInput.test.tsx[2m > [22mChatInput[2m > [22mclears input after sending
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'Symbol(Node prepared with document state workarounds)')[39m
+[90m [2m❯[22m prepareDocument node_modules/@testing-library/user-event/dist/esm/document/prepareDocument.js:[2m10:17[22m[39m
+[90m [2m❯[22m Object.setupMain [as setup] node_modules/@testing-library/user-event/dist/esm/setup/setup.js:[2m52:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/ChatInput.test.tsx:[2m28:28[22m[39m
+    [90m 26| [39m
+    [90m 27| [39m  [34mit[39m([32m'clears input after sending'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 28| [39m    [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 29| [39m    [34mrender[39m([33m<[39m[33mChatInput[39m [33monSend[39m[33m=[39m[33m{[39mvi[33m.[39m[34mfn[39m()[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m 30| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/ChatInput.test.tsx[2m > [22mChatInput[2m > [22msubmits on Enter key
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'Symbol(Node prepared with document state workarounds)')[39m
+[90m [2m❯[22m prepareDocument node_modules/@testing-library/user-event/dist/esm/document/prepareDocument.js:[2m10:17[22m[39m
+[90m [2m❯[22m Object.setupMain [as setup] node_modules/@testing-library/user-event/dist/esm/setup/setup.js:[2m52:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/ChatInput.test.tsx:[2m40:28[22m[39m
+    [90m 38| [39m  [34mit[39m([32m'submits on Enter key'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 39| [39m    [35mconst[39m onSend [33m=[39m vi[33m.[39m[34mfn[39m()[33m;[39m
+    [90m 40| [39m    [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 41| [39m
+    [90m 42| [39m    [34mrender[39m([33m<[39m[33mChatInput[39m [33monSend[39m[33m=[39m[33m{[39monSend[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/ChatInput.test.tsx[2m > [22mChatInput[2m > [22mdoes not submit empty messages
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'Symbol(Node prepared with document state workarounds)')[39m
+[90m [2m❯[22m prepareDocument node_modules/@testing-library/user-event/dist/esm/document/prepareDocument.js:[2m10:17[22m[39m
+[90m [2m❯[22m Object.setupMain [as setup] node_modules/@testing-library/user-event/dist/esm/setup/setup.js:[2m52:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/ChatInput.test.tsx:[2m52:28[22m[39m
+    [90m 50| [39m  [34mit[39m([32m'does not submit empty messages'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 51| [39m    [35mconst[39m onSend [33m=[39m vi[33m.[39m[34mfn[39m()[33m;[39m
+    [90m 52| [39m    [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 53| [39m
+    [90m 54| [39m    [34mrender[39m([33m<[39m[33mChatInput[39m [33monSend[39m[33m=[39m[33m{[39monSend[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/ChatPanel.test.tsx[2m > [22mChatPanel[2m > [22mrenders chat panel
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/ChatPanel.test.tsx:[2m10:5[22m[39m
+    [90m  8| [39m[34mdescribe[39m([32m'ChatPanel'[39m[33m,[39m () [33m=>[39m {
+    [90m  9| [39m  [34mit[39m([32m'renders chat panel'[39m[33m,[39m () [33m=>[39m {
+    [90m 10| [39m    [34mrender[39m([33m<[39m[33mChatPanel[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 11| [39m    expect(screen.getByPlaceholderText(/Type a message/)).toBeInTheDoc…
+    [90m 12| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/ChatPanel.test.tsx[2m > [22mChatPanel[2m > [22msubmits message on send button click
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'Symbol(Node prepared with document state workarounds)')[39m
+[90m [2m❯[22m prepareDocument node_modules/@testing-library/user-event/dist/esm/document/prepareDocument.js:[2m10:17[22m[39m
+[90m [2m❯[22m Object.setupMain [as setup] node_modules/@testing-library/user-event/dist/esm/setup/setup.js:[2m52:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/ChatPanel.test.tsx:[2m15:28[22m[39m
+    [90m 13| [39m
+    [90m 14| [39m  [34mit[39m([32m'submits message on send button click'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 15| [39m    [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 16| [39m    [34mrender[39m([33m<[39m[33mChatPanel[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m 17| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/ChatPanel.test.tsx[2m > [22mChatPanel[2m > [22msubmits message on Enter key
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'Symbol(Node prepared with document state workarounds)')[39m
+[90m [2m❯[22m prepareDocument node_modules/@testing-library/user-event/dist/esm/document/prepareDocument.js:[2m10:17[22m[39m
+[90m [2m❯[22m Object.setupMain [as setup] node_modules/@testing-library/user-event/dist/esm/setup/setup.js:[2m52:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/ChatPanel.test.tsx:[2m29:28[22m[39m
+    [90m 27| [39m
+    [90m 28| [39m  [34mit[39m([32m'submits message on Enter key'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 29| [39m    [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 30| [39m    [34mrender[39m([33m<[39m[33mChatPanel[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m 31| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/EditorPanel.test.tsx[2m > [22mEditorPanel[2m > [22mrenders editor panel
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/EditorPanel.test.tsx:[2m14:5[22m[39m
+    [90m 12| [39m
+    [90m 13| [39m  [34mit[39m([32m'renders editor panel'[39m[33m,[39m () [33m=>[39m {
+    [90m 14| [39m    [34mrender[39m([33m<[39m[33mEditorPanel[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 15| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/Editor/[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 16| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/EditorPanel.test.tsx[2m > [22mEditorPanel[2m > [22mdisplays Python code from agent actions
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/EditorPanel.test.tsx:[2m29:5[22m[39m
+    [90m 27| [39m    (apiService[33m.[39mgetEventStream [35mas[39m any)[33m.[39m[34mmockResolvedValue[39m(mockEvents)[33m;[39m
+    [90m 28| [39m
+    [90m 29| [39m    [34mrender[39m([33m<[39m[33mEditorPanel[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 30| [39m
+    [90m 31| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/EditorPanel.test.tsx[2m > [22mEditorPanel[2m > [22msupports syntax highlighting
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/EditorPanel.test.tsx:[2m47:5[22m[39m
+    [90m 45| [39m    (apiService[33m.[39mgetEventStream [35mas[39m any)[33m.[39m[34mmockResolvedValue[39m(mockEvents)[33m;[39m
+    [90m 46| [39m
+    [90m 47| [39m    [34mrender[39m([33m<[39m[33mEditorPanel[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 48| [39m
+    [90m 49| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/EventItem.test.tsx[2m > [22mEventItem[2m > [22mrenders user message event
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/EventItem.test.tsx:[2m16:5[22m[39m
+    [90m 14| [39m    }[33m;[39m
+    [90m 15| [39m
+    [90m 16| [39m    [34mrender[39m([33m<[39m[33mEventItem[39m [33mevent[39m[33m=[39m[33m{[39mevent[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 17| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/Hello, agent!/[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 18| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/EventItem.test.tsx[2m > [22mEventItem[2m > [22mrenders agent thought event
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/EventItem.test.tsx:[2m30:5[22m[39m
+    [90m 28| [39m    }[33m;[39m
+    [90m 29| [39m
+    [90m 30| [39m    [34mrender[39m([33m<[39m[33mEventItem[39m [33mevent[39m[33m=[39m[33m{[39mevent[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 31| [39m    expect(screen.getByText(/I need to read the file/)).toBeInTheDocum…
+    [90m 32| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/EventItem.test.tsx[2m > [22mEventItem[2m > [22mrenders agent action event with code
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/EventItem.test.tsx:[2m44:5[22m[39m
+    [90m 42| [39m    }[33m;[39m
+    [90m 43| [39m
+    [90m 44| [39m    [34mrender[39m([33m<[39m[33mEventItem[39m [33mevent[39m[33m=[39m[33m{[39mevent[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 45| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/print\('Hello'\)/[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 46| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/EventItem.test.tsx[2m > [22mEventItem[2m > [22mrenders observation event
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/EventItem.test.tsx:[2m58:5[22m[39m
+    [90m 56| [39m    }[33m;[39m
+    [90m 57| [39m
+    [90m 58| [39m    [34mrender[39m([33m<[39m[33mEventItem[39m [33mevent[39m[33m=[39m[33m{[39mevent[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 59| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/Command output/[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 60| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/EventStreamPanel.test.tsx[2m > [22mEventStreamPanel[2m > [22mrenders without crashing
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/EventStreamPanel.test.tsx:[2m65:5[22m[39m
+    [90m 63| [39m    (apiService[33m.[39mgetEventStream [35mas[39m any)[33m.[39m[34mmockResolvedValue[39m([])[33m;[39m
+    [90m 64| [39m
+    [90m 65| [39m    [34mrender[39m([33m<[39m[33mEventStreamPanel[39m [33msessionId[39m[33m=[39m[33m{[39mmockSessionId[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 66| [39m
+    [90m 67| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([32m'Event Stream'[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[32/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/EventStreamPanel.test.tsx[2m > [22mEventStreamPanel[2m > [22mfetches and displays events
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/EventStreamPanel.test.tsx:[2m73:5[22m[39m
+    [90m 71| [39m    (apiService[33m.[39mgetEventStream [35mas[39m any)[33m.[39m[34mmockResolvedValue[39m(mockEvents)[33m;[39m
+    [90m 72| [39m
+    [90m 73| [39m    [34mrender[39m([33m<[39m[33mEventStreamPanel[39m [33msessionId[39m[33m=[39m[33m{[39mmockSessionId[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 74| [39m
+    [90m 75| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[33/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/EventStreamPanel.test.tsx[2m > [22mEventStreamPanel[2m > [22mdisplays event count
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/EventStreamPanel.test.tsx:[2m88:5[22m[39m
+    [90m 86| [39m    (apiService[33m.[39mgetEventStream [35mas[39m any)[33m.[39m[34mmockResolvedValue[39m(mockEvents)[33m;[39m
+    [90m 87| [39m
+    [90m 88| [39m    [34mrender[39m([33m<[39m[33mEventStreamPanel[39m [33msessionId[39m[33m=[39m[33m{[39mmockSessionId[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 89| [39m
+    [90m 90| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[34/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/EventStreamPanel.test.tsx[2m > [22mEventStreamPanel[2m > [22mhandles empty event stream
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/EventStreamPanel.test.tsx:[2m98:5[22m[39m
+    [90m 96| [39m    (apiService[33m.[39mgetEventStream [35mas[39m any)[33m.[39m[34mmockResolvedValue[39m([])[33m;[39m
+    [90m 97| [39m
+    [90m 98| [39m    [34mrender[39m([33m<[39m[33mEventStreamPanel[39m [33msessionId[39m[33m=[39m[33m{[39mmockSessionId[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 99| [39m
+    [90m100| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[35/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/EventStreamPanel.test.tsx[2m > [22mEventStreamPanel[2m > [22mhandles API errors gracefully
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/EventStreamPanel.test.tsx:[2m108:5[22m[39m
+    [90m106| [39m    (apiService.getEventStream as any).mockRejectedValue(new Error('AP…
+    [90m107| [39m
+    [90m108| [39m    [34mrender[39m([33m<[39m[33mEventStreamPanel[39m [33msessionId[39m[33m=[39m[33m{[39mmockSessionId[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m109| [39m
+    [90m110| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[36/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/EventStreamPanel.test.tsx[2m > [22mEventStreamPanel[2m > [22msupports auto-refresh
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/EventStreamPanel.test.tsx:[2m119:5[22m[39m
+    [90m117| [39m    (apiService[33m.[39mgetEventStream [35mas[39m any)[33m.[39m[34mmockResolvedValue[39m(mockEvents)[33m;[39m
+    [90m118| [39m
+    [90m119| [39m    render(<EventStreamPanel sessionId={mockSessionId} autoRefresh={tr…
+    [90m   | [39m    [31m^[39m
+    [90m120| [39m
+    [90m121| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[37/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/EventStreamPanel.test.tsx[2m > [22mEventStreamPanel[2m > [22mfilters events by iteration
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/EventStreamPanel.test.tsx:[2m139:26[22m[39m
+    [90m137| [39m    (apiService.getEventsForIteration as any).mockResolvedValue([mockE…
+    [90m138| [39m
+    [90m139| [39m    const { rerender } = render(<EventStreamPanel sessionId={mockSessi…
+    [90m   | [39m                         [31m^[39m
+    [90m140| [39m
+    [90m141| [39m    [90m// TODO: Test iteration filter interaction[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[38/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/Header.test.tsx[2m > [22mHeader[2m > [22mrenders header
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/Header.test.tsx:[2m7:5[22m[39m
+    [90m  5| [39m[34mdescribe[39m([32m'Header'[39m[33m,[39m () [33m=>[39m {
+    [90m  6| [39m  [34mit[39m([32m'renders header'[39m[33m,[39m () [33m=>[39m {
+    [90m  7| [39m    [34mrender[39m([33m<[39m[33mHeader[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m  8| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/MY Manus/[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m  9| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/Header.test.tsx[2m > [22mHeader[2m > [22mdisplays logo
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/Header.test.tsx:[2m12:5[22m[39m
+    [90m 10| [39m
+    [90m 11| [39m  [34mit[39m([32m'displays logo'[39m[33m,[39m () [33m=>[39m {
+    [90m 12| [39m    [34mrender[39m([33m<[39m[33mHeader[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 13| [39m    [35mconst[39m logo [33m=[39m screen[33m.[39m[34mgetByAltText[39m([36m/MY Manus/[39m)[33m;[39m
+    [90m 14| [39m    [34mexpect[39m(logo)[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[40/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/Header.test.tsx[2m > [22mHeader[2m > [22mdisplays navigation items
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/Header.test.tsx:[2m18:5[22m[39m
+    [90m 16| [39m
+    [90m 17| [39m  [34mit[39m([32m'displays navigation items'[39m[33m,[39m () [33m=>[39m {
+    [90m 18| [39m    [34mrender[39m([33m<[39m[33mHeader[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 19| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/Events/[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 20| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/Browser/[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[41/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/Header.test.tsx[2m > [22mHeader[2m > [22mapplies correct styling
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/Header.test.tsx:[2m25:27[22m[39m
+    [90m 23| [39m
+    [90m 24| [39m  [34mit[39m([32m'applies correct styling'[39m[33m,[39m () [33m=>[39m {
+    [90m 25| [39m    [35mconst[39m { container } [33m=[39m [34mrender[39m([33m<[39m[33mHeader[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m                          [31m^[39m
+    [90m 26| [39m    [34mexpect[39m(container[33m.[39m[34mquerySelector[39m([32m'.header'[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 27| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[42/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MainLayout.test.tsx[2m > [22mMainLayout[2m > [22mrenders main layout
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/MainLayout.test.tsx:[2m11:5[22m[39m
+    [90m  9| [39m[34mdescribe[39m([32m'MainLayout'[39m[33m,[39m () [33m=>[39m {
+    [90m 10| [39m  [34mit[39m([32m'renders main layout'[39m[33m,[39m () [33m=>[39m {
+    [90m 11| [39m    [34mrender[39m([33m<[39m[33mMainLayout[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 12| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/MY Manus/[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 13| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[43/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MainLayout.test.tsx[2m > [22mMainLayout[2m > [22mrenders all panel tabs
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/MainLayout.test.tsx:[2m16:5[22m[39m
+    [90m 14| [39m
+    [90m 15| [39m  [34mit[39m([32m'renders all panel tabs'[39m[33m,[39m () [33m=>[39m {
+    [90m 16| [39m    [34mrender[39m([33m<[39m[33mMainLayout[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 17| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/Events/[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 18| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/Browser/[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[44/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MainLayout.test.tsx[2m > [22mMainLayout[2m > [22mswitches between panels
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'Symbol(Node prepared with document state workarounds)')[39m
+[90m [2m❯[22m prepareDocument node_modules/@testing-library/user-event/dist/esm/document/prepareDocument.js:[2m10:17[22m[39m
+[90m [2m❯[22m Object.setupMain [as setup] node_modules/@testing-library/user-event/dist/esm/setup/setup.js:[2m52:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/MainLayout.test.tsx:[2m24:28[22m[39m
+    [90m 22| [39m
+    [90m 23| [39m  [34mit[39m([32m'switches between panels'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 24| [39m    [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 25| [39m    [34mrender[39m([33m<[39m[33mMainLayout[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m 26| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[45/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MainLayout.test.tsx[2m > [22mMainLayout[2m > [22mdisplays conversation list
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/MainLayout.test.tsx:[2m37:5[22m[39m
+    [90m 35| [39m
+    [90m 36| [39m  [34mit[39m([32m'displays conversation list'[39m[33m,[39m () [33m=>[39m {
+    [90m 37| [39m    [34mrender[39m([33m<[39m[33mMainLayout[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 38| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/Conversations/[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 39| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[46/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MainLayout.test.tsx[2m > [22mMainLayout[2m > [22mcreates new conversation
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'Symbol(Node prepared with document state workarounds)')[39m
+[90m [2m❯[22m prepareDocument node_modules/@testing-library/user-event/dist/esm/document/prepareDocument.js:[2m10:17[22m[39m
+[90m [2m❯[22m Object.setupMain [as setup] node_modules/@testing-library/user-event/dist/esm/setup/setup.js:[2m52:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/MainLayout.test.tsx:[2m42:28[22m[39m
+    [90m 40| [39m
+    [90m 41| [39m  [34mit[39m([32m'creates new conversation'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 42| [39m    [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 43| [39m    [34mrender[39m([33m<[39m[33mMainLayout[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m 44| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[47/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MessageItem.test.tsx[2m > [22mMessageItem[2m > [22mrenders user message
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/MessageItem.test.tsx:[2m15:5[22m[39m
+    [90m 13| [39m    }[33m;[39m
+    [90m 14| [39m
+    [90m 15| [39m    [34mrender[39m([33m<[39m[33mMessageItem[39m [33mmessage[39m[33m=[39m[33m{[39mmessage[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 16| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([32m'Hello, agent!'[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 17| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[48/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MessageItem.test.tsx[2m > [22mMessageItem[2m > [22mrenders assistant message
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/MessageItem.test.tsx:[2m28:5[22m[39m
+    [90m 26| [39m    }[33m;[39m
+    [90m 27| [39m
+    [90m 28| [39m    [34mrender[39m([33m<[39m[33mMessageItem[39m [33mmessage[39m[33m=[39m[33m{[39mmessage[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 29| [39m    expect(screen.getByText('How can I help you?')).toBeInTheDocument(…
+    [90m 30| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[49/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MessageItem.test.tsx[2m > [22mMessageItem[2m > [22mapplies correct styling for user messages
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/MessageItem.test.tsx:[2m41:27[22m[39m
+    [90m 39| [39m    }[33m;[39m
+    [90m 40| [39m
+    [90m 41| [39m    [35mconst[39m { container } [33m=[39m [34mrender[39m([33m<[39m[33mMessageItem[39m [33mmessage[39m[33m=[39m[33m{[39mmessage[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m                          [31m^[39m
+    [90m 42| [39m    expect(container.querySelector('.user-message')).toBeInTheDocument…
+    [90m 43| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[50/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MessageItem.test.tsx[2m > [22mMessageItem[2m > [22mapplies correct styling for assistant messages
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/MessageItem.test.tsx:[2m54:27[22m[39m
+    [90m 52| [39m    }[33m;[39m
+    [90m 53| [39m
+    [90m 54| [39m    [35mconst[39m { container } [33m=[39m [34mrender[39m([33m<[39m[33mMessageItem[39m [33mmessage[39m[33m=[39m[33m{[39mmessage[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m                          [31m^[39m
+    [90m 55| [39m    expect(container.querySelector('.assistant-message')).toBeInTheDoc…
+    [90m 56| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[51/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MessageList.test.tsx[2m > [22mMessageList[2m > [22mrenders message list
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/MessageList.test.tsx:[2m14:5[22m[39m
+    [90m 12| [39m
+    [90m 13| [39m  [34mit[39m([32m'renders message list'[39m[33m,[39m () [33m=>[39m {
+    [90m 14| [39m    [34mrender[39m([33m<[39m[33mMessageList[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 15| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByTestId[39m([32m'message-list'[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 16| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[52/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MessageList.test.tsx[2m > [22mMessageList[2m > [22mfetches and displays messages
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/MessageList.test.tsx:[2m38:5[22m[39m
+    [90m 36| [39m    (apiService[33m.[39mgetMessages [35mas[39m any)[33m.[39m[34mmockResolvedValue[39m(mockMessages)[33m;[39m
+    [90m 37| [39m
+    [90m 38| [39m    [34mrender[39m([33m<[39m[33mMessageList[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 39| [39m
+    [90m 40| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[53/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/MessageList.test.tsx[2m > [22mMessageList[2m > [22mdisplays empty state when no messages
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/MessageList.test.tsx:[2m49:5[22m[39m
+    [90m 47| [39m    (apiService[33m.[39mgetMessages [35mas[39m any)[33m.[39m[34mmockResolvedValue[39m([])[33m;[39m
+    [90m 48| [39m
+    [90m 49| [39m    [34mrender[39m([33m<[39m[33mMessageList[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 50| [39m
+    [90m 51| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[54/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/SnapshotViewer.test.tsx[2m > [22mSnapshotViewer[2m > [22mrenders snapshot viewer
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/SnapshotViewer.test.tsx:[2m18:5[22m[39m
+    [90m 16| [39m
+    [90m 17| [39m  [34mit[39m([32m'renders snapshot viewer'[39m[33m,[39m () [33m=>[39m {
+    [90m 18| [39m    [34mrender[39m([33m<[39m[33mSnapshotViewer[39m [33msnapshot[39m[33m=[39m[33m{[39mmockSnapshot[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 19| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/Example Domain/[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 20| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[55/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/SnapshotViewer.test.tsx[2m > [22mSnapshotViewer[2m > [22mdisplays screenshot by default
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/SnapshotViewer.test.tsx:[2m23:5[22m[39m
+    [90m 21| [39m
+    [90m 22| [39m  [34mit[39m([32m'displays screenshot by default'[39m[33m,[39m () [33m=>[39m {
+    [90m 23| [39m    [34mrender[39m([33m<[39m[33mSnapshotViewer[39m [33msnapshot[39m[33m=[39m[33m{[39mmockSnapshot[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 24| [39m    [35mconst[39m img [33m=[39m screen[33m.[39m[34mgetByAltText[39m([36m/Example Domain/[39m)[33m;[39m
+    [90m 25| [39m    [34mexpect[39m(img)[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[56/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/SnapshotViewer.test.tsx[2m > [22mSnapshotViewer[2m > [22mswitches to HTML view
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'Symbol(Node prepared with document state workarounds)')[39m
+[90m [2m❯[22m prepareDocument node_modules/@testing-library/user-event/dist/esm/document/prepareDocument.js:[2m10:17[22m[39m
+[90m [2m❯[22m Object.setupMain [as setup] node_modules/@testing-library/user-event/dist/esm/setup/setup.js:[2m52:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/SnapshotViewer.test.tsx:[2m29:28[22m[39m
+    [90m 27| [39m
+    [90m 28| [39m  [34mit[39m([32m'switches to HTML view'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 29| [39m    [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 30| [39m    [34mrender[39m([33m<[39m[33mSnapshotViewer[39m [33msnapshot[39m[33m=[39m[33m{[39mmockSnapshot[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m 31| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[57/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/SnapshotViewer.test.tsx[2m > [22mSnapshotViewer[2m > [22mswitches to accessibility tree view
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'Symbol(Node prepared with document state workarounds)')[39m
+[90m [2m❯[22m prepareDocument node_modules/@testing-library/user-event/dist/esm/document/prepareDocument.js:[2m10:17[22m[39m
+[90m [2m❯[22m Object.setupMain [as setup] node_modules/@testing-library/user-event/dist/esm/setup/setup.js:[2m52:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/SnapshotViewer.test.tsx:[2m39:28[22m[39m
+    [90m 37| [39m
+    [90m 38| [39m  [34mit[39m([32m'switches to accessibility tree view'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 39| [39m    [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 40| [39m    [34mrender[39m([33m<[39m[33mSnapshotViewer[39m [33msnapshot[39m[33m=[39m[33m{[39mmockSnapshot[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m 41| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[58/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/TerminalPanel.test.tsx[2m > [22mTerminalPanel[2m > [22mrenders terminal panel
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/TerminalPanel.test.tsx:[2m14:5[22m[39m
+    [90m 12| [39m
+    [90m 13| [39m  [34mit[39m([32m'renders terminal panel'[39m[33m,[39m () [33m=>[39m {
+    [90m 14| [39m    [34mrender[39m([33m<[39m[33mTerminalPanel[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 15| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/Terminal/[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 16| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[59/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/TerminalPanel.test.tsx[2m > [22mTerminalPanel[2m > [22mdisplays code execution output
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/TerminalPanel.test.tsx:[2m29:5[22m[39m
+    [90m 27| [39m    (apiService[33m.[39mgetEventStream [35mas[39m any)[33m.[39m[34mmockResolvedValue[39m(mockEvents)[33m;[39m
+    [90m 28| [39m
+    [90m 29| [39m    [34mrender[39m([33m<[39m[33mTerminalPanel[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 30| [39m
+    [90m 31| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[60/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/__tests__/TerminalPanel.test.tsx[2m > [22mTerminalPanel[2m > [22mdisplays error messages
+[31m[1mReferenceError[22m: document is not defined[39m
+[90m [2m❯[22m Proxy.render node_modules/@testing-library/react/dist/pure.js:[2m257:5[22m[39m
+[36m [2m❯[22m src/components/__tests__/TerminalPanel.test.tsx:[2m47:5[22m[39m
+    [90m 45| [39m    (apiService[33m.[39mgetEventStream [35mas[39m any)[33m.[39m[34mmockResolvedValue[39m(mockEvents)[33m;[39m
+    [90m 46| [39m
+    [90m 47| [39m    [34mrender[39m([33m<[39m[33mTerminalPanel[39m [33msessionId[39m[33m=[39m[32m"test-session"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m    [31m^[39m
+    [90m 48| [39m
+    [90m 49| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[61/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/api.test.ts[2m > [22mAPI Service[2m > [22msends message to agent
+[31m[1mAxiosError[22m: Request failed with status code 500[39m
+[90m [2m❯[22m settle node_modules/axios/lib/core/settle.js:[2m19:12[22m[39m
+[90m [2m❯[22m IncomingMessage.handleStreamEnd node_modules/axios/lib/adapters/http.js:[2m793:11[22m[39m
+[90m [2m❯[22m Axios.request node_modules/axios/lib/core/Axios.js:[2m45:41[22m[39m
+[36m [2m❯[22m ApiService.chat src/services/api.ts:[2m28:22[22m[39m
+    [90m 26| [39m  [90m// Chat with agent[39m
+    [90m 27| [39m  [35masync[39m [34mchat[39m(request[33m:[39m [33mChatRequest[39m)[33m:[39m [33mPromise[39m[33m<[39m[33mChatResponse[39m[33m>[39m {
+    [90m 28| [39m    const response = await this.client.post<ChatResponse>('/api/agent/…
+    [90m   | [39m                     [31m^[39m
+    [90m 29| [39m    [35mreturn[39m response[33m.[39mdata[33m;[39m
+    [90m 30| [39m  }
+[90m [2m❯[22m src/services/__tests__/api.test.ts:[2m20:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[62/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/api.test.ts[2m > [22mAPI Service[2m > [22mfetches event stream
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called with arguments: [ StringContaining{…} ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+[36m [2m❯[22m src/services/__tests__/api.test.ts:[2m45:26[22m[39m
+    [90m 43| [39m    [35mconst[39m events [33m=[39m [35mawait[39m apiService[33m.[39m[34mgetEventStream[39m([32m'session-1'[39m)[33m;[39m
+    [90m 44| [39m
+    [90m 45| [39m    [34mexpect[39m(global[33m.[39mfetch)[33m.[39m[34mtoHaveBeenCalledWith[39m(
+    [90m   | [39m                         [31m^[39m
+    [90m 46| [39m      expect[33m.[39m[34mstringContaining[39m([32m'/api/agent/events/session-1'[39m)
+    [90m 47| [39m    )[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[63/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/api.test.ts[2m > [22mAPI Service[2m > [22mfetches messages
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called with arguments: [ StringContaining{…} ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+[36m [2m❯[22m src/services/__tests__/api.test.ts:[2m64:26[22m[39m
+    [90m 62| [39m    [35mconst[39m messages [33m=[39m [35mawait[39m apiService[33m.[39m[34mgetMessages[39m([32m'session-1'[39m)[33m;[39m
+    [90m 63| [39m
+    [90m 64| [39m    [34mexpect[39m(global[33m.[39mfetch)[33m.[39m[34mtoHaveBeenCalledWith[39m(
+    [90m   | [39m                         [31m^[39m
+    [90m 65| [39m      expect[33m.[39m[34mstringContaining[39m([32m'/api/agent/messages/session-1'[39m)
+    [90m 66| [39m    )[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[64/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/api.test.ts[2m > [22mAPI Service[2m > [22mfetches sessions
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called with arguments: [ StringContaining{…} ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+[36m [2m❯[22m src/services/__tests__/api.test.ts:[2m83:26[22m[39m
+    [90m 81| [39m    [35mconst[39m sessions [33m=[39m [35mawait[39m apiService[33m.[39m[34mgetSessions[39m()[33m;[39m
+    [90m 82| [39m
+    [90m 83| [39m    [34mexpect[39m(global[33m.[39mfetch)[33m.[39m[34mtoHaveBeenCalledWith[39m(
+    [90m   | [39m                         [31m^[39m
+    [90m 84| [39m      expect[33m.[39m[34mstringContaining[39m([32m'/api/agent/sessions'[39m)
+    [90m 85| [39m    )[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[65/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/api.test.ts[2m > [22mAPI Service[2m > [22mcreates new session
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called with arguments: [ StringContaining{…}, …(1) ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+[36m [2m❯[22m src/services/__tests__/api.test.ts:[2m100:26[22m[39m
+    [90m 98| [39m    [35mconst[39m session [33m=[39m [35mawait[39m apiService[33m.[39m[34mcreateSession[39m([32m'New Conversation'[39m)[33m;[39m
+    [90m 99| [39m
+    [90m100| [39m    [34mexpect[39m(global[33m.[39mfetch)[33m.[39m[34mtoHaveBeenCalledWith[39m(
+    [90m   | [39m                         [31m^[39m
+    [90m101| [39m      expect[33m.[39m[34mstringContaining[39m([32m'/api/agent/sessions'[39m)[33m,[39m
+    [90m102| [39m      expect[33m.[39m[34mobjectContaining[39m({
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[66/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/api.test.ts[2m > [22mAPI Service[2m > [22mdeletes session
+[31m[1mAxiosError[22m: Request failed with status code 404[39m
+[90m [2m❯[22m settle node_modules/axios/lib/core/settle.js:[2m19:12[22m[39m
+[90m [2m❯[22m IncomingMessage.handleStreamEnd node_modules/axios/lib/adapters/http.js:[2m793:11[22m[39m
+[90m [2m❯[22m Axios.request node_modules/axios/lib/core/Axios.js:[2m45:41[22m[39m
+[36m [2m❯[22m ApiService.clearSession src/services/api.ts:[2m68:22[22m[39m
+    [90m 66| [39m
+    [90m 67| [39m  async clearSession(sessionId: string): Promise<{ message: string; se…
+    [90m 68| [39m    const response = await this.client.delete(`/api/agent/session/${se…
+    [90m   | [39m                     [31m^[39m
+    [90m 69| [39m    [35mreturn[39m response[33m.[39mdata[33m;[39m
+    [90m 70| [39m  }
+[90m [2m❯[22m src/services/__tests__/api.test.ts:[2m119:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[67/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/api.test.ts[2m > [22mAPI Service[2m > [22mfetches tool executions
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called with arguments: [ StringContaining{…} ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+[36m [2m❯[22m src/services/__tests__/api.test.ts:[2m141:26[22m[39m
+    [90m139| [39m    [35mconst[39m executions [33m=[39m [35mawait[39m apiService[33m.[39m[34mgetToolExecutions[39m([32m'session-1'[39m)[33m;[39m
+    [90m140| [39m
+    [90m141| [39m    [34mexpect[39m(global[33m.[39mfetch)[33m.[39m[34mtoHaveBeenCalledWith[39m(
+    [90m   | [39m                         [31m^[39m
+    [90m142| [39m      expect[33m.[39m[34mstringContaining[39m([32m'/api/agent/tool-executions/session-1'[39m)
+    [90m143| [39m    )[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[68/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/websocket.test.ts[2m > [22mWebSocket Client[2m > [22mcreates WebSocket connection
+[31m[1mTypeError[22m: __vite_ssr_import_1__.WebSocketClient is not a constructor[39m
+[36m [2m❯[22m src/services/__tests__/websocket.test.ts:[2m37:20[22m[39m
+    [90m 35| [39m
+    [90m 36| [39m  [34mit[39m([32m'creates WebSocket connection'[39m[33m,[39m () [33m=>[39m {
+    [90m 37| [39m    [35mconst[39m client [33m=[39m [35mnew[39m [33mWebSocketClient[39m([32m'ws://localhost:8080/ws'[39m)[33m;[39m
+    [90m   | [39m                   [31m^[39m
+    [90m 38| [39m    [34mexpect[39m(client)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m 39| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[69/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/websocket.test.ts[2m > [22mWebSocket Client[2m > [22mhandles connection open
+[31m[1mTypeError[22m: __vite_ssr_import_1__.WebSocketClient is not a constructor[39m
+[36m [2m❯[22m src/services/__tests__/websocket.test.ts:[2m43:20[22m[39m
+    [90m 41| [39m  [34mit[39m([32m'handles connection open'[39m[33m,[39m () [33m=>[39m {
+    [90m 42| [39m    [35mconst[39m onOpen [33m=[39m vi[33m.[39m[34mfn[39m()[33m;[39m
+    [90m 43| [39m    const client = new WebSocketClient('ws://localhost:8080/ws', { onO…
+    [90m   | [39m                   [31m^[39m
+    [90m 44| [39m
+    [90m 45| [39m    [90m// Simulate open[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[70/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/websocket.test.ts[2m > [22mWebSocket Client[2m > [22mhandles incoming messages
+[31m[1mTypeError[22m: __vite_ssr_import_1__.WebSocketClient is not a constructor[39m
+[36m [2m❯[22m src/services/__tests__/websocket.test.ts:[2m56:20[22m[39m
+    [90m 54| [39m  [34mit[39m([32m'handles incoming messages'[39m[33m,[39m () [33m=>[39m {
+    [90m 55| [39m    [35mconst[39m onMessage [33m=[39m vi[33m.[39m[34mfn[39m()[33m;[39m
+    [90m 56| [39m    const client = new WebSocketClient('ws://localhost:8080/ws', { onM…
+    [90m   | [39m                   [31m^[39m
+    [90m 57| [39m
+    [90m 58| [39m    [90m// Simulate message[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[71/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/websocket.test.ts[2m > [22mWebSocket Client[2m > [22msends messages
+[31m[1mTypeError[22m: __vite_ssr_import_1__.WebSocketClient is not a constructor[39m
+[36m [2m❯[22m src/services/__tests__/websocket.test.ts:[2m68:20[22m[39m
+    [90m 66| [39m
+    [90m 67| [39m  [34mit[39m([32m'sends messages'[39m[33m,[39m () [33m=>[39m {
+    [90m 68| [39m    [35mconst[39m client [33m=[39m [35mnew[39m [33mWebSocketClient[39m([32m'ws://localhost:8080/ws'[39m)[33m;[39m
+    [90m   | [39m                   [31m^[39m
+    [90m 69| [39m
+    [90m 70| [39m    [90m// Open connection first[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[72/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/websocket.test.ts[2m > [22mWebSocket Client[2m > [22mhandles connection close
+[31m[1mTypeError[22m: __vite_ssr_import_1__.WebSocketClient is not a constructor[39m
+[36m [2m❯[22m src/services/__tests__/websocket.test.ts:[2m83:20[22m[39m
+    [90m 81| [39m  [34mit[39m([32m'handles connection close'[39m[33m,[39m () [33m=>[39m {
+    [90m 82| [39m    [35mconst[39m onClose [33m=[39m vi[33m.[39m[34mfn[39m()[33m;[39m
+    [90m 83| [39m    const client = new WebSocketClient('ws://localhost:8080/ws', { onC…
+    [90m   | [39m                   [31m^[39m
+    [90m 84| [39m
+    [90m 85| [39m    [90m// Simulate close[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[73/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/websocket.test.ts[2m > [22mWebSocket Client[2m > [22mhandles connection errors
+[31m[1mTypeError[22m: __vite_ssr_import_1__.WebSocketClient is not a constructor[39m
+[36m [2m❯[22m src/services/__tests__/websocket.test.ts:[2m95:20[22m[39m
+    [90m 93| [39m  [34mit[39m([32m'handles connection errors'[39m[33m,[39m () [33m=>[39m {
+    [90m 94| [39m    [35mconst[39m onError [33m=[39m vi[33m.[39m[34mfn[39m()[33m;[39m
+    [90m 95| [39m    const client = new WebSocketClient('ws://localhost:8080/ws', { onE…
+    [90m   | [39m                   [31m^[39m
+    [90m 96| [39m
+    [90m 97| [39m    [90m// Simulate error[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[74/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/websocket.test.ts[2m > [22mWebSocket Client[2m > [22mcloses connection
+[31m[1mTypeError[22m: __vite_ssr_import_1__.WebSocketClient is not a constructor[39m
+[36m [2m❯[22m src/services/__tests__/websocket.test.ts:[2m106:20[22m[39m
+    [90m104| [39m
+    [90m105| [39m  [34mit[39m([32m'closes connection'[39m[33m,[39m () [33m=>[39m {
+    [90m106| [39m    [35mconst[39m client [33m=[39m [35mnew[39m [33mWebSocketClient[39m([32m'ws://localhost:8080/ws'[39m)[33m;[39m
+    [90m   | [39m                   [31m^[39m
+    [90m107| [39m
+    [90m108| [39m    [35mif[39m (client[33m.[39msocket) {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[75/76]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/__tests__/websocket.test.ts[2m > [22mWebSocket Client[2m > [22mreconnects on connection loss
+[31m[1mTypeError[22m: __vite_ssr_import_1__.WebSocketClient is not a constructor[39m
+[36m [2m❯[22m src/services/__tests__/websocket.test.ts:[2m116:20[22m[39m
+    [90m114| [39m
+    [90m115| [39m  [34mit[39m([32m'reconnects on connection loss'[39m[33m,[39m () [33m=>[39m {
+    [90m116| [39m    const client = new WebSocketClient('ws://localhost:8080/ws', { rec…
+    [90m   | [39m                   [31m^[39m
+    [90m117| [39m
+    [90m118| [39m    [90m// Simulate close (should trigger reconnect)[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[76/76]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m21 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (22)[39m
+[2m      Tests [22m [1m[31m74 failed[39m[22m[2m | [22m[1m[32m9 passed[39m[22m[90m (83)[39m
+[2m   Start at [22m 15:27:43
+[2m   Duration [22m 5.39s[2m (transform 3.23s, setup 0ms, import 18.65s, tests 2.00s, environment 4ms)[22m
+
