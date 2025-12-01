@@ -149,3 +149,22 @@ export const apiService = new ApiService();
 // npm run generate-api
 // This will create a fully typed client from the OpenAPI spec at:
 // http://localhost:8080/v3/api-docs
+
+// Top-level function exports for backward compatibility with tests
+export const health = () => apiService.health();
+export const chat = (request: ChatRequest) => apiService.chat(request);
+export const createSession = (title?: string) => apiService.createSession(title);
+export const listSessions = () => apiService.listSessions();
+export const getSessions = () => apiService.listSessions(); // Alias for tests
+export const getSessionStatus = (sessionId: string) => apiService.getSessionStatus(sessionId);
+export const updateSessionTitle = (sessionId: string, title: string) => apiService.updateSessionTitle(sessionId, title);
+export const clearSession = (sessionId: string) => apiService.clearSession(sessionId);
+export const deleteSession = (sessionId: string) => apiService.clearSession(sessionId); // Alias for tests
+export const getMessages = (sessionId: string) => apiService.getMessages(sessionId);
+export const sendMessage = (sessionId: string, content: string) => apiService.chat({ sessionId, message: content }); // Alias for tests
+export const getExecutionContext = (sessionId: string) => apiService.getExecutionContext(sessionId);
+export const getToolExecutions = (sessionId: string) => apiService.getToolExecutions(sessionId);
+export const getEventStream = (sessionId: string) => apiService.getEventStream(sessionId);
+export const getEventsForIteration = (sessionId: string, iteration: number) => apiService.getEventsForIteration(sessionId, iteration);
+export const listFiles = (path?: string) => apiService.listFiles(path);
+export const readFile = (path: string) => apiService.readFile(path);

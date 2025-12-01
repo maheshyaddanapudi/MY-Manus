@@ -17,7 +17,7 @@ class MockWebSocket {
   close() {}
 }
 
-global.WebSocket = MockWebSocket as any;
+(globalThis as any).WebSocket = MockWebSocket;
 
 describe('Real-Time Updates Integration', () => {
   beforeEach(() => {
