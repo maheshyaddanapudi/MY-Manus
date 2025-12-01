@@ -6,7 +6,7 @@ import { ChatInput } from '../Chat/ChatInput';
 describe('ChatInput', () => {
   it('renders chat input', () => {
     render(<ChatInput onSend={vi.fn()} />);
-    expect(screen.getByPlaceholderText(/Type a message/)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Type your message/)).toBeInTheDocument();
   });
 
   it('calls onSend when clicking send button', async () => {
@@ -15,7 +15,7 @@ describe('ChatInput', () => {
 
     render(<ChatInput onSend={onSend} />);
 
-    const input = screen.getByPlaceholderText(/Type a message/);
+    const input = screen.getByPlaceholderText(/Type your message/);
     await user.type(input, 'Test message');
 
     const sendButton = screen.getByText(/Send/);
@@ -28,7 +28,7 @@ describe('ChatInput', () => {
     const user = userEvent.setup();
     render(<ChatInput onSend={vi.fn()} />);
 
-    const input = screen.getByPlaceholderText(/Type a message/);
+    const input = screen.getByPlaceholderText(/Type your message/);
     await user.type(input, 'Test message');
     await user.click(screen.getByText(/Send/));
 
@@ -41,7 +41,7 @@ describe('ChatInput', () => {
 
     render(<ChatInput onSend={onSend} />);
 
-    const input = screen.getByPlaceholderText(/Type a message/);
+    const input = screen.getByPlaceholderText(/Type your message/);
     await user.type(input, 'Test message{Enter}');
 
     expect(onSend).toHaveBeenCalledWith('Test message');
