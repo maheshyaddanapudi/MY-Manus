@@ -1,6 +1,7 @@
 package ai.mymanus.tool.impl.browser;
 
 import ai.mymanus.service.browser.BrowserExecutor;
+import com.microsoft.playwright.Response;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,7 +39,8 @@ class BrowserNavigateToolTest {
         params.put("url", "https://example.com");
         params.put("sessionId", "session-123");
 
-        doNothing().when(browserExecutor).navigate(anyString(), anyString());
+        Response mockResponse = mock(Response.class);
+        when(browserExecutor.navigate(anyString(), anyString())).thenReturn(mockResponse);
 
         Map<String, Object> result = browserNavigateTool.execute(params);
 
@@ -52,7 +54,8 @@ class BrowserNavigateToolTest {
         params.put("url", "https://github.com");
         params.put("sessionId", "session-123");
 
-        doNothing().when(browserExecutor).navigate(anyString(), anyString());
+        Response mockResponse = mock(Response.class);
+        when(browserExecutor.navigate(anyString(), anyString())).thenReturn(mockResponse);
 
         Map<String, Object> result = browserNavigateTool.execute(params);
 
@@ -65,7 +68,8 @@ class BrowserNavigateToolTest {
         params.put("url", "http://example.com");
         params.put("sessionId", "session-123");
 
-        doNothing().when(browserExecutor).navigate(anyString(), anyString());
+        Response mockResponse = mock(Response.class);
+        when(browserExecutor.navigate(anyString(), anyString())).thenReturn(mockResponse);
 
         Map<String, Object> result = browserNavigateTool.execute(params);
 
@@ -83,13 +87,13 @@ class BrowserNavigateToolTest {
     }
 
     @Test
-    void testMissingSessionId() throws Exception {
+    void testMissingSessionId() {
         Map<String, Object> params = new HashMap<>();
         params.put("url", "https://example.com");
 
-        Map<String, Object> result = browserNavigateTool.execute(params);
-
-        assertFalse((Boolean) result.get("success"));
+        assertThrows(IllegalArgumentException.class, () -> {
+            browserNavigateTool.execute(params);
+        });
     }
 
     @Test
