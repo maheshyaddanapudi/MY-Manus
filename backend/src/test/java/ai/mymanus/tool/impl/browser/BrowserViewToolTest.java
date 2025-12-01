@@ -29,11 +29,11 @@ class BrowserViewToolTest {
 
     @BeforeEach
     void setUp() {
-        when(browserExecutor.captureScreenshot(anyString())).thenReturn("base64screenshot");
-        when(browserExecutor.getAccessibilityTree(anyString())).thenReturn("accessibility tree");
-        when(browserExecutor.getHtmlContent(anyString())).thenReturn("<html>...</html>");
-        when(browserExecutor.getCurrentUrl(anyString())).thenReturn("https://example.com");
-        when(browserExecutor.getCurrentTitle(anyString())).thenReturn("Example Domain");
+        lenient().when(browserExecutor.captureScreenshot(anyString())).thenReturn("base64screenshot");
+        lenient().when(browserExecutor.getAccessibilityTree(anyString())).thenReturn("accessibility tree");
+        lenient().when(browserExecutor.getHtmlContent(anyString())).thenReturn("<html>...</html>");
+        lenient().when(browserExecutor.getCurrentUrl(anyString())).thenReturn("https://example.com");
+        lenient().when(browserExecutor.getCurrentTitle(anyString())).thenReturn("Example Domain");
     }
 
     @Test
@@ -71,12 +71,13 @@ class BrowserViewToolTest {
     }
 
     @Test
-    void testMissingSessionId() throws Exception {
+    void testMissingSessionId() {
         Map<String, Object> params = new HashMap<>();
+        params.put("url", "https://example.com");
 
-        Map<String, Object> result = browserViewTool.execute(params);
-
-        assertFalse((Boolean) result.get("success"));
+        assertThrows(IllegalArgumentException.class, () -> {
+            browserViewTool.execute(params);
+        });
     }
 
     @Test

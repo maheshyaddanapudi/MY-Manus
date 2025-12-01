@@ -45,12 +45,13 @@ class BrowserScrollDownToolTest {
     }
 
     @Test
-    void testMissingSessionId() throws Exception {
+    void testMissingSessionId() {
         Map<String, Object> params = new HashMap<>();
+        params.put("url", "https://example.com");
 
-        Map<String, Object> result = browserScrollDownTool.execute(params);
-
-        assertFalse((Boolean) result.get("success"));
+        assertThrows(IllegalArgumentException.class, () -> {
+            browserScrollDownTool.execute(params);
+        });
     }
 
     @Test

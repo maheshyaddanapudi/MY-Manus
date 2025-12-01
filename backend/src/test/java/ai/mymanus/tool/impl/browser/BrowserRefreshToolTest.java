@@ -45,12 +45,13 @@ class BrowserRefreshToolTest {
     }
 
     @Test
-    void testMissingSessionId() throws Exception {
+    void testMissingSessionId() {
         Map<String, Object> params = new HashMap<>();
+        params.put("url", "https://example.com");
 
-        Map<String, Object> result = browserRefreshTool.execute(params);
-
-        assertFalse((Boolean) result.get("success"));
+        assertThrows(IllegalArgumentException.class, () -> {
+            browserRefreshTool.execute(params);
+        });
     }
 
     @Test
