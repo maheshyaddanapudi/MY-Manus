@@ -7,6 +7,7 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -35,13 +36,15 @@ public class JsonMapConverter implements AttributeConverter<Map<String, Object>,
     @Override
     public Map<String, Object> convertToEntityAttribute(String dbData) {
         if (dbData == null || dbData.isEmpty()) {
-            return null;
+            return new HashMap<>();
         }
         try {
-            return objectMapper.readValue(dbData, new TypeReference<Map<String, Object>>() {});
+            // Always return a mutable HashMap to avoid UnsupportedOperationException
+            Map<String, Object> map = objectMapper.readValue(dbData, new TypeReference<Map<String, Object>>() {});
+            return new HashMap<>(map);
         } catch (JsonProcessingException e) {
             log.error("Error converting JSON string to Map", e);
-            return Map.of();
+            return new HashMap<>();
         }
     }
 }
