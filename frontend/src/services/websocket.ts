@@ -3,7 +3,11 @@ import type { StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import type { AgentEvent } from '../types';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:8080/ws';
+const WS_URL = import.meta.env.VITE_WS_URL 
+  ? (import.meta.env.VITE_WS_URL.startsWith('http') 
+      ? import.meta.env.VITE_WS_URL 
+      : `${window.location.origin}${import.meta.env.VITE_WS_URL}`)
+  : `${window.location.origin}/ws`;
 
 export class WebSocketService {
   private client: Client | null = null;

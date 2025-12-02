@@ -1,9 +1,37 @@
 spring:
+  datasource:
+    url: jdbc:h2:mem:manusdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
   jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+  
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:sk-ant-dummy-key-for-dev}
+      chat:
+        options:
+          model: claude-3-5-sonnet-20241022
+          temperature: 0.7
+          max-tokens: 4096
 
 logging:
   level:
@@ -19,4 +47,4 @@ sandbox:
   mode: host  # Use host mode in development for faster execution
 
 cors:
-  allowed-origins: http://localhost:3000,http://localhost:5173
+  allowed-origins: http://localhost:3000,http://localhost:5173,https://4173-iiyxm1crc16yj1nrbm9ba-7f15cd92.manusvm.computer
