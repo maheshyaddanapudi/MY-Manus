@@ -59,7 +59,7 @@ describe('TerminalPanel', () => {
   it('renders terminal panel with toolbar', () => {
     render(<TerminalPanel />);
     
-    expect(screen.getByText('Python 3.11 Output')).toBeInTheDocument();
+    expect(screen.getByText('🐍 Python 3.11 Output')).toBeInTheDocument();
     expect(screen.getByText('Clear')).toBeInTheDocument();
   });
 
@@ -69,9 +69,9 @@ describe('TerminalPanel', () => {
     // Terminal should be opened
     expect(mockTerminal.open).toHaveBeenCalled();
     
-    // Welcome messages should be written
-    expect(mockTerminal.writeln).toHaveBeenCalledWith('MY Manus Terminal - Ready');
-    expect(mockTerminal.writeln).toHaveBeenCalledWith('Waiting for agent execution...\n');
+    // Welcome messages should be written with ANSI formatting
+    expect(mockTerminal.writeln).toHaveBeenCalledWith('\x1b[1;36mMY Manus Terminal\x1b[0m \x1b[32m✓\x1b[0m Ready');
+    expect(mockTerminal.writeln).toHaveBeenCalledWith('\x1b[90mWaiting for agent execution...\x1b[0m\n');
   });
 
   it('displays stdout output from store', () => {
@@ -84,8 +84,8 @@ describe('TerminalPanel', () => {
 
     render(<TerminalPanel />);
     
-    // Should write the output to terminal
-    expect(mockTerminal.write).toHaveBeenCalledWith('Hello, World!\n');
+    // Should write the output to terminal with ANSI formatting
+    expect(mockTerminal.write).toHaveBeenCalledWith('\x1b[37mHello, World!\x1b[0m\n');
   });
 
   it('displays stderr output in red', () => {
@@ -98,8 +98,8 @@ describe('TerminalPanel', () => {
 
     render(<TerminalPanel />);
     
-    // Should write error in red (ANSI escape codes)
-    expect(mockTerminal.write).toHaveBeenCalledWith('\x1b[31mError occurred\x1b[0m\n');
+    // Should write error in red with ✗ prefix (ANSI escape codes)
+    expect(mockTerminal.write).toHaveBeenCalledWith('\x1b[31m✗ Error occurred\x1b[0m\n');
   });
 
   it('displays multiple outputs in order', () => {
@@ -114,8 +114,8 @@ describe('TerminalPanel', () => {
 
     render(<TerminalPanel />);
     
-    // Should write all outputs (only last one is written in useEffect)
-    expect(mockTerminal.write).toHaveBeenCalledWith('\x1b[31mError line\x1b[0m\n');
+    // Should write all outputs (only last one is written in useEffect) with ✗ prefix
+    expect(mockTerminal.write).toHaveBeenCalledWith('\x1b[31m✗ Error line\x1b[0m\n');
   });
 
   it('clears terminal when clear button is clicked', async () => {
@@ -127,7 +127,7 @@ describe('TerminalPanel', () => {
     
     // Should clear the terminal
     expect(mockTerminal.clear).toHaveBeenCalled();
-    expect(mockTerminal.writeln).toHaveBeenCalledWith('Terminal cleared\n');
+    expect(mockTerminal.writeln).toHaveBeenCalledWith('\x1b[90mTerminal cleared\x1b[0m\n');
     
     // Should call store's clearTerminal
     expect(mockClearTerminal).toHaveBeenCalled();
@@ -168,7 +168,7 @@ describe('TerminalPanel', () => {
     
     rerender(<TerminalPanel />);
     
-    // Should write only the last output
-    expect(mockTerminal.write).toHaveBeenCalledWith('Second output\n');
+    // Should write only the last output with ANSI formatting
+    expect(mockTerminal.write).toHaveBeenCalledWith('\x1b[37mSecond output\x1b[0m\n');
   });
 });
