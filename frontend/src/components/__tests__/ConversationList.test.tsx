@@ -130,8 +130,10 @@ describe('ConversationList', () => {
 
     // Find the parent container div (not the inner text div)
     const session1Container = screen.getByText('Conversation 1').closest('.group');
-    expect(session1Container).toHaveClass('bg-gray-800');
-    expect(session1Container).toHaveClass('text-white');
+    expect(session1Container).toHaveClass('bg-gradient-to-r');
+    expect(session1Container).toHaveClass('from-blue-600/20');
+    expect(session1Container).toHaveClass('to-purple-600/20');
+    expect(session1Container).toHaveClass('border-blue-500/30');
   });
 
   it('calls switchSession when clicking a conversation', async () => {
