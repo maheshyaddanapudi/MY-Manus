@@ -83,8 +83,6 @@ class AgentStateServiceTest {
 
     @Test
     void testUpdateIteration() {
-        when(agentStateRepository.findBySessionId(testSessionId))
-            .thenReturn(Optional.of(testState));
         when(agentStateRepository.save(any(AgentState.class)))
             .thenReturn(testState);
 
@@ -97,8 +95,6 @@ class AgentStateServiceTest {
 
     @Test
     void testUpdateStatus() {
-        when(agentStateRepository.findBySessionId(testSessionId))
-            .thenReturn(Optional.of(testState));
         when(agentStateRepository.save(any(AgentState.class)))
             .thenReturn(testState);
 

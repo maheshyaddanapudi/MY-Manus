@@ -11,8 +11,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+import reactor.core.publisher.Flux;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -59,16 +62,28 @@ class CodeActAgentServiceTest {
             .executionContext(new HashMap<>())
             .metadata(new HashMap<>())
             .build();
+        
+        // Set @Value field using reflection
+        ReflectionTestUtils.setField(codeActAgentService, "maxIterations", 20);
+        
+        // Mock common dependencies (lenient because not all tests use all methods)
+        lenient().when(agentStateService.getOrCreateSession(anyString())).thenReturn(testState);
+        lenient().when(agentStateService.getExecutionContext(anyString())).thenReturn(new HashMap<>());
+        lenient().when(eventService.buildEventStreamContext(anyString())).thenReturn("Previous context");
+        lenient().when(promptBuilder.buildSystemPrompt(any(), anyBoolean())).thenReturn("System prompt");
+        lenient().when(promptBuilder.extractCodeBlocks(anyString())).thenReturn(List.of()); // No code blocks by default
     }
 
     @Test
     void testProcessQuery() {
         String userQuery = "Read /workspace/test.txt";
 
-        when(agentStateService.getOrCreateState(testSessionId))
-            .thenReturn(testState);
         when(eventService.appendUserMessage(eq(testSessionId), eq(userQuery), anyInt()))
             .thenReturn(new Event());
+        
+        // Mock streaming response (no code blocks, so loop terminates)
+        when(anthropicService.generateStream(anyString(), anyString(), anyString()))
+            .thenReturn(Flux.just("I'll help you ", "read the file."));
 
         // This would trigger the agent loop in real scenario
         // Testing the method exists and doesn't throw
@@ -77,7 +92,7 @@ class CodeActAgentServiceTest {
         });
 
         verify(eventService, times(1)).appendUserMessage(eq(testSessionId), eq(userQuery), anyInt());
-        verify(agentStateService, atLeastOnce()).getOrCreateState(testSessionId);
+        verify(agentStateService, atLeastOnce()).getOrCreateSession(testSessionId);
     }
 
     @Test
@@ -108,8 +123,12 @@ class CodeActAgentServiceTest {
     void testProcessQueryWithEmptyMessage() {
         String emptyQuery = "";
 
-        when(agentStateService.getOrCreateState(testSessionId))
-            .thenReturn(testState);
+        when(eventService.appendUserMessage(eq(testSessionId), eq(emptyQuery), anyInt()))
+            .thenReturn(new Event());
+        
+        // Mock streaming response
+        when(anthropicService.generateStream(anyString(), anyString(), anyString()))
+            .thenReturn(Flux.just("Please provide a message."));
 
         assertDoesNotThrow(() -> {
             codeActAgentService.processQuery(testSessionId, emptyQuery);
@@ -200,16 +219,18 @@ class CodeActAgentServiceTest {
     void testProcessQueryUpdatesState() {
         String userQuery = "Test query";
 
-        when(agentStateService.getOrCreateState(testSessionId))
-            .thenReturn(testState);
         when(eventService.appendUserMessage(eq(testSessionId), eq(userQuery), anyInt()))
             .thenReturn(new Event());
+        
+        // Mock streaming response
+        when(anthropicService.generateStream(anyString(), anyString(), anyString()))
+            .thenReturn(Flux.just("Response"));
 
         assertDoesNotThrow(() -> {
             codeActAgentService.processQuery(testSessionId, userQuery);
         });
 
-        verify(agentStateService, atLeastOnce()).getOrCreateState(testSessionId);
+        verify(agentStateService, atLeastOnce()).getOrCreateSession(testSessionId);
     }
 
     @Test
@@ -217,10 +238,12 @@ class CodeActAgentServiceTest {
         String query1 = "First query";
         String query2 = "Second query";
 
-        when(agentStateService.getOrCreateState(testSessionId))
-            .thenReturn(testState);
         when(eventService.appendUserMessage(anyString(), anyString(), anyInt()))
             .thenReturn(new Event());
+        
+        // Mock streaming response
+        when(anthropicService.generateStream(anyString(), anyString(), anyString()))
+            .thenReturn(Flux.just("Response"));
 
         assertDoesNotThrow(() -> {
             codeActAgentService.processQuery(testSessionId, query1);
