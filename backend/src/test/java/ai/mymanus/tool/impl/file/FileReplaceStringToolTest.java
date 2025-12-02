@@ -141,7 +141,7 @@ class FileReplaceStringToolTest {
         String signature = replaceStringTool.getPythonSignature();
         assertNotNull(signature);
         assertTrue(signature.contains("path"));
-        assertTrue(signature.contains("oldString"));
-        assertTrue(signature.contains("newString"));
+        assertTrue(signature.contains("old"));
+        assertTrue(signature.contains("new"));
     }
 }

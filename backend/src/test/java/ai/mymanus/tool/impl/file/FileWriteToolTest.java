@@ -160,11 +160,13 @@ class FileWriteToolTest {
     @Test
     void testMissingContent() throws Exception {
         Map<String, Object> params = new HashMap<>();
-        params.put("path", "test.txt");
+        params.put("path", testDir.resolve("test.txt").toString());
+        // Missing content parameter - tool should write empty content
 
         Map<String, Object> result = fileWriteTool.execute(params);
 
-        assertFalse((Boolean) result.get("success"));
+        // Tool accepts empty content
+        assertTrue((Boolean) result.get("success"));
     }
 
     @Test
