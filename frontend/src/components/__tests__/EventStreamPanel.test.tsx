@@ -95,7 +95,7 @@ describe('EventStreamPanel', () => {
 
     render(<EventStreamPanel sessionId={mockSessionId} />);
 
-    expect(screen.getByText('No events yet')).toBeInTheDocument();
+    expect(screen.getByText('No Events Yet')).toBeInTheDocument();
     expect(screen.getByText('0 events')).toBeInTheDocument();
   });
 
@@ -132,18 +132,18 @@ describe('EventStreamPanel', () => {
     const select = screen.getByRole('combobox');
     
     // Should have "All" option and iteration options
-    expect(screen.getByText('All')).toBeInTheDocument();
-    expect(screen.getByText('Iteration 1')).toBeInTheDocument();
-    expect(screen.getByText('Iteration 2')).toBeInTheDocument();
+    expect(screen.getByText(/🔄 All Iterations/)).toBeInTheDocument();
+    expect(screen.getByText(/#1 Iteration 1/)).toBeInTheDocument();
+    expect(screen.getByText(/#2 Iteration 2/)).toBeInTheDocument();
   });
 
-  it('displays session ID in footer', () => {
+  it('displays event count in footer', () => {
     (useAgentStore as any).mockReturnValue({ events: mockEvents });
 
     render(<EventStreamPanel sessionId={mockSessionId} />);
 
-    // Should show truncated session ID
-    expect(screen.getByText(/Session: test-ses/)).toBeInTheDocument();
+    // Should show event count in footer
+    expect(screen.getByText(/4 events/)).toBeInTheDocument();
   });
 
   it('displays iteration count in footer', () => {
@@ -151,8 +151,9 @@ describe('EventStreamPanel', () => {
 
     render(<EventStreamPanel sessionId={mockSessionId} />);
 
-    // Should show 2 iterations
-    expect(screen.getByText(/Iterations: 2/)).toBeInTheDocument();
+    // Should show 2 iterations (text is split across elements)
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('iterations')).toBeInTheDocument();
   });
 
   it('resets to all iterations when selecting "All"', () => {
