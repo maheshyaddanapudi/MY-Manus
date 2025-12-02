@@ -14,7 +14,7 @@ interface EventStreamPanelProps {
  * [UserMessage → AgentThought → AgentAction → Observation → ...]
  */
 const EventStreamPanel: React.FC<EventStreamPanelProps> = ({
-  sessionId,
+  sessionId: _sessionId,
 }) => {
   const { events: allEvents } = useAgentStore();
   const [selectedIteration, setSelectedIteration] = useState<number | null>(null);
@@ -80,9 +80,10 @@ const EventStreamPanel: React.FC<EventStreamPanelProps> = ({
       {events.length > 0 && (
         <div className="px-4 py-2 border-t border-gray-700 text-xs text-gray-400">
           <div className="flex items-center justify-between">
-            <span>Session: {sessionId.substring(0, 8)}...</span>
             <span>
-              Iterations: {iterations.length} |
+              Iterations: {iterations.length} | Events: {events.length}
+            </span>
+            <span>
               Last update: {new Date(events[events.length - 1]?.timestamp).toLocaleTimeString()}
             </span>
           </div>
