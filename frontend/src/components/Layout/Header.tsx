@@ -5,18 +5,18 @@ export const Header = () => {
   const { isConnected, agentStatus } = useAgentStore();
 
   const getStatusColor = () => {
-    if (!isConnected) return 'bg-gray-500';
+    if (!isConnected) return 'bg-red-500';
     switch (agentStatus) {
       case 'thinking':
-        return 'bg-blue-500 animate-pulse';
+        return 'bg-green-500 animate-pulse';
       case 'executing':
-        return 'bg-yellow-500 animate-pulse';
+        return 'bg-green-500 animate-pulse';
       case 'error':
         return 'bg-red-500';
       case 'done':
         return 'bg-green-500';
       default:
-        return 'bg-gray-400';
+        return 'bg-green-500'; // idle state - connected
     }
   };
 
