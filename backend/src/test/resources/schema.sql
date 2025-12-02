@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS agent_states (
     iteration INTEGER NOT NULL DEFAULT 0,
     current_task VARCHAR(500),
     last_error VARCHAR(2000),
-    execution_context TEXT,
-    metadata TEXT,
+    execution_context json,
+    metadata json,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP
 );
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS events (
     iteration INTEGER NOT NULL,
     sequence INTEGER NOT NULL,
     content TEXT,
-    data TEXT,
+    data json,
     timestamp TIMESTAMP NOT NULL,
     duration_ms BIGINT,
     success BOOLEAN,
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS tool_executions (
     tool_name VARCHAR(255) NOT NULL,
     iteration INTEGER NOT NULL,
     input_params TEXT,
-    output_result TEXT,
+    output_result json,
     success BOOLEAN NOT NULL,
     error_message VARCHAR(2000),
     execution_time_ms BIGINT,
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS document_chunks (
     chunk_index INTEGER NOT NULL,
     content TEXT NOT NULL,
     embedding BINARY,
-    metadata TEXT,
+    metadata json,
     created_at TIMESTAMP NOT NULL,
     FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE
 );
@@ -93,8 +93,8 @@ CREATE TABLE IF NOT EXISTS network_requests (
     method VARCHAR(10) NOT NULL,
     url VARCHAR(2000) NOT NULL,
     status_code INTEGER,
-    request_headers TEXT,
-    response_headers TEXT,
+    request_headers json,
+    response_headers json,
     request_body TEXT,
     response_body TEXT,
     duration_ms BIGINT,

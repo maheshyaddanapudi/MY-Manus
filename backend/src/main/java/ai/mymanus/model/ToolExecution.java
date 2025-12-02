@@ -1,6 +1,7 @@
 package ai.mymanus.model;
 
 import jakarta.persistence.*;
+import ai.mymanus.config.JsonMapConverter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,12 +31,12 @@ public class ToolExecution {
     @Column(nullable = false, length = 100)
     private String toolName;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
+    @Convert(converter = JsonMapConverter.class)
+    @Column(columnDefinition = "json")
     private Map<String, Object> parameters;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
+    @Convert(converter = JsonMapConverter.class)
+    @Column(columnDefinition = "json")
     private Map<String, Object> result;
 
     @Enumerated(EnumType.STRING)

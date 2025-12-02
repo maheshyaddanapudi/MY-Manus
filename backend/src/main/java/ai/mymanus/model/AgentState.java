@@ -1,6 +1,7 @@
 package ai.mymanus.model;
 
 import jakarta.persistence.*;
+import ai.mymanus.config.JsonMapConverter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -51,12 +52,12 @@ public class AgentState {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
+    @Convert(converter = JsonMapConverter.class)
+    @Column(columnDefinition = "json")
     private Map<String, Object> executionContext;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
+    @Convert(converter = JsonMapConverter.class)
+    @Column(columnDefinition = "json")
     private Map<String, Object> metadata;
 
     @PrePersist

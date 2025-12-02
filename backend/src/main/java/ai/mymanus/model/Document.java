@@ -1,6 +1,7 @@
 package ai.mymanus.model;
 
 import jakarta.persistence.*;
+import ai.mymanus.config.JsonMapConverter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -53,8 +54,8 @@ public class Document {
     /**
      * Metadata (author, created date, etc.)
      */
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
+    @Convert(converter = JsonMapConverter.class)
+    @Column(columnDefinition = "json")
     private Map<String, Object> metadata;
 
     /**

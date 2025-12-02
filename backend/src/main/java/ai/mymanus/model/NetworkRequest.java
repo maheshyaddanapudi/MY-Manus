@@ -1,6 +1,7 @@
 package ai.mymanus.model;
 
 import jakarta.persistence.*;
+import ai.mymanus.config.JsonMapConverter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -81,15 +82,15 @@ public class NetworkRequest {
     /**
      * Request headers
      */
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
+    @Convert(converter = JsonMapConverter.class)
+    @Column(columnDefinition = "json")
     private Map<String, String> requestHeaders;
 
     /**
      * Response headers
      */
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
+    @Convert(converter = JsonMapConverter.class)
+    @Column(columnDefinition = "json")
     private Map<String, String> responseHeaders;
 
     /**
