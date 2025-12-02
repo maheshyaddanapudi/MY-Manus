@@ -29,7 +29,7 @@ describe('EditorPanel', () => {
 
     render(<EditorPanel />);
     
-    expect(screen.getByText('Current Code')).toBeInTheDocument();
+    expect(screen.getByText('Code Editor')).toBeInTheDocument();
   });
 
   it('displays current code in Monaco Editor', () => {
@@ -88,7 +88,7 @@ describe('EditorPanel', () => {
 
     render(<EditorPanel />);
     
-    expect(screen.getByText('(3 executions)')).toBeInTheDocument();
+    expect(screen.getByText('3 executions')).toBeInTheDocument();
   });
 
   it('shows code history dropdown when history exists', () => {
@@ -106,9 +106,9 @@ describe('EditorPanel', () => {
     expect(dropdown).toBeInTheDocument();
     
     // Should have options for current + history
-    expect(screen.getByText('Current')).toBeInTheDocument();
-    expect(screen.getByText('Execution 1 (Iter 1)')).toBeInTheDocument();
-    expect(screen.getByText('Execution 2 (Iter 2)')).toBeInTheDocument();
+    expect(screen.getByText(/📄 Current/)).toBeInTheDocument();
+    expect(screen.getByText(/🔄 Execution 1 \(Iteration 1\)/)).toBeInTheDocument();
+    expect(screen.getByText(/🔄 Execution 2 \(Iteration 2\)/)).toBeInTheDocument();
   });
 
   it('does not show dropdown when no history', () => {
@@ -168,7 +168,7 @@ describe('EditorPanel', () => {
     // Switch back to current
     await user.selectOptions(dropdown, '-1');
     expect(screen.getByText('print("current")')).toBeInTheDocument();
-    expect(screen.getByText('Current Code')).toBeInTheDocument();
+    expect(screen.getByText('Code Editor')).toBeInTheDocument();
   });
 
   it('displays iteration number for historical code', async () => {
