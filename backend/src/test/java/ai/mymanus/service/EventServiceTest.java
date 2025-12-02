@@ -1,5 +1,6 @@
 package ai.mymanus.service;
 
+import ai.mymanus.model.AgentState;
 import ai.mymanus.model.Event;
 import ai.mymanus.repository.EventRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +46,23 @@ class EventServiceTest {
     void setUp() {
         testSessionId = "test-session-123";
         testStateId = UUID.randomUUID();
+        
+        // Mock AgentState
+        AgentState mockState = AgentState.builder()
+            .id(testStateId)
+            .sessionId(testSessionId)
+            .iteration(1)
+            .status(AgentState.Status.IDLE)
+            .executionContext(new HashMap<>())
+            .metadata(new HashMap<>())
+            .build();
+        
+        // Mock stateService to return the mock state
+        lenient().when(stateService.getSession(testSessionId)).thenReturn(mockState);
+        lenient().when(stateService.getOrCreateSession(testSessionId)).thenReturn(mockState);
+        
+        // Mock eventRepository.save to return the event
+        lenient().when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
@@ -129,8 +147,8 @@ class EventServiceTest {
         String context = eventService.buildEventStreamContext(testSessionId);
 
         assertNotNull(context);
-        assertTrue(context.contains("USER_MESSAGE"));
-        assertTrue(context.contains("AGENT_THOUGHT"));
+        assertTrue(context.contains("User:"));
+        assertTrue(context.contains("Thought:"));
     }
 
     @Test

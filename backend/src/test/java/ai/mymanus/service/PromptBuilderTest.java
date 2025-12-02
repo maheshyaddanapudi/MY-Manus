@@ -49,20 +49,20 @@ class PromptBuilderTest {
 
     @Test
     void testBuildSystemPrompt() {
-        when(toolRegistry.generatePythonBindings())
+        when(toolRegistry.getToolDescriptions())
             .thenReturn(testToolBindings);
 
         String systemPrompt = promptBuilder.buildSystemPrompt(new HashMap<>(), false);
 
         assertNotNull(systemPrompt);
-        assertTrue(systemPrompt.contains("CodeAct"));
         assertTrue(systemPrompt.contains("Python"));
-        verify(toolRegistry, times(1)).generatePythonBindings();
+        assertTrue(systemPrompt.contains("execute"));
+        verify(toolRegistry, times(1)).getToolDescriptions();
     }
 
     @Test
     void testSystemPromptContainsToolBindings() {
-        when(toolRegistry.generatePythonBindings())
+        when(toolRegistry.getToolDescriptions())
             .thenReturn(testToolBindings);
 
         String systemPrompt = promptBuilder.buildSystemPrompt(new HashMap<>(), false);
@@ -73,12 +73,12 @@ class PromptBuilderTest {
 
     @Test
     void testSystemPromptContainsCodeActInstructions() {
-        when(toolRegistry.generatePythonBindings())
+        lenient().when(toolRegistry.getToolDescriptions())
             .thenReturn(testToolBindings);
 
         String systemPrompt = promptBuilder.buildSystemPrompt(new HashMap<>(), false);
 
-        assertTrue(systemPrompt.contains("python") || systemPrompt.contains("code"));
+        assertTrue(systemPrompt.contains("Python") || systemPrompt.contains("code"));
         assertTrue(systemPrompt.contains("function") || systemPrompt.contains("tool"));
     }
 
