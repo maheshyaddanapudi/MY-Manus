@@ -14,7 +14,7 @@ describe('MessageItem', () => {
 
     render(<MessageItem message={message} />);
     expect(screen.getByText('Hello, agent!')).toBeInTheDocument();
-    expect(screen.getByText('👤 You')).toBeInTheDocument();
+    expect(screen.getByText('You')).toBeInTheDocument();
   });
 
   it('renders assistant message', () => {
@@ -27,7 +27,7 @@ describe('MessageItem', () => {
 
     render(<MessageItem message={message} />);
     expect(screen.getByText('How can I help you?')).toBeInTheDocument();
-    expect(screen.getByText('🤖 Assistant')).toBeInTheDocument();
+    expect(screen.getByText('MY Manus')).toBeInTheDocument();
   });
 
   it('renders system message', () => {
@@ -40,7 +40,7 @@ describe('MessageItem', () => {
 
     render(<MessageItem message={message} />);
     expect(screen.getByText('System notification')).toBeInTheDocument();
-    expect(screen.getByText('⚠️ System')).toBeInTheDocument();
+    expect(screen.getByText('System')).toBeInTheDocument();
   });
 
   it('applies correct styling for user messages', () => {
@@ -53,8 +53,8 @@ describe('MessageItem', () => {
 
     const { container } = render(<MessageItem message={message} />);
     
-    // User messages should have blue background
-    const messageElement = container.querySelector('.bg-blue-600');
+    // User messages should have blue gradient background
+    const messageElement = container.querySelector('.from-blue-600');
     expect(messageElement).toBeInTheDocument();
     expect(messageElement).toHaveClass('text-white');
   });
@@ -69,8 +69,8 @@ describe('MessageItem', () => {
 
     const { container } = render(<MessageItem message={message} />);
     
-    // Assistant messages should have gray background
-    const messageElement = container.querySelector('.bg-gray-800');
+    // Assistant messages should have gray gradient background
+    const messageElement = container.querySelector('.from-gray-800');
     expect(messageElement).toBeInTheDocument();
     expect(messageElement).toHaveClass('text-gray-100');
   });
@@ -85,8 +85,8 @@ describe('MessageItem', () => {
 
     const { container } = render(<MessageItem message={message} />);
     
-    // System messages should have yellow background
-    const messageElement = container.querySelector('.bg-yellow-900');
+    // System messages should have yellow gradient background with opacity
+    const messageElement = container.querySelector('.from-yellow-900\\/40');
     expect(messageElement).toBeInTheDocument();
     expect(messageElement).toHaveClass('text-yellow-100');
   });
@@ -101,8 +101,8 @@ describe('MessageItem', () => {
 
     render(<MessageItem message={message} />);
     
-    // Timestamp should be formatted and displayed
-    const timestamp = screen.getByText(/\d{1,2}:\d{2}:\d{2}/);
+    // Timestamp should be formatted and displayed in 12-hour format with AM/PM
+    const timestamp = screen.getByText(/\d{1,2}:\d{2}\s?(AM|PM)/i);
     expect(timestamp).toBeInTheDocument();
   });
 
