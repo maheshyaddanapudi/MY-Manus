@@ -1,20 +1,19 @@
 package ai.mymanus.controller;
 
-import ai.mymanus.service.sandbox.PythonSandboxExecutor;
-import ai.mymanus.service.sandbox.ExecutionResult;
-import ai.mymanus.tool.Tool;
-import ai.mymanus.tool.ToolRegistry;
+import ai.mymanus.config.TestSecurityConfig;
+import ai.mymanus.service.sandbox.SandboxExecutor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -23,264 +22,196 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Unit tests for SandboxController
- * Tests sandbox management API
+ * Tests sandbox monitoring and management API
  */
 @WebMvcTest(SandboxController.class)
+@Import(TestSecurityConfig.class)
 class SandboxControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
-    private PythonSandboxExecutor pythonSandboxExecutor;
+    private SandboxExecutor sandboxExecutor;
 
-    @MockBean
-    private ToolRegistry toolRegistry;
+    private String testSessionId;
 
     @BeforeEach
     void setUp() {
-        // Common setup if needed
+        testSessionId = "test-session-123";
     }
 
     @Test
-    void testExecutePython() throws Exception {
-        String requestJson = """
-            {
-                "sessionId": "test-session",
-                "code": "print('Hello, World!')",
-                "context": {}
-            }
-            """;
+    void testGetStats() throws Exception {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalContainers", 3);
+        stats.put("activeSessions", List.of("session1", "session2", "session3"));
 
-        ExecutionResult executionResult = ExecutionResult.builder()
-            .stdout("Hello, World!\n")
-            .stderr("")
-            .exitCode(0)
-            .success(true)
-            .build();
+        when(sandboxExecutor.getContainerStats())
+            .thenReturn(stats);
 
-        when(pythonSandboxExecutor.execute(anyString(), anyString(), any()))
-            .thenReturn(executionResult);
-
-        mockMvc.perform(post("/api/sandbox/execute")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
+        mockMvc.perform(get("/api/sandbox/stats"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.stdout").value("Hello, World!\n"))
-            .andExpect(jsonPath("$.exitCode").value(0));
+            .andExpect(jsonPath("$.totalContainers").value(3))
+            .andExpect(jsonPath("$.activeSessions").isArray());
 
-        verify(pythonSandboxExecutor, times(1))
-            .execute(eq("test-session"), eq("print('Hello, World!')"), any());
+        verify(sandboxExecutor, times(1)).getContainerStats();
     }
 
     @Test
-    void testExecutePythonWithError() throws Exception {
-        String requestJson = """
-            {
-                "sessionId": "test-session",
-                "code": "1 / 0",
-                "context": {}
-            }
-            """;
+    void testGetStatsError() throws Exception {
+        when(sandboxExecutor.getContainerStats())
+            .thenThrow(new RuntimeException("Docker daemon not running"));
 
-        ExecutionResult executionResult = ExecutionResult.builder()
-            .stdout("")
-            .stderr("ZeroDivisionError: division by zero")
-            .exitCode(1)
-            .success(false)
-            .build();
+        mockMvc.perform(get("/api/sandbox/stats"))
+            .andExpect(status().isInternalServerError())
+            .andExpect(jsonPath("$.error").value("Docker daemon not running"));
 
-        when(pythonSandboxExecutor.execute(anyString(), anyString(), any()))
-            .thenReturn(executionResult);
+        verify(sandboxExecutor, times(1)).getContainerStats();
+    }
 
-        mockMvc.perform(post("/api/sandbox/execute")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
+    @Test
+    void testCleanupContainer() throws Exception {
+        doNothing().when(sandboxExecutor).destroySessionContainer(testSessionId);
+
+        mockMvc.perform(delete("/api/sandbox/cleanup/" + testSessionId))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.exitCode").value(1))
-            .andExpect(jsonPath("$.stderr").value("ZeroDivisionError: division by zero"));
+            .andExpect(jsonPath("$.message").value("Container destroyed successfully"))
+            .andExpect(jsonPath("$.sessionId").value(testSessionId));
 
-        verify(pythonSandboxExecutor, times(1))
-            .execute(eq("test-session"), eq("1 / 0"), any());
+        verify(sandboxExecutor, times(1)).destroySessionContainer(testSessionId);
     }
 
     @Test
-    void testExecutePythonWithContext() throws Exception {
-        String requestJson = """
-            {
-                "sessionId": "test-session",
-                "code": "print(x)",
-                "context": {"x": 42}
-            }
-            """;
+    void testCleanupContainerError() throws Exception {
+        doThrow(new RuntimeException("Container not found"))
+            .when(sandboxExecutor).destroySessionContainer(testSessionId);
 
-        ExecutionResult executionResult = ExecutionResult.builder()
-            .stdout("42\n")
-            .stderr("")
-            .exitCode(0)
-            .success(true)
-            .build();
+        mockMvc.perform(delete("/api/sandbox/cleanup/" + testSessionId))
+            .andExpect(status().isInternalServerError())
+            .andExpect(jsonPath("$.error").value("Container not found"))
+            .andExpect(jsonPath("$.sessionId").value(testSessionId));
 
-        when(pythonSandboxExecutor.execute(anyString(), anyString(), any()))
-            .thenReturn(executionResult);
+        verify(sandboxExecutor, times(1)).destroySessionContainer(testSessionId);
+    }
 
-        mockMvc.perform(post("/api/sandbox/execute")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
+    @Test
+    void testCleanupAllContainers() throws Exception {
+        Map<String, Object> statsBefore = new HashMap<>();
+        statsBefore.put("totalContainers", 5);
+        statsBefore.put("activeSessions", List.of("s1", "s2", "s3", "s4", "s5"));
+
+        when(sandboxExecutor.getContainerStats())
+            .thenReturn(statsBefore);
+        doNothing().when(sandboxExecutor).cleanupAllContainers();
+
+        mockMvc.perform(post("/api/sandbox/cleanup/all"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.stdout").value("42\n"));
+            .andExpect(jsonPath("$.message").value("All sandbox environments destroyed"))
+            .andExpect(jsonPath("$.environmentsDestroyed").value(5));
 
-        verify(pythonSandboxExecutor, times(1))
-            .execute(eq("test-session"), eq("print(x)"), any());
+        verify(sandboxExecutor, times(1)).getContainerStats();
+        verify(sandboxExecutor, times(1)).cleanupAllContainers();
     }
 
     @Test
-    void testGetToolBindings() throws Exception {
-        String toolBindings = """
-            # Tool Functions
-            def file_read(path):
-                '''Read a file from workspace'''
-                pass
-            """;
+    void testCleanupAllContainersHostMode() throws Exception {
+        // In host mode, stats don't have totalContainers, use activeSessions instead
+        Map<String, Object> statsBefore = new HashMap<>();
+        statsBefore.put("activeSessions", 3);
+        statsBefore.put("workspaceDir", "/tmp/manus-workspace");
 
-        when(toolRegistry.generatePythonBindings())
-            .thenReturn(toolBindings);
+        when(sandboxExecutor.getContainerStats())
+            .thenReturn(statsBefore);
+        doNothing().when(sandboxExecutor).cleanupAllContainers();
 
-        mockMvc.perform(get("/api/sandbox/tool-bindings"))
+        mockMvc.perform(post("/api/sandbox/cleanup/all"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.bindings").value(toolBindings));
+            .andExpect(jsonPath("$.message").value("All sandbox environments destroyed"))
+            .andExpect(jsonPath("$.environmentsDestroyed").value(3));
 
-        verify(toolRegistry, times(1)).generatePythonBindings();
+        verify(sandboxExecutor, times(1)).getContainerStats();
+        verify(sandboxExecutor, times(1)).cleanupAllContainers();
     }
 
     @Test
-    void testExecuteTool() throws Exception {
-        String requestJson = """
-            {
-                "toolName": "file_read",
-                "parameters": {
-                    "path": "/workspace/test.txt"
-                }
-            }
-            """;
+    void testCleanupAllContainersError() throws Exception {
+        when(sandboxExecutor.getContainerStats())
+            .thenThrow(new RuntimeException("Failed to get stats"));
 
-        Map<String, Object> toolResult = new HashMap<>();
-        toolResult.put("success", true);
-        toolResult.put("content", "File content");
+        mockMvc.perform(post("/api/sandbox/cleanup/all"))
+            .andExpect(status().isInternalServerError())
+            .andExpect(jsonPath("$.error").value("Failed to get stats"));
 
-        Tool mockTool = mock(Tool.class);
-        when(mockTool.execute(any())).thenReturn(toolResult);
-        when(toolRegistry.getTool(eq("file_read"))).thenReturn(Optional.of(mockTool));
+        verify(sandboxExecutor, times(1)).getContainerStats();
+        verify(sandboxExecutor, never()).cleanupAllContainers();
+    }
 
-        mockMvc.perform(post("/api/sandbox/execute-tool")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
+    @Test
+    void testCleanupAllContainersNoActive() throws Exception {
+        Map<String, Object> statsBefore = new HashMap<>();
+        statsBefore.put("totalContainers", 0);
+        statsBefore.put("activeSessions", List.of());
+
+        when(sandboxExecutor.getContainerStats())
+            .thenReturn(statsBefore);
+        doNothing().when(sandboxExecutor).cleanupAllContainers();
+
+        mockMvc.perform(post("/api/sandbox/cleanup/all"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.content").value("File content"));
+            .andExpect(jsonPath("$.message").value("All sandbox environments destroyed"))
+            .andExpect(jsonPath("$.environmentsDestroyed").value(0));
 
-        verify(toolRegistry, times(1)).getTool(eq("file_read"));
-        verify(mockTool, times(1)).execute(any());
+        verify(sandboxExecutor, times(1)).getContainerStats();
+        verify(sandboxExecutor, times(1)).cleanupAllContainers();
     }
 
     @Test
-    void testExecuteToolNotFound() throws Exception {
-        String requestJson = """
-            {
-                "toolName": "non_existent_tool",
-                "parameters": {}
-            }
-            """;
+    void testGetStatsDockerMode() throws Exception {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalContainers", 2);
+        stats.put("activeSessions", List.of("session1", "session2"));
+        stats.put("mode", "docker");
 
-        when(toolRegistry.getTool(eq("non_existent_tool")))
-            .thenReturn(Optional.empty());
+        when(sandboxExecutor.getContainerStats())
+            .thenReturn(stats);
 
-        mockMvc.perform(post("/api/sandbox/execute-tool")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
-            .andExpect(status().isNotFound());
-
-        verify(toolRegistry, times(1)).getTool(eq("non_existent_tool"));
-    }
-
-    @Test
-    void testHealthCheck() throws Exception {
-        mockMvc.perform(get("/api/sandbox/health"))
+        mockMvc.perform(get("/api/sandbox/stats"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("healthy"));
+            .andExpect(jsonPath("$.totalContainers").value(2))
+            .andExpect(jsonPath("$.mode").value("docker"));
+
+        verify(sandboxExecutor, times(1)).getContainerStats();
     }
 
     @Test
-    void testInvalidExecuteRequest() throws Exception {
-        String invalidJson = "{ invalid json }";
+    void testGetStatsHostMode() throws Exception {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("activeSessions", 1);
+        stats.put("workspaceDir", "/tmp/manus-workspace");
+        stats.put("pythonPath", "/usr/bin/python3");
+        stats.put("mode", "host");
 
-        mockMvc.perform(post("/api/sandbox/execute")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
-            .andExpect(status().isBadRequest());
-    }
+        when(sandboxExecutor.getContainerStats())
+            .thenReturn(stats);
 
-    @Test
-    void testMissingCode() throws Exception {
-        String requestJson = """
-            {
-                "sessionId": "test-session",
-                "context": {}
-            }
-            """;
-
-        mockMvc.perform(post("/api/sandbox/execute")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
-            .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testMissingSessionId() throws Exception {
-        String requestJson = """
-            {
-                "code": "print('test')",
-                "context": {}
-            }
-            """;
-
-        mockMvc.perform(post("/api/sandbox/execute")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
-            .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testExecuteWithVariables() throws Exception {
-        String requestJson = """
-            {
-                "sessionId": "test-session",
-                "code": "result = x + y",
-                "context": {"x": 10, "y": 20}
-            }
-            """;
-
-        Map<String, Object> newVariables = new HashMap<>();
-        newVariables.put("result", 30);
-
-        ExecutionResult executionResult = ExecutionResult.builder()
-            .stdout("")
-            .stderr("")
-            .exitCode(0)
-            .success(true)
-            .variables(newVariables)
-            .build();
-
-        when(pythonSandboxExecutor.execute(anyString(), anyString(), any()))
-            .thenReturn(executionResult);
-
-        mockMvc.perform(post("/api/sandbox/execute")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
+        mockMvc.perform(get("/api/sandbox/stats"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true));
+            .andExpect(jsonPath("$.activeSessions").value(1))
+            .andExpect(jsonPath("$.mode").value("host"));
 
-        verify(pythonSandboxExecutor, times(1))
-            .execute(eq("test-session"), eq("result = x + y"), any());
+        verify(sandboxExecutor, times(1)).getContainerStats();
+    }
+
+    @Test
+    void testCleanupContainerSuccess() throws Exception {
+        doNothing().when(sandboxExecutor).destroySessionContainer(anyString());
+
+        mockMvc.perform(delete("/api/sandbox/cleanup/session-abc-123"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.message").exists())
+            .andExpect(jsonPath("$.sessionId").value("session-abc-123"));
+
+        verify(sandboxExecutor, times(1)).destroySessionContainer("session-abc-123");
     }
 }
