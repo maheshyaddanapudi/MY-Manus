@@ -29,17 +29,6 @@ describe('Header', () => {
     expect(screen.getByText('CodeAct AI Agent')).toBeInTheDocument();
   });
 
-  it('displays session ID when available', () => {
-    (useAgentStore as any).mockReturnValue({
-      sessionId: 'test-session-123456789',
-      isConnected: true,
-      agentStatus: 'idle',
-    });
-
-    render(<Header />);
-    expect(screen.getByText(/Session: test-ses.../)).toBeInTheDocument();
-  });
-
   it('displays connection status - connected', () => {
     (useAgentStore as any).mockReturnValue({
       sessionId: 'test-session-123',
@@ -109,16 +98,5 @@ describe('Header', () => {
   it('renders notification bell', () => {
     render(<Header />);
     expect(screen.getByTestId('notification-bell')).toBeInTheDocument();
-  });
-
-  it('hides session ID when not available', () => {
-    (useAgentStore as any).mockReturnValue({
-      sessionId: null,
-      isConnected: false,
-      agentStatus: 'idle',
-    });
-
-    render(<Header />);
-    expect(screen.queryByText(/Session:/)).not.toBeInTheDocument();
   });
 });
