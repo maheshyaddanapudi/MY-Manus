@@ -128,9 +128,9 @@ export const SessionReplayPanel: React.FC<SessionReplayPanelProps> = ({ sessionI
   }, [isPlaying, playbackSpeed, currentSnapshot]);
 
   return (
-    <div className="h-full flex flex-col bg-gray-900 text-gray-100">
+    <div className="h-full flex flex-col bg-gradient-to-b from-gray-900 to-gray-900/95 text-gray-100">
       {/* Header */}
-      <div className="border-b border-gray-700 px-4 py-3">
+      <div className="border-b border-gray-700/50 px-4 py-3">
         <h2 className="text-lg font-semibold">Session Replay</h2>
         <div className="text-xs text-gray-400 mt-1">
           Time-travel debugging - Step through execution history
@@ -138,7 +138,7 @@ export const SessionReplayPanel: React.FC<SessionReplayPanelProps> = ({ sessionI
       </div>
 
       {/* Controls */}
-      <div className="border-b border-gray-700 px-4 py-3 flex items-center space-x-4">
+      <div className="border-b border-gray-700/50 px-4 py-3 flex items-center space-x-4">
         <button
           onClick={stepBackward}
           disabled={loading || !currentSnapshot}
@@ -187,7 +187,7 @@ export const SessionReplayPanel: React.FC<SessionReplayPanelProps> = ({ sessionI
       {/* Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Timeline */}
-        <div className="w-1/4 border-r border-gray-700 overflow-y-auto">
+        <div className="w-1/4 border-r border-gray-700/50 overflow-y-auto">
           <div className="p-4">
             <h3 className="text-sm font-semibold mb-3">Timeline</h3>
             {replayPoints.map((point) => (
@@ -197,7 +197,7 @@ export const SessionReplayPanel: React.FC<SessionReplayPanelProps> = ({ sessionI
                 className={`p-3 mb-2 rounded cursor-pointer border transition-colors ${
                   currentSnapshot?.iteration === point.iteration
                     ? 'bg-blue-900 border-blue-500'
-                    : 'bg-gray-800 border-gray-700 hover:bg-gray-750'
+                    : 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-750'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
@@ -224,7 +224,7 @@ export const SessionReplayPanel: React.FC<SessionReplayPanelProps> = ({ sessionI
               {currentSnapshot.lastAction && (
                 <div>
                   <h3 className="text-sm font-semibold mb-2">Last Action</h3>
-                  <pre className="bg-gray-800 p-3 rounded text-xs overflow-x-auto">
+                  <pre className="bg-gray-800/40 p-3 rounded text-xs overflow-x-auto">
                     <code>{currentSnapshot.lastAction}</code>
                   </pre>
                 </div>
@@ -234,7 +234,7 @@ export const SessionReplayPanel: React.FC<SessionReplayPanelProps> = ({ sessionI
               {currentSnapshot.lastObservation && (
                 <div>
                   <h3 className="text-sm font-semibold mb-2">Last Observation</h3>
-                  <div className="bg-gray-800 p-3 rounded text-xs">
+                  <div className="bg-gray-800/40 p-3 rounded text-xs">
                     {currentSnapshot.lastObservation.stdout && (
                       <div>
                         <div className="text-green-400 font-semibold mb-1">stdout:</div>
@@ -260,7 +260,7 @@ export const SessionReplayPanel: React.FC<SessionReplayPanelProps> = ({ sessionI
               {Object.keys(currentSnapshot.pythonVariables).length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold mb-2">Python Variables</h3>
-                  <div className="bg-gray-800 p-3 rounded text-xs space-y-1">
+                  <div className="bg-gray-800/40 p-3 rounded text-xs space-y-1">
                     {Object.entries(currentSnapshot.pythonVariables).map(([key, value]) => (
                       <div key={key} className="flex">
                         <span className="text-blue-400 font-mono mr-2">{key}:</span>
@@ -282,7 +282,7 @@ export const SessionReplayPanel: React.FC<SessionReplayPanelProps> = ({ sessionI
                   {currentSnapshot.events.slice(-10).map((event: any) => (
                     <div
                       key={event.id}
-                      className="bg-gray-800 p-2 rounded text-xs"
+                      className="bg-gray-800/40 p-2 rounded text-xs"
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-semibold">{event.type}</span>

@@ -50,24 +50,22 @@ export const ChatPanel = () => {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-gradient-to-b from-gray-900 to-gray-900/95">
       {/* Messages */}
       <div className="flex-1 overflow-hidden">
         <MessageList messages={messages} />
       </div>
 
       {/* Input */}
-      <div className="border-t border-gray-700">
-        <ChatInput
-          onSend={handleSendMessage}
-          disabled={isProcessing}
-          placeholder={
-            isProcessing
-              ? 'Agent is processing...'
-              : 'Ask the agent to solve a task...'
-          }
-        />
-      </div>
+      <ChatInput
+        onSend={handleSendMessage}
+        disabled={isProcessing}
+        placeholder={
+          isProcessing
+            ? '⏳ Agent is processing...'
+            : 'Ask the agent to solve a task...'
+        }
+      />
     </div>
   );
 };

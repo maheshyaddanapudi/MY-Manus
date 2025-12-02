@@ -4,6 +4,13 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  safelist: [
+    'bg-green-500',
+    'bg-red-500',
+    'bg-gray-500',
+    'bg-gray-400',
+    'animate-pulse',
+  ],
   theme: {
     extend: {},
   },

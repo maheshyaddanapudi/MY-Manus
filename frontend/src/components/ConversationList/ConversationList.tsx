@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAgentStore } from '../../stores/agentStore';
 import type { Session } from '../../types';
 import { PlusIcon, TrashIcon, PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { ChatBubbleLeftIcon } from '@heroicons/react/24/solid';
+import { getButtonClasses, cn } from '../../theme';
 
 export const ConversationList: React.FC = () => {
   const {
@@ -79,41 +80,45 @@ export const ConversationList: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 border-r border-gray-700">
+    <div className="flex flex-col h-full bg-gradient-to-b from-gray-900 to-gray-900/95 border-r border-gray-700/50">
       {/* Header */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-4 border-b border-gray-700/50">
         <button
           onClick={handleNewChat}
           disabled={isCreating}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+          className={cn(
+            getButtonClasses('primary', 'md'),
+            'w-full shadow-lg hover:shadow-xl',
+            isCreating && 'opacity-50 cursor-not-allowed'
+          )}
         >
           <PlusIcon className="w-5 h-5" />
-          <span>{isCreating ? 'Creating...' : 'New Chat'}</span>
+          <span className="font-semibold">{isCreating ? 'Creating...' : 'New Chat'}</span>
         </button>
       </div>
 
       {/* Conversation List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
         {sessions.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <ChatBubbleLeftIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">No conversations yet</p>
-            <p className="text-xs mt-1">Click "New Chat" to start</p>
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gray-800/50 rounded-2xl flex items-center justify-center border border-gray-700/50">
+              <ChatBubbleLeftIcon className="w-8 h-8 text-gray-600" />
+            </div>
+            <p className="text-sm text-gray-400 font-medium">No conversations yet</p>
+            <p className="text-xs text-gray-500 mt-1">Click "New Chat" to start</p>
           </div>
         ) : (
-          <div className="p-2 space-y-1">
+          <div className="p-3 space-y-1.5">
             {sessions.map((session) => (
               <div
                 key={session.sessionId}
                 onClick={() => handleSwitchSession(session.sessionId)}
-                className={`
-                  group relative px-3 py-3 rounded-lg cursor-pointer transition-colors
-                  ${
-                    currentSessionId === session.sessionId
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-300 hover:bg-gray-800/50'
-                  }
-                `}
+                className={cn(
+                  'group relative px-3.5 py-3 rounded-xl cursor-pointer transition-all duration-200',
+                  currentSessionId === session.sessionId
+                    ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 shadow-lg shadow-blue-500/10'
+                    : 'hover:bg-gray-800/60 border border-transparent hover:border-gray-700/50'
+                )}
               >
                 {editingSessionId === session.sessionId ? (
                   // Edit mode
@@ -127,18 +132,20 @@ export const ConversationList: React.FC = () => {
                         if (e.key === 'Enter') saveEdit(session.sessionId, e as any);
                         if (e.key === 'Escape') cancelEditing(e as any);
                       }}
-                      className="flex-1 px-2 py-1 text-sm bg-gray-700 text-white rounded border border-gray-600 focus:outline-none focus:border-blue-500"
+                      className="flex-1 px-3 py-1.5 text-sm bg-gray-800 text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       autoFocus
                     />
                     <button
                       onClick={(e) => saveEdit(session.sessionId, e)}
-                      className="p-1 hover:bg-gray-700 rounded"
+                      className="p-1.5 hover:bg-green-900/30 rounded-lg transition-colors"
+                      title="Save"
                     >
                       <CheckIcon className="w-4 h-4 text-green-400" />
                     </button>
                     <button
                       onClick={cancelEditing}
-                      className="p-1 hover:bg-gray-700 rounded"
+                      className="p-1.5 hover:bg-red-900/30 rounded-lg transition-colors"
+                      title="Cancel"
                     >
                       <XMarkIcon className="w-4 h-4 text-red-400" />
                     </button>
@@ -148,30 +155,50 @@ export const ConversationList: React.FC = () => {
                   <>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <ChatBubbleLeftIcon className="w-4 h-4 flex-shrink-0" />
-                          <h3 className="font-medium text-sm truncate">{session.title}</h3>
+                        <div className="flex items-center gap-2.5 mb-1.5">
+                          <div className={cn(
+                            'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all',
+                            currentSessionId === session.sessionId
+                              ? 'bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg'
+                              : 'bg-gray-800 border border-gray-700'
+                          )}>
+                            <ChatBubbleLeftIcon className="w-4 h-4 text-white" />
+                          </div>
+                          <h3 className={cn(
+                            'font-semibold text-sm truncate transition-colors',
+                            currentSessionId === session.sessionId
+                              ? 'text-white'
+                              : 'text-gray-300 group-hover:text-white'
+                          )}>
+                            {session.title}
+                          </h3>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {formatDate(session.updatedAt)} · {session.messageCount} messages
-                        </p>
+                        <div className="flex items-center gap-2 ml-10">
+                          <span className="text-xs text-gray-500 font-medium">
+                            {formatDate(session.updatedAt)}
+                          </span>
+                          <span className="text-gray-600">·</span>
+                          <span className="text-xs text-gray-500">
+                            {session.messageCount} {session.messageCount === 1 ? 'message' : 'messages'}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Action buttons (show on hover) */}
                       <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => startEditing(session, e)}
-                          className="p-1.5 hover:bg-gray-700 rounded transition-colors"
+                          className="p-1.5 hover:bg-gray-700/80 rounded-lg transition-all hover:scale-110"
                           title="Rename"
                         >
-                          <PencilIcon className="w-4 h-4" />
+                          <PencilIcon className="w-4 h-4 text-gray-400 hover:text-blue-400 transition-colors" />
                         </button>
                         <button
                           onClick={(e) => handleDelete(session.sessionId, e)}
-                          className="p-1.5 hover:bg-red-900/50 rounded transition-colors"
+                          className="p-1.5 hover:bg-red-900/40 rounded-lg transition-all hover:scale-110"
                           title="Delete"
                         >
-                          <TrashIcon className="w-4 h-4 text-red-400" />
+                          <TrashIcon className="w-4 h-4 text-gray-400 hover:text-red-400 transition-colors" />
                         </button>
                       </div>
                     </div>
@@ -182,6 +209,23 @@ export const ConversationList: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Custom Scrollbar Styles */}
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #475569;
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #64748b;
+        }
+      `}</style>
     </div>
   );
 };

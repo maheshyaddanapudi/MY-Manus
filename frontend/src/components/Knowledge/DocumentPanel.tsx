@@ -112,9 +112,9 @@ export const DocumentPanel: React.FC<DocumentPanelProps> = ({ sessionId }) => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-900 text-gray-100">
+    <div className="h-full flex flex-col bg-gradient-to-b from-gray-900 to-gray-900/95 text-gray-100">
       {/* Header */}
-      <div className="border-b border-gray-700 px-4 py-3">
+      <div className="border-b border-gray-700/50 px-4 py-3">
         <h2 className="text-lg font-semibold">Knowledge Base</h2>
         <div className="text-xs text-gray-400 mt-1">
           Upload documents to augment agent context with RAG
@@ -122,7 +122,7 @@ export const DocumentPanel: React.FC<DocumentPanelProps> = ({ sessionId }) => {
       </div>
 
       {/* Upload Section */}
-      <div className="border-b border-gray-700 px-4 py-3">
+      <div className="border-b border-gray-700/50 px-4 py-3">
         <label className="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded cursor-pointer text-sm">
           {uploading ? '⏳ Uploading...' : '📤 Upload Documents'}
           <input
@@ -140,7 +140,7 @@ export const DocumentPanel: React.FC<DocumentPanelProps> = ({ sessionId }) => {
       </div>
 
       {/* Search Section */}
-      <div className="border-b border-gray-700 px-4 py-3">
+      <div className="border-b border-gray-700/50 px-4 py-3">
         <div className="flex space-x-2">
           <input
             type="text"
@@ -148,7 +148,7 @@ export const DocumentPanel: React.FC<DocumentPanelProps> = ({ sessionId }) => {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             placeholder="Search knowledge base..."
-            className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded text-sm"
+            className="flex-1 px-3 py-2 bg-gray-800/40 border border-gray-600 rounded text-sm"
           />
           <button
             onClick={handleSearch}
@@ -169,7 +169,7 @@ export const DocumentPanel: React.FC<DocumentPanelProps> = ({ sessionId }) => {
             <h3 className="text-sm font-semibold mb-2">Search Results ({searchResults.length})</h3>
             <div className="space-y-2">
               {searchResults.map((chunk, idx) => (
-                <div key={idx} className="bg-gray-800 p-3 rounded text-xs">
+                <div key={idx} className="bg-gray-800/40 p-3 rounded text-xs">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-blue-400 font-semibold">{chunk.filename}</span>
                     <span className="text-gray-400">Chunk {chunk.chunkIndex + 1}</span>
@@ -206,7 +206,7 @@ export const DocumentPanel: React.FC<DocumentPanelProps> = ({ sessionId }) => {
               {documents.map((doc) => (
                 <div
                   key={doc.id}
-                  className="bg-gray-800 p-3 rounded hover:bg-gray-750 transition-colors"
+                  className="bg-gray-800/40 p-3 rounded hover:bg-gray-750 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">

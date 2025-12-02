@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileNode } from './FileNode';
 import { FileViewer } from './FileViewer';
 import { apiService } from '../../services/api';
+import { cn, getButtonClasses } from '../../theme';
 
 interface FileInfo {
   path: string;
@@ -83,37 +84,53 @@ export const FileTreePanel: React.FC<FileTreePanelProps> = ({ sessionId }) => {
   const tree = buildTree(files);
 
   return (
-    <div className="h-full flex bg-gray-900 text-gray-100">
+    <div className="h-full flex bg-gradient-to-b from-gray-900 to-gray-900/95">
       {/* File Tree */}
-      <div className="w-1/3 border-r border-gray-700 overflow-y-auto">
-        <div className="p-4 border-b border-gray-700">
-          <h2 className="text-lg font-semibold">File Explorer</h2>
-          <div className="text-xs text-gray-400 mt-1">{rootPath}</div>
-          {rootPath !== '/workspace' && (
+      <div className="w-1/3 border-r border-gray-700/50 overflow-y-auto custom-scrollbar">
+        <div className="p-4 border-b border-gray-700/50 bg-gray-800/40 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">📂</span>
+            <h2 className="text-base font-semibold text-gray-200">File Explorer</h2>
+          </div>
+          <div className="text-xs text-gray-500 font-mono bg-gray-800/50 px-2 py-1 rounded mt-2">
+            {rootPath}
+          </div>
+          <div className="flex gap-2 mt-3">
+            {rootPath !== '/workspace' && (
+              <button
+                onClick={() => setRootPath('/workspace')}
+                className={cn(getButtonClasses('secondary', 'sm'))}
+              >
+                ← Back
+              </button>
+            )}
             <button
-              onClick={() => setRootPath('/workspace')}
-              className="mt-2 px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm"
+              onClick={loadFileTree}
+              className={cn(getButtonClasses('primary', 'sm'))}
             >
-              ← Back to Workspace
+              🔄 Refresh
             </button>
-          )}
-          <button
-            onClick={loadFileTree}
-            className="mt-2 ml-2 px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded text-sm"
-          >
-            Refresh
-          </button>
+          </div>
         </div>
 
-        <div className="p-4">
-          {loading && <div className="text-gray-400">Loading...</div>}
+        <div className="p-3">
+          {loading && (
+            <div className="text-center py-8">
+              <div className="text-3xl mb-2 animate-pulse">📂</div>
+              <div className="text-gray-400 text-sm">Loading files...</div>
+            </div>
+          )}
 
           {!loading && files.length === 0 && (
-            <div className="text-gray-400">No files found</div>
+            <div className="text-center py-12">
+              <div className="text-5xl mb-3 opacity-30">📁</div>
+              <div className="text-gray-400">No files found</div>
+              <div className="text-gray-600 text-sm mt-1">Directory is empty</div>
+            </div>
           )}
 
           {!loading && files.length > 0 && (
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {Object.entries(tree).map(([depth, depthFiles]) => (
                 <div key={depth}>
                   {depthFiles.map((file) => (
@@ -132,12 +149,20 @@ export const FileTreePanel: React.FC<FileTreePanelProps> = ({ sessionId }) => {
       </div>
 
       {/* File Viewer */}
-      <div className="w-2/3">
+      <div className="w-2/3 bg-gray-900/50">
         {selectedFile && fileContent !== null ? (
           <FileViewer filePath={selectedFile} content={fileContent} />
         ) : (
-          <div className="flex items-center justify-center h-full text-gray-400">
-            Select a file to view
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-4">
+              <div className="text-6xl opacity-30">📄</div>
+              <div>
+                <p className="text-lg font-medium text-gray-400">No File Selected</p>
+                <p className="text-sm text-gray-600 mt-2">
+                  Select a file from the tree to view its contents
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>

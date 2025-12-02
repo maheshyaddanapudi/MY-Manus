@@ -77,9 +77,9 @@ export const BrowserPanel: React.FC<BrowserPanelProps> = ({ sessionId }) => {
   }, [sessionId]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 text-gray-100">
+    <div className="flex flex-col h-full bg-gradient-to-b from-gray-900 to-gray-900/95 text-gray-100">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700/50">
         <div className="flex items-center space-x-3">
           <h2 className="text-lg font-semibold">🌐 Browser</h2>
           <span className="px-2 py-1 text-xs bg-blue-600 rounded">
@@ -128,7 +128,7 @@ export const BrowserPanel: React.FC<BrowserPanelProps> = ({ sessionId }) => {
       <div className="flex flex-1 overflow-hidden">
         {/* Snapshot List (Sidebar) */}
         {snapshots.length > 1 && (
-          <div className="w-48 border-r border-gray-700 overflow-y-auto bg-gray-800">
+          <div className="w-48 border-r border-gray-700/50 overflow-y-auto bg-gray-800/40">
             <div className="p-2">
               <div className="text-xs text-gray-400 mb-2 px-2">History</div>
               {snapshots.map((snapshot) => (
