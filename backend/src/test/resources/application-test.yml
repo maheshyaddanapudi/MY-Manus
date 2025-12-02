@@ -1,0 +1,42 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    defer-datasource-initialization: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: false
+        hbm2ddl:
+          auto: create-drop
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  h2:
+    console:
+      enabled: false
+  ai:
+    anthropic:
+      api-key: test-api-key-for-integration-tests
+
+sandbox:
+  mode: mock
+  docker:
+    image: mymanus-sandbox:latest
+    memory-limit: 536870912
+    cpu-quota: 50000
+    timeout-seconds: 30
+    network-mode: none
+
+agent:
+  max-iterations: 20
+
+logging:
+  level:
+    ai.mymanus: DEBUG
