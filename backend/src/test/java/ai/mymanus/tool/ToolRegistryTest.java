@@ -32,16 +32,18 @@ class ToolRegistryTest {
 
     @BeforeEach
     void setUp() {
+        // Setup mocks BEFORE creating ToolRegistry (lenient because not all tests use all methods)
+        lenient().when(fileReadTool.getName()).thenReturn("file_read");
+        lenient().when(fileReadTool.getDescription()).thenReturn("Read a file from workspace");
+        lenient().when(fileReadTool.getPythonSignature()).thenReturn("file_read(path: str)");
+
+        lenient().when(browserNavigateTool.getName()).thenReturn("browser_navigate");
+        lenient().when(browserNavigateTool.getDescription()).thenReturn("Navigate browser to URL");
+        lenient().when(browserNavigateTool.getPythonSignature()).thenReturn("browser_navigate(url: str, session_id: str)");
+        
+        // Now create ToolRegistry with mocked tools
         List<Tool> tools = List.of(fileReadTool, browserNavigateTool);
         toolRegistry = new ToolRegistry(tools);
-
-        when(fileReadTool.getName()).thenReturn("file_read");
-        when(fileReadTool.getDescription()).thenReturn("Read a file from workspace");
-        when(fileReadTool.getPythonSignature()).thenReturn("file_read(path: str)");
-
-        when(browserNavigateTool.getName()).thenReturn("browser_navigate");
-        when(browserNavigateTool.getDescription()).thenReturn("Navigate browser to URL");
-        when(browserNavigateTool.getPythonSignature()).thenReturn("browser_navigate(url: str, session_id: str)");
     }
 
     @Test
@@ -80,9 +82,9 @@ class ToolRegistryTest {
     @Test
     void testRegisterAdditionalTool() {
         Tool newTool = mock(Tool.class);
-        when(newTool.getName()).thenReturn("new_tool");
-        when(newTool.getDescription()).thenReturn("A new tool");
-        when(newTool.getPythonSignature()).thenReturn("new_tool()");
+        lenient().when(newTool.getName()).thenReturn("new_tool");
+        lenient().when(newTool.getDescription()).thenReturn("A new tool");
+        lenient().when(newTool.getPythonSignature()).thenReturn("new_tool()");
 
         toolRegistry.registerTool(newTool);
 
@@ -132,9 +134,9 @@ class ToolRegistryTest {
     @Test
     void testToolRegistryWithSingleTool() {
         Tool singleTool = mock(Tool.class);
-        when(singleTool.getName()).thenReturn("single_tool");
-        when(singleTool.getDescription()).thenReturn("Single tool");
-        when(singleTool.getPythonSignature()).thenReturn("single_tool()");
+        lenient().when(singleTool.getName()).thenReturn("single_tool");
+        lenient().when(singleTool.getDescription()).thenReturn("Single tool");
+        lenient().when(singleTool.getPythonSignature()).thenReturn("single_tool()");
 
         ToolRegistry singleRegistry = new ToolRegistry(List.of(singleTool));
 
@@ -181,9 +183,9 @@ class ToolRegistryTest {
     void testRegisterToolOverwrite() {
         // Register a tool with same name
         Tool newFileRead = mock(Tool.class);
-        when(newFileRead.getName()).thenReturn("file_read");
-        when(newFileRead.getDescription()).thenReturn("New file read implementation");
-        when(newFileRead.getPythonSignature()).thenReturn("file_read(path: str)");
+        lenient().when(newFileRead.getName()).thenReturn("file_read");
+        lenient().when(newFileRead.getDescription()).thenReturn("New file read implementation");
+        lenient().when(newFileRead.getPythonSignature()).thenReturn("file_read(path: str)");
 
         toolRegistry.registerTool(newFileRead);
 
@@ -199,9 +201,9 @@ class ToolRegistryTest {
 
         // Add another tool
         Tool additionalTool = mock(Tool.class);
-        when(additionalTool.getName()).thenReturn("additional_tool");
-        when(additionalTool.getDescription()).thenReturn("Additional");
-        when(additionalTool.getPythonSignature()).thenReturn("additional_tool()");
+        lenient().when(additionalTool.getName()).thenReturn("additional_tool");
+        lenient().when(additionalTool.getDescription()).thenReturn("Additional");
+        lenient().when(additionalTool.getPythonSignature()).thenReturn("additional_tool()");
 
         toolRegistry.registerTool(additionalTool);
 

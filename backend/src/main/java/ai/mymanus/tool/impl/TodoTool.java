@@ -93,7 +93,7 @@ public class TodoTool implements Tool {
 
     private Map<String, Object> writeTodo(Path todoPath, String content) throws IOException {
         if (content == null) {
-            content = "";
+            return error("content parameter required for write action", null);
         }
 
         Files.writeString(todoPath, content);
