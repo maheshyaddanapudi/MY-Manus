@@ -108,7 +108,7 @@ class BrowserSessionTest {
     @Test
     void testGetPageCreatesNewIfClosed() {
         Page newPage = mock(Page.class);
-        when(page.isClosed()).thenReturn(true);
+        when(page.isClosed()).thenReturn(false); // Initially not closed
         when(context.newPage()).thenReturn(page, newPage);
         
         browserSession = new BrowserSession("session-1", browser, context);
@@ -119,13 +119,13 @@ class BrowserSessionTest {
         
         // Simulate page being closed
         when(page.isClosed()).thenReturn(true);
-        when(context.newPage()).thenReturn(newPage);
         
         // Second call should create new page
         Page secondPage = browserSession.getPage();
+        assertEquals(newPage, secondPage);
         
         // Should have called newPage at least twice (once in constructor, once in getPage)
-        verify(context, atLeast(1)).newPage();
+        verify(context, atLeast(2)).newPage();
     }
 
     @Test

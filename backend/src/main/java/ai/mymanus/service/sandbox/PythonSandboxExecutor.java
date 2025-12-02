@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -61,10 +62,10 @@ public class PythonSandboxExecutor implements SandboxExecutor {
                                   ToolRegistry toolRegistry,
                                   ObjectMapper objectMapper,
                                   ToolRpcHandler rpcHandler) {
-        this.dockerClient = dockerClient;
-        this.toolRegistry = toolRegistry;
-        this.objectMapper = objectMapper;
-        this.rpcHandler = rpcHandler;
+        this.dockerClient = Objects.requireNonNull(dockerClient, "dockerClient cannot be null");
+        this.toolRegistry = Objects.requireNonNull(toolRegistry, "toolRegistry cannot be null");
+        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper cannot be null");
+        this.rpcHandler = Objects.requireNonNull(rpcHandler, "rpcHandler cannot be null");
     }
 
     /**
