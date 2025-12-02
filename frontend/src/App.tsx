@@ -91,7 +91,7 @@ function App() {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-900 text-white">
         <div className="text-center">
-          <div className="text-6xl mb-4">🤖</div>
+          <img src="/avatar-manus.png" alt="MY Manus AI" className="w-32 h-32 mx-auto mb-4 animate-pulse rounded-full" style={{ mixBlendMode: 'screen' }} />
           <h2 className="text-2xl font-bold mb-2">Initializing MY Manus...</h2>
           <p className="text-gray-400">Connecting to backend</p>
         </div>
