@@ -1,10 +1,14 @@
 package ai.mymanus.integration;
 
+import ai.mymanus.MyManusApplication;
+import ai.mymanus.config.IntegrationTestConfiguration;
 import ai.mymanus.tool.impl.file.FileReadTool;
 import ai.mymanus.tool.impl.file.FileWriteTool;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.HashMap;
@@ -15,8 +19,10 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Integration test for sandbox security validation
  */
-@SpringBootTest
+@SpringBootTest(classes = MyManusApplication.class)
 @ActiveProfiles("test")
+@Import(IntegrationTestConfiguration.class)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 class SandboxSecurityIntegrationTest {
 
     @Autowired
@@ -51,7 +57,8 @@ class SandboxSecurityIntegrationTest {
     @Test
     void testValidWorkspacePath() throws Exception {
         Map<String, Object> writeParams = new HashMap<>();
-        writeParams.put("path", "/workspace/safe-file.txt");
+        // Use relative path which will be resolved to workspace root
+        writeParams.put("path", "safe-file.txt");
         writeParams.put("content", "Safe content");
 
         Map<String, Object> result = fileWriteTool.execute(writeParams);
