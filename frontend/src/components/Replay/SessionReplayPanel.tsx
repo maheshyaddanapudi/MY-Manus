@@ -279,22 +279,40 @@ export const SessionReplayPanel: React.FC<SessionReplayPanelProps> = ({ sessionI
                   Events ({currentSnapshot.eventCount})
                 </h3>
                 <div className="space-y-2">
-                  {currentSnapshot.events.slice(-10).map((event: any) => (
-                    <div
-                      key={event.id}
-                      className="bg-gray-800/40 p-2 rounded text-xs"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold">{event.type}</span>
-                        <span className="text-gray-400">Seq: {event.sequence}</span>
-                      </div>
-                      {event.data && (
-                        <pre className="text-gray-400 text-xs overflow-x-auto">
-                          {JSON.stringify(event.data, null, 2).substring(0, 200)}
-                        </pre>
-                      )}
-                    </div>
-                  ))}
+                  {currentSnapshot.events.slice(-10)
+                    .filter((event: any) => {
+                      // Filter out events with empty/null data
+                      if (!event.data) return false;
+                      const dataStr = JSON.stringify(event.data);
+                      // Filter out empty objects {} and empty arrays []
+                      if (dataStr === '{}' || dataStr === '[]') return false;
+                      return true;
+                    })
+                    .map((event: any) => {
+                      // Show "Thinking..." for thought events with minimal content
+                      const isThought = event.type === 'AGENT_THOUGHT';
+                      const dataStr = JSON.stringify(event.data, null, 2);
+                      const isEmpty = !event.data || dataStr.length < 10;
+                      
+                      return (
+                        <div
+                          key={event.id}
+                          className="bg-gray-800/40 p-2 rounded text-xs"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-semibold">{event.type}</span>
+                            <span className="text-gray-400">Seq: {event.sequence}</span>
+                          </div>
+                          {isEmpty && isThought ? (
+                            <div className="text-gray-400 italic">Thinking...</div>
+                          ) : (
+                            <pre className="text-gray-400 text-xs overflow-x-auto">
+                              {dataStr.substring(0, 200)}
+                            </pre>
+                          )}
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             </div>

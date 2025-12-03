@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Header } from './Header';
+import { ActivityBanner } from './ActivityBanner';
 import { useAgentStore } from '../../stores/agentStore';
 import { EventStreamPanel } from '../EventStream';
 import { EnhancedBrowserPanel } from '../Browser';
@@ -114,6 +115,9 @@ export const MainLayout = ({ conversationListPanel, chatPanel, terminalPanel, ed
           </div>
         </div>
       </div>
+
+      {/* Activity Banner */}
+      <ActivityBanner />
     </div>
   );
 };

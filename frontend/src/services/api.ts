@@ -102,17 +102,22 @@ class ApiService {
     return response.data;
   }
 
+  async getWorkspacePath(sessionId: string): Promise<{ sessionId: string; workspacePath: string }> {
+    const response = await this.client.get(`/api/agent/session/${sessionId}/workspace`);
+    return response.data;
+  }
+
   // File browsing (read-only, extensible for editing later)
-  async listFiles(path: string = '/workspace', maxDepth: number = 3, includeHidden: boolean = false): Promise<any> {
+  async listFiles(sessionId: string, path: string = '.', maxDepth: number = 3, includeHidden: boolean = false): Promise<any> {
     const response = await this.client.get('/api/files/list', {
-      params: { path, maxDepth, includeHidden },
+      params: { sessionId, path, maxDepth, includeHidden },
     });
     return response.data;
   }
 
-  async readFile(path: string): Promise<any> {
+  async readFile(sessionId: string, path: string): Promise<any> {
     const response = await this.client.get('/api/files/read', {
-      params: { path },
+      params: { sessionId, path },
     });
     return response.data;
   }
@@ -166,5 +171,6 @@ export const getExecutionContext = (sessionId: string) => apiService.getExecutio
 export const getToolExecutions = (sessionId: string) => apiService.getToolExecutions(sessionId);
 export const getEventStream = (sessionId: string) => apiService.getEventStream(sessionId);
 export const getEventsForIteration = (sessionId: string, iteration: number) => apiService.getEventsForIteration(sessionId, iteration);
-export const listFiles = (path?: string) => apiService.listFiles(path);
-export const readFile = (path: string) => apiService.readFile(path);
+export const getWorkspacePath = (sessionId: string) => apiService.getWorkspacePath(sessionId);
+export const listFiles = (sessionId: string, path?: string) => apiService.listFiles(sessionId, path);
+export const readFile = (sessionId: string, path: string) => apiService.readFile(sessionId, path);

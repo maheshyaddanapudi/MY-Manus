@@ -34,6 +34,7 @@ interface AgentState {
 
   // UI State
   activePanel: 'terminal' | 'editor' | 'browser' | 'events' | 'files' | 'replay' | 'knowledge' | 'plan';
+  suggestedPanel: 'terminal' | 'editor' | 'browser' | 'events' | 'files' | 'replay' | 'knowledge' | 'plan' | null;
   isSidebarOpen: boolean;
 
   // Actions
@@ -82,6 +83,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   codeHistory: [],
   executionContext: {},
   activePanel: 'terminal',
+  suggestedPanel: null,
   isSidebarOpen: true,
 
   // Actions
@@ -126,7 +128,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
       case 'code':
         // Update current code and add to history
-        set({ currentCode: event.content, activePanel: 'editor' });
+        // Suggest editor panel but don't auto-switch
+        set({ currentCode: event.content, suggestedPanel: 'editor' });
         get().addCodeToHistory(
           event.content,
           event.metadata?.iteration || state.currentIteration
@@ -135,22 +138,24 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
       case 'output':
         // Add to terminal output
+        // Suggest terminal panel but don't auto-switch
         get().addTerminalOutput({
           content: event.content,
           type: 'stdout',
           timestamp: new Date(),
         });
-        set({ activePanel: 'terminal' });
+        set({ suggestedPanel: 'terminal' });
         break;
 
       case 'error':
         // Add error to terminal
+        // Suggest terminal panel but don't auto-switch
         get().addTerminalOutput({
           content: event.content,
           type: 'stderr',
           timestamp: new Date(),
         });
-        set({ agentStatus: 'error', activePanel: 'terminal' });
+        set({ agentStatus: 'error', suggestedPanel: 'terminal' });
         break;
 
       case 'connected':
@@ -181,7 +186,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
   resetSession: () => set({
     messages: [],
-    events: [],
+    // Don't clear events - they should persist for Event Stream tab
     agentStatus: 'idle',
     currentIteration: 0,
     terminalOutput: [],
@@ -202,7 +207,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   clearSession: () => set({
     currentSessionId: null,
     sessionId: null,
-    events: [],
+    // Don't clear events - they should persist for Event Stream tab
     messages: [],
     terminalOutput: [],
     currentCode: '',

@@ -8,6 +8,7 @@ import ai.mymanus.model.ToolExecution;
 import ai.mymanus.service.AgentStateService;
 import ai.mymanus.service.CodeActAgentService;
 import ai.mymanus.service.EventService;
+import org.springframework.beans.factory.annotation.Value;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -39,6 +40,9 @@ public class AgentController {
     private final CodeActAgentService agentService;
     private final AgentStateService stateService;
     private final EventService eventService;
+
+    @Value("${workspace.dir:/workspace}")
+    private String workspaceDir;
 
     @PostMapping("/chat")
     @Operation(
@@ -209,6 +213,41 @@ public class AgentController {
             return ResponseEntity.ok(executions);
         } catch (Exception e) {
             log.warn("Failed to retrieve tool executions for session: {}", sessionId, e);
+            return ResponseEntity.status(404).build();
+        }
+    }
+
+    @GetMapping("/session/{sessionId}/workspace")
+    @Operation(
+            summary = "Get workspace path",
+            description = """  
+                    Get the workspace directory path for a specific session.
+                    
+                    Returns the absolute path to the session's workspace directory
+                    where all files, code, and outputs are stored.
+                    """,
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Workspace path retrieved successfully"),
+                    @ApiResponse(responseCode = "404", description = "Session not found")
+            }
+    )
+    public ResponseEntity<Map<String, String>> getWorkspacePath(
+            @PathVariable
+            @Parameter(description = "Session ID", required = true)
+            String sessionId) {
+
+        try {
+            // Verify session exists
+            stateService.getSession(sessionId);
+            
+            String workspacePath = workspaceDir + "/" + sessionId;
+            Map<String, String> response = new HashMap<>();
+            response.put("sessionId", sessionId);
+            response.put("workspacePath", workspacePath);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.warn("Failed to retrieve workspace path for session: {}", sessionId, e);
             return ResponseEntity.status(404).build();
         }
     }

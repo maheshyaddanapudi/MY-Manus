@@ -41,11 +41,12 @@ public class FileController {
                     Browse workspace files in a tree structure.
                     
                     **Security:**
-                    - Restricted to /workspace directory only
-                    - Cannot access files outside workspace
+                    - Restricted to session workspace only
+                    - Cannot access files outside session workspace
                     
                     **Parameters:**
-                    - path: Directory to list (default: /workspace)
+                    - sessionId: Session ID (required)
+                    - path: Directory to list relative to session workspace (default: ".")
                     - maxDepth: How deep to recurse (default: 3, max: 10)
                     - includeHidden: Show hidden files (default: false)
                     
@@ -61,8 +62,12 @@ public class FileController {
             }
     )
     public ResponseEntity<Map<String, Object>> listFiles(
-            @RequestParam(defaultValue = "/workspace")
-            @Parameter(description = "Directory path to list", example = "/workspace")
+            @RequestParam
+            @Parameter(description = "Session ID", required = true, example = "abc-123")
+            String sessionId,
+            
+            @RequestParam(defaultValue = ".")
+            @Parameter(description = "Directory path relative to session workspace", example = ".")
             String path,
             
             @RequestParam(defaultValue = "3")
@@ -75,6 +80,7 @@ public class FileController {
 
         try {
             Map<String, Object> params = Map.of(
+                    "sessionId", sessionId,
                     "path", path,
                     "maxDepth", maxDepth,
                     "includeHidden", includeHidden
@@ -126,11 +132,18 @@ public class FileController {
     )
     public ResponseEntity<Map<String, Object>> readFile(
             @RequestParam
-            @Parameter(description = "File path to read", required = true, example = "/workspace/example.py")
+            @Parameter(description = "Session ID", required = true, example = "abc-123")
+            String sessionId,
+            
+            @RequestParam
+            @Parameter(description = "File path relative to session workspace", required = true, example = "example.py")
             String path) {
 
         try {
-            Map<String, Object> params = Map.of("path", path);
+            Map<String, Object> params = Map.of(
+                    "sessionId", sessionId,
+                    "path", path
+            );
             Map<String, Object> result = fileReadTool.execute(params);
 
             if (!(Boolean) result.get("success")) {

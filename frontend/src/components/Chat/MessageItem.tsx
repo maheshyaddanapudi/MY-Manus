@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { cn } from '../../theme';
+import { CollapsibleCodeBlock } from './CollapsibleCodeBlock';
 
 interface MessageItemProps {
   message: Message;
@@ -63,11 +64,25 @@ export const MessageItem = ({ message }: MessageItemProps) => {
                   const match = /language-(\w+)/.exec(className || '');
                   
                   if (!inline && match) {
+                    const code = String(children).replace(/\n$/, '');
+                    const language = match[1];
+                    
+                    // Use collapsible block for Python code (likely tool calls)
+                    if (language === 'python') {
+                      return (
+                        <CollapsibleCodeBlock
+                          code={code}
+                          language={language}
+                        />
+                      );
+                    }
+                    
+                    // Regular code block for other languages
                     return (
                       <div className="my-3 rounded-lg overflow-hidden border border-gray-700/50">
                         <SyntaxHighlighter
                           style={vscDarkPlus as any}
-                          language={match[1]}
+                          language={language}
                           PreTag="div"
                           customStyle={{
                             margin: 0,
@@ -75,7 +90,7 @@ export const MessageItem = ({ message }: MessageItemProps) => {
                             fontSize: '0.875rem',
                           }}
                         >
-                          {String(children).replace(/\n$/, '')}
+                          {code}
                         </SyntaxHighlighter>
                       </div>
                     );

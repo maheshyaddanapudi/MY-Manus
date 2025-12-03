@@ -23,17 +23,17 @@ export const FileTreePanel: React.FC<FileTreePanelProps> = ({ sessionId }) => {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [rootPath, setRootPath] = useState('/workspace');
+  const [rootPath, setRootPath] = useState<string>('.');
 
   useEffect(() => {
     loadFileTree();
-  }, [sessionId, rootPath]);
+  }, [rootPath, sessionId]);
 
   const loadFileTree = async () => {
     setLoading(true);
     try {
-      // Call file browsing API
-      const result = await apiService.listFiles(rootPath, 3, false);
+      // Call file browsing API with sessionId and relative path
+      const result = await apiService.listFiles(sessionId, rootPath, 3, false);
 
       if (result.success) {
         setFiles(result.files || []);
@@ -54,7 +54,7 @@ export const FileTreePanel: React.FC<FileTreePanelProps> = ({ sessionId }) => {
       setSelectedFile(file.path);
       setLoading(true);
       try {
-        const result = await apiService.readFile(file.path);
+        const result = await apiService.readFile(sessionId, file.path);
         if (result.success) {
           setFileContent(result.content);
         }
@@ -93,12 +93,12 @@ export const FileTreePanel: React.FC<FileTreePanelProps> = ({ sessionId }) => {
             <h2 className="text-base font-semibold text-gray-200">File Explorer</h2>
           </div>
           <div className="text-xs text-gray-500 font-mono bg-gray-800/50 px-2 py-1 rounded mt-2">
-            {rootPath}
+            Session: {sessionId} / {rootPath}
           </div>
           <div className="flex gap-2 mt-3">
-            {rootPath !== '/workspace' && (
+            {rootPath !== '.' && (
               <button
-                onClick={() => setRootPath('/workspace')}
+                onClick={() => setRootPath('.')}
                 className={cn(getButtonClasses('secondary', 'sm'))}
               >
                 ← Back
