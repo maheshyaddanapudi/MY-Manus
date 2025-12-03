@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Message, AgentEvent, TerminalOutput, ExecutionContext, Session, Event } from '../types';
+import type { Message, AgentEvent, TerminalOutput, ExecutionContext, Session, Event, EventType } from '../types';
 import { apiService } from '../services/api';
 
 interface AgentState {
@@ -105,6 +105,31 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
   handleAgentEvent: (event) => {
     const state = get();
+
+    // Add all events to the events array for Event Stream display
+    // Convert AgentEvent to Event format
+    // Map agent event types to EventType
+    const typeMap: Record<string, EventType> = {
+      'thought': 'AGENT_THOUGHT',
+      'thought_chunk': 'AGENT_THOUGHT',
+      'code': 'AGENT_ACTION',
+      'output': 'OBSERVATION',
+      'error': 'ERROR',
+      'status': 'SYSTEM',
+      'connected': 'SYSTEM',
+    };
+    
+    const eventType = typeMap[event.type] || 'SYSTEM';
+    const eventRecord: Event = {
+      id: `${event.type}-${Date.now()}-${Math.random()}`,
+      type: eventType,
+      content: event.content,
+      timestamp: new Date().toISOString(),
+      iteration: event.metadata?.iteration || state.currentIteration,
+      sequence: state.events.length,
+      data: event.metadata || {},
+    };
+    get().addEvent(eventRecord);
 
     switch (event.type) {
       case 'status':

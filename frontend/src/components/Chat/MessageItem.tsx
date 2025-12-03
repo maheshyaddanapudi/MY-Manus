@@ -13,6 +13,44 @@ export const MessageItem = ({ message }: MessageItemProps) => {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
 
+  // Parse message content to extract <execute> tags and convert to collapsible blocks
+  const parseExecuteTags = (content: string) => {
+    const parts: Array<{ type: 'text' | 'code'; content: string }> = [];
+    const regex = /<execute>([\s\S]*?)<\/execute>/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(content)) !== null) {
+      // Add text before the execute tag
+      if (match.index > lastIndex) {
+        parts.push({
+          type: 'text',
+          content: content.substring(lastIndex, match.index)
+        });
+      }
+      
+      // Add the code from execute tag
+      parts.push({
+        type: 'code',
+        content: match[1].trim()
+      });
+      
+      lastIndex = regex.lastIndex;
+    }
+    
+    // Add remaining text after last execute tag
+    if (lastIndex < content.length) {
+      parts.push({
+        type: 'text',
+        content: content.substring(lastIndex)
+      });
+    }
+    
+    return parts.length > 0 ? parts : [{ type: 'text', content }];
+  };
+
+  const contentParts = !isUser ? parseExecuteTags(message.content) : [];
+
   return (
     <div
       className={cn(
@@ -56,7 +94,7 @@ export const MessageItem = ({ message }: MessageItemProps) => {
         )}>
           {isUser ? (
             <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
-          ) : (
+          ) : contentParts.length === 1 && contentParts[0].type === 'text' ? (
             <ReactMarkdown
               components={{
                 code(props: any) {
@@ -119,8 +157,75 @@ export const MessageItem = ({ message }: MessageItemProps) => {
                 },
               }}
             >
-              {message.content}
+              {contentParts[0].content}
             </ReactMarkdown>
+          ) : (
+            <div>
+              {contentParts.map((part, index) => (
+                part.type === 'text' ? (
+                  <ReactMarkdown
+                    key={index}
+                    components={{
+                      code(props: any) {
+                        const { node, inline, className, children, ...rest } = props;
+                        const match = /language-(\w+)/.exec(className || '');
+                        
+                        if (!inline && match) {
+                          const code = String(children).replace(/\n$/, '');
+                          const language = match[1];
+                          
+                          return (
+                            <div className="my-3 rounded-lg overflow-hidden border border-gray-700/50">
+                              <SyntaxHighlighter
+                                style={vscDarkPlus as any}
+                                language={language}
+                                PreTag="div"
+                                customStyle={{
+                                  margin: 0,
+                                  borderRadius: '0.5rem',
+                                  fontSize: '0.875rem',
+                                }}
+                              >
+                                {code}
+                              </SyntaxHighlighter>
+                            </div>
+                          );
+                        }
+                        
+                        return (
+                          <code
+                            className={cn(
+                              className,
+                              'px-1.5 py-0.5 rounded bg-gray-900/50 text-blue-300 text-sm font-mono'
+                            )}
+                            {...rest}
+                          >
+                            {children}
+                          </code>
+                        );
+                      },
+                      p(props) {
+                        return <p className="leading-relaxed mb-3 last:mb-0" {...props} />;
+                      },
+                      ul(props) {
+                        return <ul className="list-disc list-inside space-y-1 my-2" {...props} />;
+                      },
+                      ol(props) {
+                        return <ol className="list-decimal list-inside space-y-1 my-2" {...props} />;
+                      },
+                    }}
+                  >
+                    {part.content}
+                  </ReactMarkdown>
+                ) : (
+                  <CollapsibleCodeBlock
+                    key={index}
+                    code={part.content}
+                    language="python"
+                  />
+                )
+              ))}
+            </div>
           )}
         </div>
 
