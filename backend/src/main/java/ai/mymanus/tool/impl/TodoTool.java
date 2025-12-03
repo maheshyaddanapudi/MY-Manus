@@ -23,7 +23,11 @@ import java.util.Map;
 @Component
 public class TodoTool implements Tool {
 
-    private static final String TODO_FILE = "/tmp/manus-workspace/todo.md";
+    private final String workspaceDir;
+
+    public TodoTool(@org.springframework.beans.factory.annotation.Value("${sandbox.host.workspace-dir}") String workspaceDir) {
+        this.workspaceDir = workspaceDir;
+    }
 
     @Override
     public String getName() {
@@ -38,22 +42,27 @@ public class TodoTool implements Tool {
 
     @Override
     public String getPythonSignature() {
-        return "todo(action: str, content: str = None) -> dict";
+        return "todo(sessionId: str, action: str, content: str = None) -> dict";
     }
 
     @Override
     public Map<String, Object> execute(Map<String, Object> parameters) throws Exception {
+        String sessionId = (String) parameters.get("sessionId");
         String action = (String) parameters.get("action");
         String content = (String) parameters.get("content");
+
+        if (sessionId == null || sessionId.isEmpty()) {
+            return error("sessionId parameter required", null);
+        }
 
         if (action == null) {
             return error("action parameter required (read/write)", null);
         }
 
-        log.info("📝 Todo action: {}", action);
+        log.info("📝 Todo action: {} for session: {}", action, sessionId);
 
         try {
-            Path todoPath = Paths.get(TODO_FILE);
+            Path todoPath = Paths.get(workspaceDir, sessionId, "todo.md");
 
             // Ensure parent directory exists
             Files.createDirectories(todoPath.getParent());

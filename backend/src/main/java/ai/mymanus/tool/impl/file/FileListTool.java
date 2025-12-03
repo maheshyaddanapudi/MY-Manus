@@ -1,14 +1,13 @@
 package ai.mymanus.tool.impl.file;
 
-import ai.mymanus.tool.Tool;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Tool to list files and directories in a tree structure
@@ -16,9 +15,12 @@ import java.util.stream.Collectors;
  */
 @Component
 @Slf4j
-public class FileListTool implements Tool {
+public class FileListTool extends FileTool {
 
-    private static final String WORKSPACE = "/workspace";
+    public FileListTool(@Value("${sandbox.host.workspace-dir}") String workspaceDir) {
+        super(workspaceDir);
+    }
+
     private static final int MAX_DEPTH = 10;
 
     @Override
@@ -33,41 +35,44 @@ public class FileListTool implements Tool {
 
     @Override
     public String getPythonSignature() {
-        return "file_list(path: str = '/workspace', maxDepth: int = 3, includeHidden: bool = False) -> dict";
+        return "file_list(sessionId: str, path: str = \".\", maxDepth: int = 3, includeHidden: bool = False) -> dict";
     }
 
     @Override
     public Map<String, Object> execute(Map<String, Object> parameters) throws Exception {
+        String sessionId = (String) parameters.get("sessionId");
+        
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            return error("sessionId parameter required", null);
+        }
+
         try {
-            String pathStr = (String) parameters.getOrDefault("path", WORKSPACE);
+            String pathStr = (String) parameters.getOrDefault("path", ".");
             int maxDepth = ((Number) parameters.getOrDefault("maxDepth", 3)).intValue();
             boolean includeHidden = (Boolean) parameters.getOrDefault("includeHidden", false);
 
-            // Security: ensure path is within workspace
-            Path path = Paths.get(pathStr).normalize();
-            if (!path.toString().startsWith(WORKSPACE)) {
-                return error("Security: Path must be within /workspace", null);
-            }
+            // Validate and resolve path with security checks
+            Path resolvedPath = validateAndResolvePath(sessionId, pathStr);
 
-            if (!Files.exists(path)) {
+            if (!Files.exists(resolvedPath)) {
                 return error("Path does not exist: " + pathStr, null);
             }
 
-            if (!Files.isDirectory(path)) {
+            if (!Files.isDirectory(resolvedPath)) {
                 return error("Path is not a directory: " + pathStr, null);
             }
 
             // Limit depth to prevent infinite recursion
             maxDepth = Math.min(maxDepth, MAX_DEPTH);
 
-            List<Map<String, Object>> fileTree = buildFileTree(path, maxDepth, includeHidden);
+            List<Map<String, Object>> fileTree = buildFileTree(resolvedPath, maxDepth, includeHidden);
 
             var result = success("File tree generated successfully");
             result.put("files", fileTree);
             result.put("totalFiles", fileTree.size());
             result.put("rootPath", pathStr);
 
-            log.info("📂 Listed {} files from {}", fileTree.size(), pathStr);
+            log.info("📂 Listed {} files from {} (session: {})", fileTree.size(), pathStr, sessionId);
 
             return result;
 
@@ -88,7 +93,7 @@ public class FileListTool implements Tool {
                 }
 
                 Map<String, Object> fileInfo = new HashMap<>();
-                fileInfo.put("path", dir.toString());
+                fileInfo.put("path", root.relativize(dir).toString());
                 fileInfo.put("name", dir.getFileName().toString());
                 fileInfo.put("type", "directory");
                 fileInfo.put("size", 0);
@@ -107,7 +112,7 @@ public class FileListTool implements Tool {
                 }
 
                 Map<String, Object> fileInfo = new HashMap<>();
-                fileInfo.put("path", file.toString());
+                fileInfo.put("path", root.relativize(file).toString());
                 fileInfo.put("name", file.getFileName().toString());
                 fileInfo.put("type", "file");
                 fileInfo.put("size", attrs.size());
@@ -130,22 +135,5 @@ public class FileListTool implements Tool {
             return filename.substring(lastDot + 1);
         }
         return "";
-    }
-
-    private Map<String, Object> success(String message) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
-        result.put("message", message);
-        return result;
-    }
-
-    private Map<String, Object> error(String message, Exception e) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", false);
-        result.put("error", message);
-        if (e != null) {
-            result.put("exception", e.getClass().getSimpleName());
-        }
-        return result;
     }
 }

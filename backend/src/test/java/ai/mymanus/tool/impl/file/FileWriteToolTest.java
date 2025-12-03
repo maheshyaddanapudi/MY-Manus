@@ -31,7 +31,7 @@ class FileWriteToolTest {
         String workspace = System.getenv().getOrDefault("MANUS_WORKSPACE", "/tmp/manus-workspace");
         testDir = Paths.get(workspace, "test-" + UUID.randomUUID());
         Files.createDirectories(testDir);
-        fileWriteTool = new FileWriteTool();
+        fileWriteTool = new FileWriteTool("/tmp/test-workspace");
     }
     @AfterEach
     void tearDown() throws Exception {

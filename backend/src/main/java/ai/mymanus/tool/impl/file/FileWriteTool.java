@@ -2,6 +2,7 @@ package ai.mymanus.tool.impl.file;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -25,6 +26,10 @@ import java.util.Map;
 @Component
 public class FileWriteTool extends FileTool {
 
+    public FileWriteTool(@Value("${sandbox.host.workspace-dir}") String workspaceDir) {
+        super(workspaceDir);
+    }
+
     @Override
     public String getName() {
         return "file_write";
@@ -38,23 +43,28 @@ public class FileWriteTool extends FileTool {
 
     @Override
     public String getPythonSignature() {
-        return "file_write(path: str, content: str) -> None";
+        return "file_write(sessionId: str, path: str, content: str) -> None";
     }
 
     @Override
     public Map<String, Object> execute(Map<String, Object> parameters) throws Exception {
+        String sessionId = (String) parameters.get("sessionId");
         String filePath = (String) parameters.get("path");
         String content = (String) parameters.get("content");
+
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            return error("sessionId parameter required", null);
+        }
 
         if (content == null) {
             content = ""; // Allow writing empty files
         }
 
-        log.info("✍️ Writing file: {} ({} bytes)", filePath, content.length());
+        log.info("✍️ Writing file: {} ({} bytes, session: {})", filePath, content.length(), sessionId);
 
         try {
             // Validate and resolve path with security checks
-            Path resolvedPath = validateAndResolvePath(filePath);
+            Path resolvedPath = validateAndResolvePath(sessionId, filePath);
 
             // Create parent directories if they don't exist
             Path parentDir = resolvedPath.getParent();

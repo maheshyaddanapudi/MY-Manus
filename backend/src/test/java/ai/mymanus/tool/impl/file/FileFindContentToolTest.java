@@ -18,7 +18,7 @@ class FileFindContentToolTest {
 
     @BeforeEach
     void setUp() {
-        findContentTool = new FileFindContentTool();
+        findContentTool = new FileFindContentTool("/tmp/test-workspace");
     }
 
     @Test

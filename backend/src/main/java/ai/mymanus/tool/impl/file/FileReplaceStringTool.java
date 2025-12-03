@@ -2,6 +2,7 @@ package ai.mymanus.tool.impl.file;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -12,7 +13,7 @@ import java.util.Map;
 /**
  * Tool for finding and replacing text in files.
  *
- * Manus AI Equivalent: file_replace_string(path: str, old: str, new: str) -> dict
+ * Manus AI Equivalent: file_replace_string(sessionId: str, path: str, old: str, new: str) -> dict
  *
  * Features:
  * - Find and replace text in file
@@ -24,6 +25,10 @@ import java.util.Map;
 @Slf4j
 @Component
 public class FileReplaceStringTool extends FileTool {
+
+    public FileReplaceStringTool(@Value("${sandbox.host.workspace-dir}") String workspaceDir) {
+        super(workspaceDir);
+    }
 
     @Override
     public String getName() {
@@ -38,11 +43,12 @@ public class FileReplaceStringTool extends FileTool {
 
     @Override
     public String getPythonSignature() {
-        return "file_replace_string(path: str, old: str, new: str) -> dict";
+        return "file_replace_string(sessionId: str, path: str, old: str, new: str) -> dict";
     }
 
     @Override
     public Map<String, Object> execute(Map<String, Object> parameters) throws Exception {
+        String sessionId = (String) parameters.get("sessionId");
         String filePath = (String) parameters.get("path");
         String oldText = (String) parameters.get("old");
         String newText = (String) parameters.get("new");
@@ -54,6 +60,10 @@ public class FileReplaceStringTool extends FileTool {
         if (newText == null) {
             newText = ""; // Allow replacing with empty string (deletion)
         }
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            return error("sessionId parameter required", null);
+        }
+
 
         log.info("🔄 Replacing in file: {} (old: '{}...' -> new: '{}...')",
                 filePath,
@@ -62,7 +72,7 @@ public class FileReplaceStringTool extends FileTool {
 
         try {
             // Validate and resolve path with security checks
-            Path resolvedPath = validateAndResolvePath(filePath);
+            Path resolvedPath = validateAndResolvePath(sessionId, filePath);
 
             // Check if file exists
             if (!Files.exists(resolvedPath)) {

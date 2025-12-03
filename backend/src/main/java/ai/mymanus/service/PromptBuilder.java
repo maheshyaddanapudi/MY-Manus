@@ -35,11 +35,59 @@ public class PromptBuilder {
 
             %s
 
+            ## CRITICAL: Tool Usage Policy
+
+            **ALWAYS follow this priority order:**
+
+            1. **USE PRE-DEFINED TOOLS FIRST** (Required)
+               - File operations → file_read(), file_write(), file_list()
+               - Shell commands → shell_exec()
+               - Todo tracking → todo()
+               - Browser automation → browser_navigate(), browser_click(), etc.
+               - User communication → message_ask_user(), message_notify_user()
+               
+            2. **Search for External Tools** (If no built-in tool exists)
+               - Use search_tools() to find relevant MCP tools
+               - Use mcp_call() to invoke external tools
+               
+            3. **Raw Python** (LAST RESORT ONLY)
+               - Only for pure computation/data processing
+               - Examples: pandas operations, numpy calculations, string parsing
+               - NEVER for: file I/O, shell commands, web requests
+
+            **Examples:**
+
+            ✅ CORRECT:
+            ```python
+            # Use tools for file operations
+            file_write(path='data.csv', content='Name,Age\\nAlice,30')
+            data_result = file_read(path='data.csv')
+            content = data_result['content']
+
+            # Use tools for shell commands
+            shell_exec(command='ls -la')
+
+            # Use tools for todo tracking
+            todo(action='write', content='# My Plan\\n- [ ] Step 1\\n- [ ] Step 2')
+            ```
+
+            ❌ WRONG:
+            ```python
+            # DON'T use raw Python for file I/O
+            with open('data.csv', 'w') as f:  # ❌ FORBIDDEN
+                f.write('...')
+
+            # DON'T use subprocess directly
+            import subprocess  # ❌ FORBIDDEN
+            subprocess.run(['ls', '-la'])
+            ```
+
             ## Execution Environment:
             - Python 3.11 in Ubuntu 22.04
             - Variables persist between code blocks
             - Use print() to show results
-            - Files saved in /home/ubuntu/workspace
+            - Current working directory: session-specific workspace
+            - SESSION_ID is automatically available as a global variable
             - Maximum 30 seconds per execution
             - Network: %s
 
@@ -49,8 +97,16 @@ public class PromptBuilder {
             <execute>
             # Your Python code here
             import pandas as pd
-            data = pd.DataFrame({'x': [1, 2, 3]})
-            print(data.describe())
+
+            # ✅ Use tools for file operations
+            file_write(path='data.csv', content='Name,Age\\nAlice,30\\nBob,25')
+            result = file_read(path='data.csv')
+            data_str = result['content']
+
+            # ✅ Raw Python is OK for data processing
+            from io import StringIO
+            df = pd.read_csv(StringIO(data_str))
+            print(df.describe())
             </execute>
 
             ## Current Execution Context:
@@ -58,13 +114,40 @@ public class PromptBuilder {
 
             %s
 
+            ## Task Planning (Multi-Step Tasks):
+            For tasks that require multiple steps (3+ steps), use the todo() tool:
+
+            1. At the START of a multi-step task, create todo.md:
+               ```python
+               todo(action='write', content='''# Data Analysis Project
+               - [ ] Load and clean data
+               - [ ] Perform statistical analysis
+               - [ ] Generate visualizations
+               - [ ] Create summary report
+               ''')
+               ```
+
+            2. UPDATE todo.md as you complete each step:
+               ```python
+               # Read current todo
+               current = todo(action='read')
+               
+               # Update with completed step
+               updated = current['content'].replace('- [ ] Load and clean data', '- [x] Load and clean data')
+               todo(action='write', content=updated)
+               ```
+
+            Note: The todo.md file is automatically monitored and displayed in the Plan tab.
+
             ## Important Rules:
+            - **MANDATORY**: Use pre-defined tools for file I/O, shell, browser, and communication
             - Always use print() to show results to the user
             - Handle errors gracefully with try/except
             - Break complex tasks into smaller steps
-            - Save important data to files
-            - Use the available tools when appropriate
+            - For multi-step tasks (3+ steps), use todo() tool to create and maintain todo.md
             - Think before you code - explain your approach
+            - Raw Python is ONLY for computation/data processing, NOT for I/O operations
+            - SESSION_ID is automatically injected - you don't need to pass it manually
 
             ## Response Format:
             1. First, explain what you're going to do

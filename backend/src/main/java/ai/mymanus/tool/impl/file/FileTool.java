@@ -2,6 +2,7 @@ package ai.mymanus.tool.impl.file;
 
 import ai.mymanus.tool.Tool;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -10,55 +11,74 @@ import java.util.Map;
 
 /**
  * Abstract base class for file operation tools.
- * Provides security sandboxing to ensure files are only accessed within workspace.
+ * Provides security sandboxing to ensure files are only accessed within session workspace.
  *
  * Security Model:
- * - All file paths are resolved relative to workspace root
+ * - All file paths are resolved relative to session-specific workspace
  * - Absolute paths outside workspace are rejected
  * - Path traversal attacks (../) are prevented
  * - Symlinks are validated to stay within workspace
+ * - Each session has isolated workspace: {workspaceDir}/{sessionId}/
  */
 @Slf4j
 public abstract class FileTool implements Tool {
 
-    // Workspace root for file operations (configurable via environment)
-    protected static final String WORKSPACE_ROOT = System.getenv()
-            .getOrDefault("MANUS_WORKSPACE", "/tmp/manus-workspace");
+    // Base workspace directory (injected from config)
+    protected final String workspaceDir;
+
+    protected FileTool(@Value("${sandbox.host.workspace-dir}") String workspaceDir) {
+        this.workspaceDir = workspaceDir;
+    }
 
     /**
-     * Validate and resolve a file path within the workspace.
+     * Get session-specific workspace directory
+     */
+    protected Path getSessionWorkspace(String sessionId) throws IOException {
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            throw new IllegalArgumentException("sessionId cannot be empty");
+        }
+        
+        Path sessionWorkspace = Paths.get(workspaceDir, sessionId);
+        
+        // Ensure session workspace exists
+        if (!Files.exists(sessionWorkspace)) {
+            Files.createDirectories(sessionWorkspace);
+            log.info("📁 Created session workspace: {}", sessionWorkspace);
+        }
+        
+        return sessionWorkspace.toRealPath();
+    }
+
+    /**
+     * Validate and resolve a file path within the session workspace.
      *
      * Security checks:
-     * 1. Resolve against workspace root
+     * 1. Resolve against session workspace root
      * 2. Normalize path (resolve .., ., etc.)
-     * 3. Ensure resolved path is within workspace
+     * 3. Ensure resolved path is within session workspace
      *
-     * @param filePath User-provided file path
-     * @return Validated absolute Path within workspace
+     * @param sessionId Session ID for workspace isolation
+     * @param filePath User-provided file path (relative to session workspace)
+     * @return Validated absolute Path within session workspace
      * @throws SecurityException if path escapes workspace
      */
-    protected Path validateAndResolvePath(String filePath) throws SecurityException, IOException {
+    protected Path validateAndResolvePath(String sessionId, String filePath) throws SecurityException, IOException {
         if (filePath == null || filePath.trim().isEmpty()) {
             throw new IllegalArgumentException("File path cannot be empty");
         }
 
-        Path workspaceRoot = Paths.get(WORKSPACE_ROOT).toRealPath();
-        Path resolvedPath = workspaceRoot.resolve(filePath).normalize();
+        Path sessionWorkspace = getSessionWorkspace(sessionId);
+        Path resolvedPath = sessionWorkspace.resolve(filePath).normalize();
 
-        // Ensure workspace directory exists
-        if (!Files.exists(workspaceRoot)) {
-            Files.createDirectories(workspaceRoot);
-            log.info("📁 Created workspace directory: {}", workspaceRoot);
-        }
-
-        // Security check: resolved path must start with workspace root
-        if (!resolvedPath.startsWith(workspaceRoot)) {
-            log.warn("🚨 Security violation: Attempted to access path outside workspace");
+        // Security check: resolved path must start with session workspace
+        if (!resolvedPath.startsWith(sessionWorkspace)) {
+            log.warn("🚨 Security violation: Attempted to access path outside session workspace");
+            log.warn("   Session: {}", sessionId);
             log.warn("   Requested: {}", filePath);
             log.warn("   Resolved: {}", resolvedPath);
-            log.warn("   Workspace: {}", workspaceRoot);
+            log.warn("   Workspace: {}", sessionWorkspace);
             throw new SecurityException(
-                    "Access denied: Path escapes workspace. File operations are restricted to: " + WORKSPACE_ROOT
+                    "Access denied: Path escapes session workspace. File operations are restricted to session directory."
             );
         }
 

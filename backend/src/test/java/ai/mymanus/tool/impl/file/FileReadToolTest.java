@@ -31,7 +31,7 @@ class FileReadToolTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        fileReadTool = new FileReadTool();
+        fileReadTool = new FileReadTool("/tmp/test-workspace");
         
         // Create test directory within workspace
         String workspace = System.getenv().getOrDefault("MANUS_WORKSPACE", "/tmp/manus-workspace");

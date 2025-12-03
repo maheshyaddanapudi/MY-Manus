@@ -28,7 +28,7 @@ class FileReplaceStringToolTest {
         String workspace = System.getenv().getOrDefault("MANUS_WORKSPACE", "/tmp/manus-workspace");
         testDir = Paths.get(workspace, "test-" + UUID.randomUUID());
         Files.createDirectories(testDir);
-        replaceStringTool = new FileReplaceStringTool();
+        replaceStringTool = new FileReplaceStringTool("/tmp/test-workspace");
     }
     @AfterEach
     void tearDown() throws Exception {

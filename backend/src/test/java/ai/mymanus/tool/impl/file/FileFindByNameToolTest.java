@@ -18,7 +18,7 @@ class FileFindByNameToolTest {
 
     @BeforeEach
     void setUp() {
-        findByNameTool = new FileFindByNameTool();
+        findByNameTool = new FileFindByNameTool("/tmp/test-workspace");
     }
 
     @Test

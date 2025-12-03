@@ -70,7 +70,7 @@ public class HostPythonExecutor implements SandboxExecutor {
             log.debug("Using workspace: {}", sessionWorkspace);
 
             // Build execution script
-            String fullCode = buildExecutionScript(code, previousState);
+            String fullCode = buildExecutionScript(sessionId, code, previousState);
 
             // Write code to file
             Path codeFile = sessionWorkspace.resolve("code.py");
@@ -108,14 +108,23 @@ public class HostPythonExecutor implements SandboxExecutor {
     /**
      * Build Python script with state restoration and tool bindings
      */
-    private String buildExecutionScript(String userCode, Map<String, Object> previousState) {
+    private String buildExecutionScript(String sessionId, String userCode, Map<String, Object> previousState) {
         StringBuilder script = new StringBuilder();
 
         // Add imports
         script.append("import json\n");
         script.append("import sys\n");
+        script.append("import os\n");
         script.append("import uuid\n");
         script.append("import traceback\n\n");
+        
+        // Inject sessionId as a global variable
+        script.append("# Session context (automatically injected)\n");
+        script.append(String.format("SESSION_ID = '%s'\n\n", sessionId));
+        
+        // Debug: Print current working directory
+        script.append("# Debug: Current working directory\n");
+        script.append("print(f'[DEBUG] CWD: {os.getcwd()}')\n\n");
 
         // Tool execution function (RPC bridge to Java)
         script.append("# Tool execution bridge (RPC to Java)\n");

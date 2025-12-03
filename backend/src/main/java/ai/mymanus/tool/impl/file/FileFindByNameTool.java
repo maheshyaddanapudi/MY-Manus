@@ -2,6 +2,7 @@ package ai.mymanus.tool.impl.file;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,6 +31,10 @@ import java.util.stream.Stream;
 @Component
 public class FileFindByNameTool extends FileTool {
 
+    public FileFindByNameTool(@Value("${sandbox.host.workspace-dir}") String workspaceDir) {
+        super(workspaceDir);
+    }
+
     private static final int MAX_RESULTS = 100;
 
     @Override
@@ -51,6 +56,7 @@ public class FileFindByNameTool extends FileTool {
 
     @Override
     public Map<String, Object> execute(Map<String, Object> parameters) throws Exception {
+        String sessionId = (String) parameters.get("sessionId");
         String pattern = (String) parameters.get("pattern");
         String searchPath = (String) parameters.getOrDefault("path", ".");
         Boolean useRegex = (Boolean) parameters.getOrDefault("regex", false);
@@ -58,13 +64,17 @@ public class FileFindByNameTool extends FileTool {
         if (pattern == null || pattern.isEmpty()) {
             return error("Search pattern cannot be empty", null);
         }
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            return error("sessionId parameter required", null);
+        }
+
 
         log.info("🔍 Searching for files: '{}' in path: {} (regex: {})",
                 pattern, searchPath, useRegex);
 
         try {
             // Validate and resolve path with security checks
-            Path resolvedPath = validateAndResolvePath(searchPath);
+            Path resolvedPath = validateAndResolvePath(sessionId, searchPath);
 
             // Check if path exists
             if (!Files.exists(resolvedPath)) {
@@ -158,7 +168,7 @@ public class FileFindByNameTool extends FileTool {
      */
     private String getRelativePath(Path file) {
         try {
-            Path workspaceRoot = Paths.get(WORKSPACE_ROOT).toRealPath();
+            Path workspaceRoot = Paths.get(workspaceDir).toRealPath();
             return workspaceRoot.relativize(file).toString();
         } catch (IOException e) {
             return file.toString();

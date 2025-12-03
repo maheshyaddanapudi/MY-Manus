@@ -52,8 +52,21 @@ public class ToolRegistry {
         sb.append("# Tool functions available in this environment\n\n");
 
         for (Tool tool : tools.values()) {
-            sb.append(String.format("def %s:\n", tool.getPythonSignature()));
+            // Extract function signature without return type annotation
+            String signature = tool.getPythonSignature();
+            // Remove return type annotation (e.g., " -> dict")
+            String functionDef = signature.replaceAll("\\s*->\\s*\\w+\\s*$", "");
+            
+            sb.append(String.format("def %s:\n", functionDef));
             sb.append(String.format("    '''%s'''\n", tool.getDescription()));
+            
+            // Auto-inject SESSION_ID if tool signature includes sessionId parameter
+            if (signature.contains("sessionId")) {
+                sb.append("    # Auto-inject SESSION_ID if not provided\n");
+                sb.append("    if 'sessionId' not in locals() or sessionId is None:\n");
+                sb.append("        sessionId = SESSION_ID\n");
+            }
+            
             sb.append(String.format("    return _execute_tool('%s', locals())\n\n", tool.getName()));
         }
 

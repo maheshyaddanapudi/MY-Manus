@@ -2,6 +2,7 @@ package ai.mymanus.tool.impl.file;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -23,6 +24,10 @@ import java.util.Map;
 @Component
 public class FileReadTool extends FileTool {
 
+    public FileReadTool(@Value("${sandbox.host.workspace-dir}") String workspaceDir) {
+        super(workspaceDir);
+    }
+
     @Override
     public String getName() {
         return "file_read";
@@ -35,18 +40,23 @@ public class FileReadTool extends FileTool {
 
     @Override
     public String getPythonSignature() {
-        return "file_read(path: str) -> str";
+        return "file_read(sessionId: str, path: str) -> str";
     }
 
     @Override
     public Map<String, Object> execute(Map<String, Object> parameters) throws Exception {
+        String sessionId = (String) parameters.get("sessionId");
         String filePath = (String) parameters.get("path");
 
-        log.info("📖 Reading file: {}", filePath);
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            return error("sessionId parameter required", null);
+        }
+
+        log.info("📖 Reading file: {} (session: {})", filePath, sessionId);
 
         try {
             // Validate and resolve path with security checks
-            Path resolvedPath = validateAndResolvePath(filePath);
+            Path resolvedPath = validateAndResolvePath(sessionId, filePath);
 
             // Check if file exists
             if (!Files.exists(resolvedPath)) {

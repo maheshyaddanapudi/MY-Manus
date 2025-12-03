@@ -23,7 +23,7 @@ class TodoToolTest {
 
     @BeforeEach
     void setUp() {
-        todoTool = new TodoTool();
+        todoTool = new TodoTool("/tmp/test-workspace");
     }
 
     @Test

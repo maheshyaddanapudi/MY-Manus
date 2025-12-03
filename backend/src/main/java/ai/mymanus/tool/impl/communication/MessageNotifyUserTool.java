@@ -32,14 +32,19 @@ public class MessageNotifyUserTool implements Tool {
 
     @Override
     public String getPythonSignature() {
-        return "message_notify_user(message: str, level: str = 'info') -> dict";
+        return "message_notify_user(sessionId: str, message: str, level: str = 'info') -> dict";
     }
 
     @Override
     public Map<String, Object> execute(Map<String, Object> parameters) throws Exception {
         try {
+            String sessionId = (String) parameters.get("sessionId");
             String message = (String) parameters.get("message");
             String level = (String) parameters.getOrDefault("level", "info");
+
+            if (sessionId == null || sessionId.trim().isEmpty()) {
+                return error("sessionId parameter required", null);
+            }
 
             if (message == null || message.trim().isEmpty()) {
                 return error("Message cannot be empty", null);
@@ -52,7 +57,7 @@ public class MessageNotifyUserTool implements Tool {
             notificationData.put("timestamp", System.currentTimeMillis());
             notificationData.put("type", "user_notification");
 
-            log.info("📬 Notifying user ({}): {}", level, message);
+            log.info("📬 Notifying user ({}) in session {}: {}", level, sessionId, message);
 
             var result = success("Notification sent to user");
             result.put("message", message);
