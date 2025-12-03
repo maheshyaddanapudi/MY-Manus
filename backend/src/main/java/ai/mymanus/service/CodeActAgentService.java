@@ -164,6 +164,33 @@ public class CodeActAgentService {
 
                 // **Event Stream: Append final AGENT_RESPONSE**
                 eventService.appendAgentResponse(sessionId, llmResponse, iteration);
+                
+                // Generate final summary using LLM
+                log.info("📝 Generating final summary...");
+                String summaryPrompt = "Based on the conversation above, provide a brief summary (2-3 sentences) of what was accomplished. " +
+                    "Focus on the final result and what the user can now do. Be concise and friendly.";
+                
+                try {
+                    final int finalIteration = iteration;
+                    StringBuilder summaryBuilder = new StringBuilder();
+                    anthropicService.generateStream(sessionId, systemPrompt, summaryPrompt)
+                        .doOnNext(chunk -> {
+                            summaryBuilder.append(chunk);
+                            // Send summary chunks as regular message (not thought)
+                            sendEvent(sessionId, "message_chunk", chunk, Map.of("iteration", finalIteration, "final", true));
+                        })
+                        .blockLast();
+                    
+                    String summary = summaryBuilder.toString();
+                    // Send complete summary as regular message
+                    sendEvent(sessionId, "message", summary, Map.of("iteration", finalIteration, "complete", true, "final", true));
+                    log.info("✅ Final summary sent: {} chars", summary.length());
+                } catch (Exception e) {
+                    log.error("❌ Failed to generate summary: {}", e.getMessage());
+                    // Fallback - send the thought as final message
+                    sendEvent(sessionId, "message", llmResponse, Map.of("iteration", iteration, "complete", true, "final", true));
+                }
+                
                 break;
             }
 

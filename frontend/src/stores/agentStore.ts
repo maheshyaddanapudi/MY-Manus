@@ -41,6 +41,8 @@ interface AgentState {
   thoughtBuffer: string;
   lastThoughtMessageId: string | null;
   lastEventId: string | null;
+  messageBuffer: string;
+  lastMessageId: string | null;
 
   // Actions
   setSessionId: (sessionId: string) => void;
@@ -90,9 +92,11 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   activePanel: 'terminal',
   suggestedPanel: null,
   isSidebarOpen: true,
-  thoughtBuffer: '',
-  lastThoughtMessageId: null,
-  lastEventId: null,
+      thoughtBuffer: '',
+      lastThoughtMessageId: null,
+      lastEventId: null,
+      messageBuffer: '',
+      lastMessageId: null,
 
   // Actions
   setSessionId: (sessionId) => set({ sessionId }),
@@ -114,6 +118,95 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   handleAgentEvent: (event) => {
     const state = get();
 
+    // Handle message_chunk - accumulate final summary message
+    if (event.type === 'message_chunk') {
+      const newBuffer = state.messageBuffer + event.content;
+      
+      // Update or create message
+      if (state.lastMessageId) {
+        set((state) => ({
+          messages: state.messages.map(m => 
+            m.id === state.lastMessageId
+              ? { ...m, content: newBuffer }
+              : m
+          ),
+          messageBuffer: newBuffer,
+        }));
+      } else {
+        const messageId = `message-${Date.now()}`;
+        get().addMessage({
+          id: messageId,
+          role: 'assistant',
+          content: newBuffer,
+          timestamp: new Date(),
+        });
+        set({ lastMessageId: messageId, messageBuffer: newBuffer });
+      }
+      
+      return; // Don't process further
+    }
+    
+    // Handle complete message
+    if (event.type === 'message') {
+      const finalContent = event.content;
+      
+      // Finalize message
+      if (state.lastMessageId) {
+        set((state) => ({
+          messages: state.messages.map(m => 
+            m.id === state.lastMessageId
+              ? { ...m, content: finalContent }
+              : m
+          ),
+          messageBuffer: '',
+          lastMessageId: null,
+        }));
+      } else {
+        // No chunks, just add the complete message
+        get().addMessage({
+          id: `message-${Date.now()}`,
+          role: 'assistant',
+          content: finalContent,
+          timestamp: new Date(),
+        });
+      }
+      
+      return; // Don't process further
+    }
+    
+    // Handle output - attach to last message as observation
+    if (event.type === 'output') {
+      const output = event.content;
+      
+      // Find the last assistant message and append observation
+      set((state) => {
+        const messages = [...state.messages];
+        for (let i = messages.length - 1; i >= 0; i--) {
+          if (messages[i].role === 'assistant') {
+            // Append observation to the message content
+            const currentContent = messages[i].content;
+            // Check if there's an execute block to attach to
+            if (currentContent.includes('<execute>')) {
+              // Find the last </execute> and insert observation after it
+              const lastExecuteIndex = currentContent.lastIndexOf('</execute>');
+              if (lastExecuteIndex !== -1) {
+                const before = currentContent.substring(0, lastExecuteIndex + 10); // +10 for </execute>
+                const after = currentContent.substring(lastExecuteIndex + 10);
+                messages[i] = {
+                  ...messages[i],
+                  content: before + `\n<observation>${output}</observation>` + after
+                };
+              }
+            }
+            break;
+          }
+        }
+        return { messages };
+      });
+      
+      // Don't return - let it continue to add to events
+    }
+    
     // Handle thought chunks - merge them into continuous events and messages
     if (event.type === 'thought_chunk') {
       const newBuffer = state.thoughtBuffer + event.content;
