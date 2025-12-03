@@ -171,18 +171,19 @@ public class HostPythonExecutor implements SandboxExecutor {
 
         // Restore previous state
         if (previousState != null && !previousState.isEmpty()) {
+            log.info("🔄 Restoring {} variables: {}", previousState.size(), previousState.keySet());
             script.append("# Restore previous state\n");
-            script.append("import ast\n");
+            script.append("import json\n");
             for (Map.Entry<String, Object> entry : previousState.entrySet()) {
                 try {
                     String value = objectMapper.writeValueAsString(entry.getValue());
-                    // Use ast.literal_eval which safely evaluates Python literals
-                    // This avoids all escaping issues with quotes and newlines
-                    script.append(String.format("%s = ast.literal_eval(%s)\n",
-                            entry.getKey(),
-                            objectMapper.writeValueAsString(value)));
+                    // Use json.loads to parse JSON back to Python objects
+                    // This correctly handles true/false/null → True/False/None conversion
+                    script.append(entry.getKey()).append(" = json.loads(")
+                          .append(objectMapper.writeValueAsString(value))
+                          .append(")\n");
                 } catch (Exception e) {
-                    log.warn("Could not serialize variable: {}", entry.getKey());
+                    log.warn("Failed to serialize variable: {}", entry.getKey(), e);
                 }
             }
             script.append("\n");
@@ -327,11 +328,14 @@ public class HostPythonExecutor implements SandboxExecutor {
             for (String line : lines) {
                 if (line.startsWith("STATE:")) {
                     String jsonState = line.substring(6);
-                    return objectMapper.readValue(jsonState, new TypeReference<Map<String, Object>>() {});
+                    log.info("📦 STATE captured: {} characters", jsonState.length());
+                    Map<String, Object> state = objectMapper.readValue(jsonState, new TypeReference<Map<String, Object>>() {});
+                    log.info("📦 STATE parsed: {} variables: {}", state.size(), state.keySet());
+                    return state;
                 }
             }
         } catch (Exception e) {
-            log.warn("Could not parse state from output", e);
+            log.error("❌ Could not parse state from output", e);
         }
         return new HashMap<>();
     }
