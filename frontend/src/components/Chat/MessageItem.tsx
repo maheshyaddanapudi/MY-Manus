@@ -4,6 +4,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { cn } from '../../theme';
 import { CollapsibleCodeBlock } from './CollapsibleCodeBlock';
+import { CollapsibleThought } from './CollapsibleThought';
 
 interface MessageItemProps {
   message: Message;
@@ -13,9 +14,20 @@ export const MessageItem = ({ message }: MessageItemProps) => {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
 
-  // Parse message content to extract <execute> tags and convert to collapsible blocks
-  const parseExecuteTags = (content: string) => {
-    const parts: Array<{ type: 'text' | 'code'; content: string }> = [];
+  // Parse message content to extract <execute> tags and thoughts
+  const parseMessageContent = (content: string) => {
+    const parts: Array<{ type: 'text' | 'code' | 'thought'; content: string }> = [];
+    
+    // First check if the entire message is a thought (no <execute> tags)
+    // Thoughts typically don't have <execute> tags and are explanatory
+    const hasExecuteTags = /<execute>/.test(content);
+    
+    if (!hasExecuteTags && content.trim().length > 50) {
+      // This is likely a thought - make it collapsible
+      return [{ type: 'thought', content }];
+    }
+    
+    // Parse <execute> tags
     const regex = /<execute>([\s\S]*?)<\/execute>/g;
     let lastIndex = 0;
     let match;
@@ -23,10 +35,13 @@ export const MessageItem = ({ message }: MessageItemProps) => {
     while ((match = regex.exec(content)) !== null) {
       // Add text before the execute tag
       if (match.index > lastIndex) {
-        parts.push({
-          type: 'text',
-          content: content.substring(lastIndex, match.index)
-        });
+        const textContent = content.substring(lastIndex, match.index).trim();
+        if (textContent) {
+          parts.push({
+            type: 'text',
+            content: textContent
+          });
+        }
       }
       
       // Add the code from execute tag
@@ -40,16 +55,19 @@ export const MessageItem = ({ message }: MessageItemProps) => {
     
     // Add remaining text after last execute tag
     if (lastIndex < content.length) {
-      parts.push({
-        type: 'text',
-        content: content.substring(lastIndex)
-      });
+      const remaining = content.substring(lastIndex).trim();
+      if (remaining) {
+        parts.push({
+          type: 'text',
+          content: remaining
+        });
+      }
     }
     
     return parts.length > 0 ? parts : [{ type: 'text', content }];
   };
 
-  const contentParts = !isUser ? parseExecuteTags(message.content) : [];
+  const contentParts = !isUser ? parseMessageContent(message.content) : [];
 
   return (
     <div
@@ -217,11 +235,16 @@ export const MessageItem = ({ message }: MessageItemProps) => {
                   >
                     {part.content}
                   </ReactMarkdown>
-                ) : (
+                ) : part.type === 'code' ? (
                   <CollapsibleCodeBlock
                     key={index}
                     code={part.content}
                     language="python"
+                  />
+                ) : (
+                  <CollapsibleThought
+                    key={index}
+                    content={part.content}
                   />
                 )
               ))}

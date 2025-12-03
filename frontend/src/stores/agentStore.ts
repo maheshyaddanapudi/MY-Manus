@@ -37,6 +37,11 @@ interface AgentState {
   suggestedPanel: 'terminal' | 'editor' | 'browser' | 'events' | 'files' | 'replay' | 'knowledge' | 'plan' | null;
   isSidebarOpen: boolean;
 
+  // Chunk buffering for streaming events
+  thoughtBuffer: string;
+  lastThoughtMessageId: string | null;
+  lastEventId: string | null;
+
   // Actions
   setSessionId: (sessionId: string) => void;
   setConnected: (connected: boolean) => void;
@@ -85,6 +90,9 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   activePanel: 'terminal',
   suggestedPanel: null,
   isSidebarOpen: true,
+  thoughtBuffer: '',
+  lastThoughtMessageId: null,
+  lastEventId: null,
 
   // Actions
   setSessionId: (sessionId) => set({ sessionId }),
@@ -106,12 +114,176 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   handleAgentEvent: (event) => {
     const state = get();
 
-    // Add all events to the events array for Event Stream display
-    // Convert AgentEvent to Event format
-    // Map agent event types to EventType
+    // Handle thought chunks - merge them into continuous events and messages
+    if (event.type === 'thought_chunk') {
+      const newBuffer = state.thoughtBuffer + event.content;
+      
+      // Update or create event in Event Stream
+      if (state.lastEventId) {
+        // Update existing event
+        set((state) => ({
+          events: state.events.map(e => 
+            e.id === state.lastEventId 
+              ? { ...e, content: newBuffer }
+              : e
+          ),
+          thoughtBuffer: newBuffer,
+        }));
+      } else {
+        // Create new event
+        const eventId = `thought-${event.metadata?.iteration || state.currentIteration}-${Date.now()}`;
+        const eventRecord: Event = {
+          id: eventId,
+          type: 'AGENT_THOUGHT',
+          content: newBuffer,
+          timestamp: new Date().toISOString(),
+          iteration: event.metadata?.iteration || state.currentIteration,
+          sequence: state.events.length,
+          data: event.metadata || {},
+        };
+        get().addEvent(eventRecord);
+        set({ lastEventId: eventId });
+      }
+      
+      // Update or create message in chat
+      if (state.lastThoughtMessageId) {
+        // Update existing message
+        set((state) => ({
+          messages: state.messages.map(m => 
+            m.id === state.lastThoughtMessageId
+              ? { ...m, content: newBuffer }
+              : m
+          ),
+        }));
+      } else {
+        // Create new message
+        const messageId = `thought-${Date.now()}`;
+        get().addMessage({
+          id: messageId,
+          role: 'assistant',
+          content: newBuffer,
+          timestamp: new Date(),
+        });
+        set({ lastThoughtMessageId: messageId });
+      }
+      
+      return; // Don't process further
+    }
+    
+    // Handle complete thought - only finalize if complete flag is set
+    if (event.type === 'thought') {
+      const isComplete = event.metadata?.complete === true;
+      const isStreaming = event.metadata?.streaming === true;
+      
+      // If streaming (not complete), treat like a chunk
+      if (isStreaming && !isComplete) {
+        const newBuffer = state.thoughtBuffer + event.content;
+        
+        // Update or create event
+        if (state.lastEventId) {
+          set((state) => ({
+            events: state.events.map(e => 
+              e.id === state.lastEventId 
+                ? { ...e, content: newBuffer }
+                : e
+            ),
+            thoughtBuffer: newBuffer,
+          }));
+        } else {
+          const eventId = `thought-${event.metadata?.iteration || state.currentIteration}-${Date.now()}`;
+          const eventRecord: Event = {
+            id: eventId,
+            type: 'AGENT_THOUGHT',
+            content: newBuffer,
+            timestamp: new Date().toISOString(),
+            iteration: event.metadata?.iteration || state.currentIteration,
+            sequence: state.events.length,
+            data: event.metadata || {},
+          };
+          get().addEvent(eventRecord);
+          set({ lastEventId: eventId });
+        }
+        
+        // Update or create message
+        if (state.lastThoughtMessageId) {
+          set((state) => ({
+            messages: state.messages.map(m => 
+              m.id === state.lastThoughtMessageId
+                ? { ...m, content: newBuffer }
+                : m
+            ),
+          }));
+        } else {
+          const messageId = `thought-${Date.now()}`;
+          get().addMessage({
+            id: messageId,
+            role: 'assistant',
+            content: newBuffer,
+            timestamp: new Date(),
+          });
+          set({ lastThoughtMessageId: messageId });
+        }
+        
+        return; // Don't process further
+      }
+      
+      // Complete thought - finalize
+      if (isComplete) {
+        // Use the complete content from the event (not buffer)
+        const finalContent = event.content;
+        
+        // Finalize event
+        if (state.lastEventId) {
+          set((state) => ({
+            events: state.events.map(e => 
+              e.id === state.lastEventId 
+                ? { ...e, content: finalContent }
+                : e
+            ),
+            thoughtBuffer: '',
+            lastEventId: null,
+          }));
+        } else {
+          // No chunks, just add the complete thought
+          const eventRecord: Event = {
+            id: `thought-${event.metadata?.iteration || state.currentIteration}-${Date.now()}`,
+            type: 'AGENT_THOUGHT',
+            content: finalContent,
+            timestamp: new Date().toISOString(),
+            iteration: event.metadata?.iteration || state.currentIteration,
+            sequence: state.events.length,
+            data: event.metadata || {},
+          };
+          get().addEvent(eventRecord);
+        }
+        
+        // Finalize message
+        if (state.lastThoughtMessageId) {
+          set((state) => ({
+            messages: state.messages.map(m => 
+              m.id === state.lastThoughtMessageId
+                ? { ...m, content: finalContent }
+                : m
+            ),
+            thoughtBuffer: '',
+            lastThoughtMessageId: null,
+          }));
+        } else {
+          // No chunks, just add the complete thought
+          get().addMessage({
+            id: `thought-${Date.now()}`,
+            role: 'assistant',
+            content: finalContent,
+            timestamp: new Date(),
+          });
+        }
+        
+        return; // Don't process further
+      }
+    }
+
+    // For other event types, add to events array
     const typeMap: Record<string, EventType> = {
-      'thought': 'AGENT_THOUGHT',
-      'thought_chunk': 'AGENT_THOUGHT',
       'code': 'AGENT_ACTION',
       'output': 'OBSERVATION',
       'error': 'ERROR',
@@ -120,16 +292,18 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     };
     
     const eventType = typeMap[event.type] || 'SYSTEM';
-    const eventRecord: Event = {
-      id: `${event.type}-${Date.now()}-${Math.random()}`,
-      type: eventType,
-      content: event.content,
-      timestamp: new Date().toISOString(),
-      iteration: event.metadata?.iteration || state.currentIteration,
-      sequence: state.events.length,
-      data: event.metadata || {},
-    };
-    get().addEvent(eventRecord);
+    if (eventType !== 'SYSTEM' || event.type === 'status') {
+      const eventRecord: Event = {
+        id: `${event.type}-${Date.now()}-${Math.random()}`,
+        type: eventType,
+        content: event.content,
+        timestamp: new Date().toISOString(),
+        iteration: event.metadata?.iteration || state.currentIteration,
+        sequence: state.events.length,
+        data: event.metadata || {},
+      };
+      get().addEvent(eventRecord);
+    }
 
     switch (event.type) {
       case 'status':
@@ -138,16 +312,6 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           agentStatus: status,
           currentIteration: event.metadata?.iteration || state.currentIteration,
           maxIterations: event.metadata?.maxIterations || state.maxIterations,
-        });
-        break;
-
-      case 'thought':
-        // Add assistant message with the thought
-        get().addMessage({
-          id: `thought-${Date.now()}`,
-          role: 'assistant',
-          content: event.content,
-          timestamp: new Date(),
         });
         break;
 

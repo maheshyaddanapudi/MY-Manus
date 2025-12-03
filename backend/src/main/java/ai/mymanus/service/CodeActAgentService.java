@@ -127,7 +127,6 @@ public class CodeActAgentService {
 
             // Generate LLM response with streaming
             StringBuilder llmResponseBuilder = new StringBuilder();
-            StringBuilder chunkBuffer = new StringBuilder();
 
             log.info("🌊 Starting streaming LLM response...");
 
@@ -135,27 +134,13 @@ public class CodeActAgentService {
             anthropicService.generateStream(sessionId, systemPrompt, userMessage)
                 .doOnNext(chunk -> {
                     llmResponseBuilder.append(chunk);
-                    chunkBuffer.append(chunk);
-
+                    
                     // Send chunk to frontend for real-time display
                     sendEvent(sessionId, "thought_chunk", chunk, Map.of("iteration", currentIteration));
-
-                    // Send accumulated response periodically (every ~50 chars)
-                    if (chunkBuffer.length() > 50) {
-                        sendEvent(sessionId, "thought", chunkBuffer.toString(),
-                            Map.of("iteration", currentIteration, "streaming", true));
-                        chunkBuffer.setLength(0);
-                    }
                 })
                 .blockLast(); // Wait for stream to complete
 
             String llmResponse = llmResponseBuilder.toString();
-
-            // Send final thought if there's remaining buffer
-            if (chunkBuffer.length() > 0) {
-                sendEvent(sessionId, "thought", chunkBuffer.toString(),
-                    Map.of("iteration", iteration, "streaming", true, "final", true));
-            }
 
             log.info("🤔 LLM Response complete: {} chars", llmResponse.length());
 

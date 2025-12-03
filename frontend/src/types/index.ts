@@ -6,7 +6,7 @@ export interface Message {
 }
 
 export interface AgentEvent {
-  type: 'status' | 'thought' | 'code' | 'output' | 'error' | 'warning' | 'connected';
+  type: 'status' | 'thought' | 'thought_chunk' | 'code' | 'output' | 'error' | 'warning' | 'connected';
   content: string;
   metadata?: Record<string, any>;
 }
