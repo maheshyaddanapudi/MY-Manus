@@ -31,11 +31,13 @@ public class PythonValidationService {
         }
 
         // Use Python's ast module for syntax validation
-        String validationScript = String.format("""
+        // Pass code via stdin to avoid escaping issues
+        String validationScript = """
             import ast
             import sys
 
-            code = '''%s'''
+            # Read code from stdin
+            code = sys.stdin.read()
 
             try:
                 ast.parse(code)
@@ -44,13 +46,17 @@ public class PythonValidationService {
                 print(f"SYNTAX_ERROR: {e.msg} at line {e.lineno}")
             except Exception as e:
                 print(f"ERROR: {str(e)}")
-            """, code.replace("'''", "\\'\\'\\'"));
+            """;
 
         try {
             // Execute validation script in a safe Python environment
             Process process = new ProcessBuilder(
                 "python3", "-c", validationScript
             ).redirectErrorStream(true).start();
+            
+            // Send code to Python via stdin
+            process.getOutputStream().write(code.getBytes());
+            process.getOutputStream().close();
 
             String output = new String(process.getInputStream().readAllBytes()).trim();
             process.waitFor();

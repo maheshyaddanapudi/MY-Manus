@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +39,9 @@ public class CodeActAgentService {
 
     @Value("${agent.max-iterations:20}")
     private Integer maxIterations;
+
+    @Value("${sandbox.host.workspace-dir}")
+    private String workspaceDir;
 
     /**
      * Main agent loop: processes user query and executes CodeAct loop
@@ -167,6 +173,9 @@ public class CodeActAgentService {
             if (codeBlocks.isEmpty()) {
                 // No code to execute, task is complete
                 log.info("✅ No code blocks found - task complete");
+
+                // **Optional: Validate todos if they exist**
+                validateTodoCompletion(sessionId);
 
                 // **Event Stream: Append final AGENT_RESPONSE**
                 eventService.appendAgentResponse(sessionId, llmResponse, iteration);
@@ -311,13 +320,6 @@ public class CodeActAgentService {
                 log.warn("⚠️ Action failed - LLM will see error in next iteration");
             }
 
-            // Check if we should continue
-            if (isTaskComplete(llmResponse)) {
-                log.info("✅ Task complete indicator found in response");
-                eventService.appendAgentResponse(sessionId, llmResponse, iteration);
-                break;
-            }
-
             // Continue to next iteration (LLM will see full event stream)
             log.info("➡️ Proceeding to next iteration");
         }
@@ -361,15 +363,26 @@ public class CodeActAgentService {
     }
 
     /**
-     * Determine if the task is complete based on LLM response
+     * Validate todo.md completion as a safety check
+     * Logs warnings if todos exist but are not all checked
      */
-    private boolean isTaskComplete(String response) {
-        String lower = response.toLowerCase();
-        return lower.contains("task complete") ||
-                lower.contains("task is complete") ||
-                lower.contains("finished") ||
-                lower.contains("done") ||
-                (lower.contains("final") && lower.contains("answer"));
+    private void validateTodoCompletion(String sessionId) {
+        try {
+            Path todoPath = Paths.get(workspaceDir, sessionId, "todo.md");
+            if (Files.exists(todoPath)) {
+                String content = Files.readString(todoPath);
+                boolean hasUnchecked = content.contains("- [ ]");
+                
+                if (hasUnchecked) {
+                    log.warn("⚠️ Task stopped but todo.md has unchecked items!");
+                    log.warn("Todo content:\n{}", content);
+                } else {
+                    log.info("✅ All todo items are checked");
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Could not validate todo.md: {}", e.getMessage());
+        }
     }
 
     /**
