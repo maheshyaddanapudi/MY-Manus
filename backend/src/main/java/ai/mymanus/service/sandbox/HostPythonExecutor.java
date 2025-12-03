@@ -195,10 +195,14 @@ public class HostPythonExecutor implements SandboxExecutor {
         script.append("    print(f'ERROR: {str(e)}', file=sys.stderr)\n");
         script.append("    traceback.print_exc()\n\n");
 
-        // Capture final state
+        // Capture final state (exclude functions and modules to preserve tool bindings)
         script.append("# Capture state\n");
+        script.append("import types\n");
         script.append("_state = {k: v for k, v in globals().items() ");
-        script.append("if not k.startswith('_') and k not in ['json', 'sys', 'traceback']}\n");
+        script.append("if not k.startswith('_') ");
+        script.append("and k not in ['json', 'sys', 'traceback', 'os', 'uuid', 'types', 'SESSION_ID'] ");
+        script.append("and not callable(v) ");
+        script.append("and not isinstance(v, types.ModuleType)}\n");
         script.append("print(f'STATE:{json.dumps(_state, default=str)}')\n");
 
         return script.toString();
