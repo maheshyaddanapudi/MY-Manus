@@ -20,12 +20,20 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class TodoMdWatcher {
 
     private final TodoMdParser todoMdParser;
     private final SimpMessagingTemplate messagingTemplate;
     private final MeterRegistry meterRegistry;
+    private final String workspaceDir;
+
+    public TodoMdWatcher(TodoMdParser todoMdParser, SimpMessagingTemplate messagingTemplate, 
+                        MeterRegistry meterRegistry, @org.springframework.beans.factory.annotation.Value("${sandbox.host.workspace-dir}") String workspaceDir) {
+        this.todoMdParser = todoMdParser;
+        this.messagingTemplate = messagingTemplate;
+        this.meterRegistry = meterRegistry;
+        this.workspaceDir = workspaceDir;
+    }
     private final Map<String, WatchService> sessionWatchers = new ConcurrentHashMap<>();
     private final Map<String, Boolean> watcherRunning = new ConcurrentHashMap<>();
 
@@ -48,11 +56,11 @@ public class TodoMdWatcher {
             return;
         }
 
-        Path todoPath = Paths.get("/workspace", sessionId, "todo.md");
+        Path todoPath = Paths.get(workspaceDir, sessionId, "todo.md");
 
         if (!Files.exists(todoPath)) {
             log.debug("No todo.md yet for session: {}, will watch parent directory", sessionId);
-            todoPath = Paths.get("/workspace", sessionId);
+            todoPath = Paths.get(workspaceDir, sessionId);
 
             // Create directory if it doesn't exist
             try {
@@ -171,7 +179,7 @@ public class TodoMdWatcher {
      * Get current todo.md structure
      */
     public Optional<TodoMdStructure> getCurrentTodo(String sessionId) {
-        Path todoPath = Paths.get("/workspace", sessionId, "todo.md");
+        Path todoPath = Paths.get(workspaceDir, sessionId, "todo.md");
 
         if (!Files.exists(todoPath)) {
             log.debug("No todo.md found for session: {}", sessionId);
