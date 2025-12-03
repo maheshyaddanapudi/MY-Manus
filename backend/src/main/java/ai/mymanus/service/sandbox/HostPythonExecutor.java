@@ -172,12 +172,15 @@ public class HostPythonExecutor implements SandboxExecutor {
         // Restore previous state
         if (previousState != null && !previousState.isEmpty()) {
             script.append("# Restore previous state\n");
+            script.append("import ast\n");
             for (Map.Entry<String, Object> entry : previousState.entrySet()) {
                 try {
                     String value = objectMapper.writeValueAsString(entry.getValue());
-                    script.append(String.format("%s = json.loads('%s')\n",
+                    // Use ast.literal_eval which safely evaluates Python literals
+                    // This avoids all escaping issues with quotes and newlines
+                    script.append(String.format("%s = ast.literal_eval(%s)\n",
                             entry.getKey(),
-                            value.replace("'", "\\'")));
+                            objectMapper.writeValueAsString(value)));
                 } catch (Exception e) {
                     log.warn("Could not serialize variable: {}", entry.getKey());
                 }
