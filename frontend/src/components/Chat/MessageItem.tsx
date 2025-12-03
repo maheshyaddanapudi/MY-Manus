@@ -23,20 +23,17 @@ export const MessageItem = ({ message }: MessageItemProps) => {
       observation?: string; // Observation/output for code blocks
     }> = [];
     
+    // If this message came from a 'message' event (final summary), render as normal text
+    if (message.sourceType === 'message') {
+      return [{ type: 'text', content }];
+    }
+    
     // First check if the entire message is a thought (no <execute> tags)
     // Thoughts typically don't have <execute> tags and are explanatory
     const hasExecuteTags = /<execute>/.test(content);
     
-    if (!hasExecuteTags && content.trim().length > 50) {
-      // Check if this is a final summary/result (don't collapse these)
-      const isFinalSummary = /^##?\s*✅|Task completed|successfully created|Summary:/i.test(content);
-      
-      if (isFinalSummary) {
-        // Show final summaries as regular text, not collapsible
-        return [{ type: 'text', content }];
-      }
-      
-      // This is likely a thought - make it collapsible
+    if (!hasExecuteTags && content.trim().length > 50 && message.sourceType === 'thought') {
+      // This is a thought - make it collapsible
       return [{ type: 'thought', content }];
     }
     

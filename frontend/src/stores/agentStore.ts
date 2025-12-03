@@ -139,6 +139,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           role: 'assistant',
           content: newBuffer,
           timestamp: new Date(),
+          sourceType: 'message',
         });
         set({ lastMessageId: messageId, messageBuffer: newBuffer });
       }
@@ -168,6 +169,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           role: 'assistant',
           content: finalContent,
           timestamp: new Date(),
+          sourceType: 'message',
         });
       }
       
@@ -256,6 +258,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           role: 'assistant',
           content: newBuffer,
           timestamp: new Date(),
+          sourceType: 'thought',
         });
         set({ lastThoughtMessageId: messageId });
       }

@@ -3,6 +3,7 @@ export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
+  sourceType?: 'thought' | 'message'; // Track if this came from thought or message event
 }
 
 export interface AgentEvent {
