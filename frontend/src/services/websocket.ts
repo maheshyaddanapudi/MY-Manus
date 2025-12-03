@@ -1,13 +1,6 @@
 import { Client } from '@stomp/stompjs';
 import type { StompSubscription } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 import type { AgentEvent } from '../types';
-
-const WS_URL = import.meta.env.VITE_WS_URL 
-  ? (import.meta.env.VITE_WS_URL.startsWith('http') 
-      ? import.meta.env.VITE_WS_URL 
-      : `${window.location.origin}${import.meta.env.VITE_WS_URL}`)
-  : `${window.location.origin}/ws`;
 
 export class WebSocketService {
   private client: Client | null = null;
@@ -19,9 +12,9 @@ export class WebSocketService {
   connect(sessionId: string, onEvent: (event: AgentEvent) => void) {
     this.onEventCallback = onEvent;
 
-    // Create STOMP client with SockJS
+    // Create STOMP client with native WebSocket
     this.client = new Client({
-      webSocketFactory: () => new SockJS(WS_URL),
+      brokerURL: `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`,
       debug: (str) => {
         console.log('STOMP:', str);
       },

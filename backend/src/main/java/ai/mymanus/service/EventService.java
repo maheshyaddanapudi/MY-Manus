@@ -263,4 +263,26 @@ public class EventService {
 
         return context.toString();
     }
+
+    /**
+     * Get the last observation from the event stream
+     * Used for Option A architecture to pass observation to next iteration
+     */
+    public String getLastObservation(String sessionId) {
+        List<Event> events = getEventStream(sessionId);
+        
+        // Find the most recent OBSERVATION event
+        for (int i = events.size() - 1; i >= 0; i--) {
+            Event event = events.get(i);
+            if (event.getType() == Event.EventType.OBSERVATION) {
+                if (event.getSuccess()) {
+                    return event.getContent();
+                } else {
+                    return "ERROR: " + event.getError();
+                }
+            }
+        }
+        
+        return "No previous observation found";
+    }
 }

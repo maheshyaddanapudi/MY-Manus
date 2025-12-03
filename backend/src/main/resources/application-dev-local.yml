@@ -28,7 +28,7 @@ sandbox:
   mode: host
   host:
     python-executable: python3
-    workspace-dir: ./workspace
+    workspace-dir: /home/ubuntu/MY-Manus/backend/workspace
     timeout-seconds: 30
 
 auth:

@@ -62,7 +62,7 @@ public class CodeActAgentService {
             sendEvent(sessionId, "status", "thinking", Map.of("iteration", 0));
 
             // Execute agent loop with event stream
-            String finalResponse = executeAgentLoop(sessionId);
+            String finalResponse = executeAgentLoop(sessionId, userQuery);
 
             // **Event Stream: Append AGENT_RESPONSE**
             // Note: Response is built from the event stream, not returned directly
@@ -90,7 +90,7 @@ public class CodeActAgentService {
      * Execute the CodeAct agent loop with Event Stream Architecture
      * CRITICAL: ONE action per iteration (Manus AI pattern)
      */
-    private String executeAgentLoop(String sessionId) {
+    private String executeAgentLoop(String sessionId, String userQuery) {
         StringBuilder fullResponse = new StringBuilder();
         Map<String, Object> executionContext = stateService.getExecutionContext(sessionId);
         int iteration = 0;
@@ -102,12 +102,19 @@ public class CodeActAgentService {
             sendEvent(sessionId, "status", "thinking",
                     Map.of("iteration", iteration, "maxIterations", maxIterations));
 
-            // **Build context from event stream** (includes all previous events)
-            String eventStreamContext = eventService.buildEventStreamContext(sessionId);
+            // **Build system prompt** (instructions only, no history)
             String systemPrompt = promptBuilder.buildSystemPrompt(executionContext, false);
 
-            // Combine system prompt with event stream history
-            String fullContext = systemPrompt + "\n\n" + eventStreamContext;
+            // **Build user message** based on iteration
+            String userMessage;
+            if (iteration == 1) {
+                // First iteration: pass user query directly
+                userMessage = userQuery;
+            } else {
+                // Subsequent iterations: pass observation from previous iteration
+                String lastObservation = eventService.getLastObservation(sessionId);
+                userMessage = "The code executed with result: " + lastObservation;
+            }
 
             // Capture iteration in final variable for lambda
             final int currentIteration = iteration;
@@ -119,7 +126,7 @@ public class CodeActAgentService {
             log.info("🌊 Starting streaming LLM response...");
 
             // Stream response and send chunks to frontend in real-time
-            anthropicService.generateStream(sessionId, fullContext, "")
+            anthropicService.generateStream(sessionId, systemPrompt, userMessage)
                 .doOnNext(chunk -> {
                     llmResponseBuilder.append(chunk);
                     chunkBuffer.append(chunk);
