@@ -114,37 +114,110 @@ public class PromptBuilder {
 
             %s
 
-            ## Task Planning (Multi-Step Tasks):
-            For tasks that require multiple steps (3+ steps), use the todo() tool:
+            ## MANDATORY: Task Planning for Multi-Step Tasks
 
-            1. At the START of a multi-step task, create todo.md:
-               ```python
-               todo(action='write', content='''# Data Analysis Project
-               - [ ] Load and clean data
-               - [ ] Perform statistical analysis
-               - [ ] Generate visualizations
-               - [ ] Create summary report
-               ''')
-               ```
+            **CRITICAL REQUIREMENT:** For ANY task with 3 or more steps, you MUST:
 
-            2. UPDATE todo.md as you complete each step:
-               ```python
-               # Read current todo
-               current = todo(action='read')
-               
-               # Update with completed step
-               updated = current['content'].replace('- [ ] Load and clean data', '- [x] Load and clean data')
-               todo(action='write', content=updated)
-               ```
+            ### Step 1: CREATE todo.md IMMEDIATELY (First Action)
+            
+            Before executing ANY code, create todo.md using the todo() tool:
+            
+            <execute>
+            todo(action='write', content='''# [Task Name]
+            - [ ] Step 1: [Description]
+            - [ ] Step 2: [Description]
+            - [ ] Step 3: [Description]
+            - [ ] Step 4: [Description]
+            ''')
+            </execute>
 
-            Note: The todo.md file is automatically monitored and displayed in the Plan tab.
+            ### Step 2: EXECUTE each step
+            
+            Work through each task step by step.
+
+            ### Step 3: UPDATE todo.md AFTER EACH COMPLETED STEP
+            
+            After completing each step, mark it as done:
+            
+            <execute>
+            # Read current todo
+            current_todo = todo(action='read')
+            
+            # Mark step as complete
+            updated_content = current_todo['content'].replace(
+                '- [ ] Step 1: [Description]',
+                '- [x] Step 1: [Description] ✅'
+            )
+            
+            # Write updated todo
+            todo(action='write', content=updated_content)
+            </execute>
+
+            ### Example: Complete Multi-Step Task Workflow
+            
+            **Task:** "Create a data analysis project"
+            
+            **Iteration 1 - Create Plan:**
+            <execute>
+            todo(action='write', content='''# Data Analysis Project
+            - [ ] Generate sample data
+            - [ ] Save data to CSV file
+            - [ ] Load and analyze data
+            - [ ] Create visualization
+            - [ ] Generate summary report
+            ''')
+            print("✅ Todo list created")
+            </execute>
+
+            **Iteration 2 - Complete Step 1:**
+            <execute>
+            # Generate sample data
+            import random
+            data = [{'id': i, 'value': random.randint(1, 100)} for i in range(10)]
+            print(f"Generated {len(data)} records")
+            
+            # Update todo
+            current = todo(action='read')
+            updated = current['content'].replace(
+                '- [ ] Generate sample data',
+                '- [x] Generate sample data ✅'
+            )
+            todo(action='write', content=updated)
+            print("✅ Step 1 complete, todo updated")
+            </execute>
+
+            **Iteration 3 - Complete Step 2:**
+            <execute>
+            # Save to CSV
+            csv_content = 'id,value\n' + '\n'.join([f"{d['id']},{d['value']}" for d in data])
+            file_write(path='data.csv', content=csv_content)
+            print("✅ Data saved to CSV")
+            
+            # Update todo
+            current = todo(action='read')
+            updated = current['content'].replace(
+                '- [ ] Save data to CSV file',
+                '- [x] Save data to CSV file ✅'
+            )
+            todo(action='write', content=updated)
+            print("✅ Step 2 complete, todo updated")
+            </execute>
+
+            ... and so on for remaining steps.
+
+            **IMPORTANT NOTES:**
+            - The todo.md file is automatically monitored and displayed in the Plan tab
+            - Users can see real-time progress as you update the todo list
+            - ALWAYS create todo.md BEFORE executing the first step
+            - ALWAYS update todo.md AFTER completing each step
+            - Use descriptive step names so users understand progress
 
             ## Important Rules:
             - **MANDATORY**: Use pre-defined tools for file I/O, shell, browser, and communication
             - Always use print() to show results to the user
             - Handle errors gracefully with try/except
             - Break complex tasks into smaller steps
-            - For multi-step tasks (3+ steps), use todo() tool to create and maintain todo.md
+            - **MANDATORY**: For multi-step tasks (3+ steps), you MUST use todo() tool to create todo.md FIRST, then update it after EACH completed step
             - Think before you code - explain your approach
             - Raw Python is ONLY for computation/data processing, NOT for I/O operations
             - SESSION_ID is automatically injected - you don't need to pass it manually
