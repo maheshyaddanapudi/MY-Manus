@@ -324,37 +324,6 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 - Rate limiting per user
 - Audit logging for compliance
 
-## 🗺️ Roadmap
-
-### Phase 1 - Core Infrastructure ✅ Complete
-- ✅ Basic CodeAct loop
-- ✅ Docker sandboxing
-- ✅ Eight-panel UI (Chat, Terminal, Editor, Browser, Events, Files, Replay, Knowledge, Plan)
-- ✅ 22 core tools
-
-### Phase 2 - Enhanced Features ✅ Complete
-- ✅ Multi-agent orchestration (6 specialized roles)
-- ✅ Browser automation with Playwright
-- ✅ Enhanced browser tabs (Console, Network monitoring)
-- ✅ Session replay with time-travel debugging
-- ✅ File tree visualization
-
-### Phase 3 - Advanced Features ✅ Complete
-- ✅ RAG/Knowledge base integration
-- ✅ Real-time notifications (browser + in-app)
-- ✅ Live plan visualization
-- ✅ Multi-turn conversation support
-- ✅ Hybrid tool system (Core + MCP dynamic discovery)
-- ✅ Comprehensive observability (Prometheus metrics)
-
-### Phase 4 - Future Enhancements
-- ⏳ Plugin marketplace
-- ⏳ Custom tool creation UI
-- ⏳ Team collaboration features
-- ⏳ Mobile app support
-- ⏳ Advanced analytics dashboards
-- ⏳ Cost tracking and optimization
-
 ## 🙏 Acknowledgments
 
 - Inspired by [Manus AI](https://manus.im) interface design
