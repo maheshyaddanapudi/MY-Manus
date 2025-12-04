@@ -321,7 +321,7 @@ public class CodeActAgentService {
 
             sendEvent(sessionId, "output", result.getStdout(), resultMeta);
 
-            if (!result.getStderr().isEmpty()) {
+            if (result.getStderr() != null && !result.getStderr().isEmpty()) {
                 sendEvent(sessionId, "error", result.getStderr(), resultMeta);
             }
 
@@ -355,7 +355,7 @@ public class CodeActAgentService {
 
         if (result.isSuccess()) {
             obs.append("Execution successful.\n");
-            if (!result.getStdout().isEmpty()) {
+            if (result.getStdout() != null && !result.getStdout().isEmpty()) {
                 obs.append("Output:\n").append(result.getStdout()).append("\n");
             }
             if (result.getVariables() != null && !result.getVariables().isEmpty()) {
@@ -363,7 +363,7 @@ public class CodeActAgentService {
             }
         } else {
             obs.append("Execution failed.\n");
-            if (!result.getStderr().isEmpty()) {
+            if (result.getStderr() != null && !result.getStderr().isEmpty()) {
                 obs.append("Error:\n").append(result.getStderr()).append("\n");
             }
             if (result.getError() != null) {
