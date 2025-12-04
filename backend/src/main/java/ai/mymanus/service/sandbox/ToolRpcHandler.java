@@ -1,5 +1,7 @@
 package ai.mymanus.service.sandbox;
 
+import ai.mymanus.model.ToolExecution;
+import ai.mymanus.service.AgentStateService;
 import ai.mymanus.tool.Tool;
 import ai.mymanus.tool.ToolRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,6 +26,7 @@ public class ToolRpcHandler {
 
     private final ToolRegistry toolRegistry;
     private final ObjectMapper objectMapper;
+    private final AgentStateService stateService;
 
     /**
      * Handle a tool request line from Python stdout.
@@ -32,7 +35,7 @@ public class ToolRpcHandler {
      * @param line The stdout line containing __TOOL_REQUEST__
      * @return The tool response to send to Python stdin (__TOOL_RESPONSE__{json}__END__)
      */
-    public String handleToolRequest(String line) {
+    public String handleToolRequest(String sessionId, String line) {
         try {
             // Extract JSON from __TOOL_REQUEST__{json}__END__
             String requestJson = extractJson(line, "__TOOL_REQUEST__");
@@ -58,6 +61,18 @@ public class ToolRpcHandler {
             long duration = System.currentTimeMillis() - startTime;
 
             log.info("✅ Tool {} executed in {}ms", request.tool, duration);
+
+            // Record tool execution in database for UI display
+            try {
+                ToolExecution.ExecutionStatus status = (result != null && Boolean.TRUE.equals(result.get("success"))) 
+                    ? ToolExecution.ExecutionStatus.SUCCESS 
+                    : ToolExecution.ExecutionStatus.FAILED;
+                
+                stateService.recordToolExecution(sessionId, request.tool, request.params, result, status, (int) duration);
+                log.debug("📝 Tool execution recorded in database");
+            } catch (Exception e) {
+                log.warn("⚠️ Failed to record tool execution (non-fatal): {}", e.getMessage());
+            }
 
             // Build response
             ToolResponse response = new ToolResponse();

@@ -354,7 +354,7 @@ public class PythonSandboxExecutor implements SandboxExecutor {
                 while ((line = reader.readLine()) != null) {
                     if (line.contains("__TOOL_REQUEST__")) {
                         // Handle tool request via RPC handler
-                        String response = rpcHandler.handleToolRequest(line);
+                        String response = rpcHandler.handleToolRequest(sessionId, line);
                         stdinWriter.println(response);
                         stdinWriter.flush();
                     } else {

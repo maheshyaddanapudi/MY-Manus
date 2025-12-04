@@ -77,7 +77,7 @@ public class HostPythonExecutor implements SandboxExecutor {
             Files.writeString(codeFile, fullCode);
 
             // Execute Python process
-            ExecutionResult result = executeProcess(sessionWorkspace, codeFile);
+            ExecutionResult result = executeProcess(sessionId, sessionWorkspace, codeFile);
             result.setExecutionTimeMs(System.currentTimeMillis() - startTime);
 
             log.info("Executed code in session {} (host mode) in {}ms", sessionId, result.getExecutionTimeMs());
@@ -252,7 +252,7 @@ public class HostPythonExecutor implements SandboxExecutor {
     /**
      * Execute Python process and capture output with RPC tool execution support
      */
-    private ExecutionResult executeProcess(Path workspace, Path codeFile) throws Exception {
+    private ExecutionResult executeProcess(String sessionId, Path workspace, Path codeFile) throws Exception {
         ProcessBuilder processBuilder = new ProcessBuilder(
                 pythonExecutable,
                 codeFile.toString()
@@ -281,7 +281,7 @@ public class HostPythonExecutor implements SandboxExecutor {
                 while ((line = reader.readLine()) != null) {
                     // Check for tool request
                     if (line.contains("__TOOL_REQUEST__")) {
-                        handleToolRequest(line, stdinWriter);
+                        handleToolRequest(sessionId, line, stdinWriter);
                     } else {
                         stdout.append(line).append("\n");
                     }
@@ -342,10 +342,10 @@ public class HostPythonExecutor implements SandboxExecutor {
     /**
      * Handle tool execution request from Python (delegates to shared RPC handler)
      */
-    private void handleToolRequest(String line, java.io.PrintWriter stdinWriter) {
+    private void handleToolRequest(String sessionId, String line, java.io.PrintWriter stdinWriter) {
         try {
             // Delegate to shared RPC handler
-            String response = rpcHandler.handleToolRequest(line);
+            String response = rpcHandler.handleToolRequest(sessionId, line);
             
             // Send response to Python
             stdinWriter.println(response);
