@@ -190,8 +190,27 @@ public class PythonSandboxExecutor implements SandboxExecutor {
         // Add imports
         script.append("import json\n");
         script.append("import sys\n");
+        script.append("import os\n");
         script.append("import uuid\n");
-        script.append("import traceback\n\n");
+        script.append("import traceback\n");
+        script.append("import pickle\n\n");
+        
+        // State persistence file path
+        script.append("# State persistence file path\n");
+        script.append("STATE_FILE = os.path.join(os.getcwd(), '.python_state.pkl')\n\n");
+        
+        // Load previous state from pickle file if it exists
+        script.append("# Load previous state if it exists\n");
+        script.append("if os.path.exists(STATE_FILE):\n");
+        script.append("    try:\n");
+        script.append("        with open(STATE_FILE, 'rb') as f:\n");
+        script.append("            saved_state = pickle.load(f)\n");
+        script.append("            # Restore variables to globals (exclude functions and modules)\n");
+        script.append("            for key, value in saved_state.items():\n");
+        script.append("                if not callable(value) and not isinstance(value, type(os)):\n");
+        script.append("                    globals()[key] = value\n");
+        script.append("    except Exception as e:\n");
+        script.append("        print(f'Warning: Failed to load state: {e}', file=sys.stderr)\n\n");
 
         // Tool execution function (RPC bridge to Java)
         script.append("# Tool execution bridge (RPC to Java)\n");
@@ -262,10 +281,30 @@ public class PythonSandboxExecutor implements SandboxExecutor {
         script.append("    print(f'ERROR: {str(e)}', file=sys.stderr)\n");
         script.append("    traceback.print_exc()\n\n");
 
-        // Capture final state
-        script.append("# Capture state\n");
+        // Save state for next iteration using pickle
+        script.append("# Save state for next iteration\n");
+        script.append("try:\n");
+        script.append("    import types\n");
+        script.append("    # Filter out built-ins, modules, and functions\n");
+        script.append("    state_to_save = {\n");
+        script.append("        k: v for k, v in globals().items()\n");
+        script.append("        if not k.startswith('_')\n");
+        script.append("        and k not in ['json', 'sys', 'os', 'uuid', 'traceback', 'pickle', 'types', 'STATE_FILE']\n");
+        script.append("        and not callable(v)\n");
+        script.append("        and not isinstance(v, types.ModuleType)\n");
+        script.append("        and k not in dir(__builtins__)\n");
+        script.append("    }\n");
+        script.append("    \n");
+        script.append("    with open(STATE_FILE, 'wb') as f:\n");
+        script.append("        pickle.dump(state_to_save, f)\n");
+        script.append("except Exception as e:\n");
+        script.append("    print(f'Warning: Failed to save state: {e}', file=sys.stderr)\n\n");
+
+        // Capture final state for Java
+        script.append("# Capture state for Java\n");
+        script.append("import types\n");
         script.append("_state = {k: v for k, v in globals().items() ");
-        script.append("if not k.startswith('_') and k not in ['json', 'sys', 'traceback']}\n");
+        script.append("if not k.startswith('_') and k not in ['json', 'sys', 'os', 'uuid', 'traceback', 'pickle', 'types', 'STATE_FILE']}\n");
         script.append("print(f'STATE:{json.dumps(_state, default=str)}')\n");
 
         return script.toString();
