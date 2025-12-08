@@ -16,6 +16,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Main CodeAct Agent Service.
@@ -43,12 +45,46 @@ public class CodeActAgentService {
     @Value("${sandbox.host.workspace-dir}")
     private String workspaceDir;
 
+    // Track sessions that should be stopped
+    private final Set<String> stopRequests = ConcurrentHashMap.newKeySet();
+
+    // Track currently running sessions
+    private final Set<String> runningSessions = ConcurrentHashMap.newKeySet();
+
+    /**
+     * Request to stop the agent loop for a session.
+     * The loop will stop at the next iteration boundary.
+     *
+     * @param sessionId Session to stop
+     * @return true if session was running and stop was requested
+     */
+    public boolean stopAgent(String sessionId) {
+        if (runningSessions.contains(sessionId)) {
+            stopRequests.add(sessionId);
+            log.info("🛑 Stop requested for session: {}", sessionId);
+            sendEvent(sessionId, "status", "stopping", Map.of("message", "Stop requested"));
+            return true;
+        }
+        log.warn("⚠️ Stop requested but session not running: {}", sessionId);
+        return false;
+    }
+
+    /**
+     * Check if a session is currently running
+     */
+    public boolean isRunning(String sessionId) {
+        return runningSessions.contains(sessionId);
+    }
+
     /**
      * Main agent loop: processes user query and executes CodeAct loop
      * Uses Event Stream Architecture for proper state tracking
      */
     public String processQuery(String sessionId, String userQuery) {
         log.info("═══ Starting CodeAct Agent Loop for session: {} ═══", sessionId);
+
+        // Mark session as running
+        runningSessions.add(sessionId);
 
         try {
             // Ensure session exists
@@ -89,6 +125,11 @@ public class CodeActAgentService {
                 Map.of("stackTrace", e.getStackTrace()[0].toString()), 0);
             sendEvent(sessionId, "error", e.getMessage(), null);
             throw new RuntimeException("Failed to process query: " + e.getMessage(), e);
+        } finally {
+            // Clean up running state
+            runningSessions.remove(sessionId);
+            stopRequests.remove(sessionId);
+            log.debug("🧹 Cleaned up session state for: {}", sessionId);
         }
     }
 
@@ -102,6 +143,16 @@ public class CodeActAgentService {
         int iteration = 0;
 
         while (iteration < maxIterations) {
+            // Check for stop request at the beginning of each iteration
+            if (stopRequests.contains(sessionId)) {
+                log.info("🛑 Stop request detected - stopping agent loop at iteration {}", iteration);
+                String stopMsg = "Agent stopped by user request at iteration " + iteration;
+                eventService.appendSystem(sessionId, stopMsg, iteration);
+                sendEvent(sessionId, "status", "stopped", Map.of("message", stopMsg, "iteration", iteration));
+                fullResponse.append("\n\n").append(stopMsg);
+                break;
+            }
+
             iteration++;
             log.info("🔄 Iteration {}/{} starting", iteration, maxIterations);
 

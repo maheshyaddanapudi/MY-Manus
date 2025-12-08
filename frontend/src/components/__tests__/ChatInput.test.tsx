@@ -58,4 +58,50 @@ describe('ChatInput', () => {
 
     expect(onSend).not.toHaveBeenCalled();
   });
+
+  it('shows Stop button when agent is running and input is empty', () => {
+    render(<ChatInput onSend={vi.fn()} onStop={vi.fn()} isAgentRunning={true} />);
+
+    expect(screen.getByText(/Stop/)).toBeInTheDocument();
+    expect(screen.queryByText(/Send/)).not.toBeInTheDocument();
+  });
+
+  it('shows Send button when agent is running but input has text', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput onSend={vi.fn()} onStop={vi.fn()} isAgentRunning={true} />);
+
+    const input = screen.getByPlaceholderText(/Type a follow-up/);
+    await user.type(input, 'Follow-up message');
+
+    expect(screen.getByText(/Send/)).toBeInTheDocument();
+    expect(screen.queryByText(/Stop/)).not.toBeInTheDocument();
+  });
+
+  it('calls onStop when clicking Stop button', async () => {
+    const onStop = vi.fn();
+    const user = userEvent.setup();
+
+    render(<ChatInput onSend={vi.fn()} onStop={onStop} isAgentRunning={true} />);
+
+    const stopButton = screen.getByText(/Stop/);
+    await user.click(stopButton);
+
+    expect(onStop).toHaveBeenCalled();
+  });
+
+  it('shows different placeholder when agent is running', () => {
+    render(<ChatInput onSend={vi.fn()} isAgentRunning={true} />);
+    expect(screen.getByPlaceholderText(/Type a follow-up/)).toBeInTheDocument();
+  });
+
+  it('shows different hint text when agent is running', () => {
+    render(<ChatInput onSend={vi.fn()} isAgentRunning={true} />);
+    expect(screen.getByText(/Agent is working/)).toBeInTheDocument();
+  });
+
+  it('textarea is not disabled when agent is running', () => {
+    render(<ChatInput onSend={vi.fn()} isAgentRunning={true} />);
+    const textarea = screen.getByPlaceholderText(/Type a follow-up/);
+    expect(textarea).not.toBeDisabled();
+  });
 });

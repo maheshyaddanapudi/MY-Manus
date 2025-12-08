@@ -44,6 +44,66 @@ public class AgentController {
     @Value("${workspace.dir:/workspace}")
     private String workspaceDir;
 
+    @PostMapping("/session/{sessionId}/stop")
+    @Operation(
+            summary = "Stop agent execution",
+            description = """
+                    Request the agent to stop processing for a specific session.
+                    The agent will stop at the next iteration boundary.
+
+                    **Note:** This is a graceful stop - the current iteration may complete
+                    before the agent stops.
+                    """,
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Stop requested successfully"),
+                    @ApiResponse(responseCode = "404", description = "Session not found or not running")
+            }
+    )
+    public ResponseEntity<Map<String, Object>> stopAgent(
+            @PathVariable
+            @Parameter(description = "Session ID to stop", required = true)
+            String sessionId) {
+
+        log.info("Stop request received for session: {}", sessionId);
+
+        boolean stopped = agentService.stopAgent(sessionId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("sessionId", sessionId);
+
+        if (stopped) {
+            response.put("status", "stopping");
+            response.put("message", "Stop request sent. Agent will stop at next iteration.");
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("status", "not_running");
+            response.put("message", "Session is not currently running");
+            return ResponseEntity.status(404).body(response);
+        }
+    }
+
+    @GetMapping("/session/{sessionId}/running")
+    @Operation(
+            summary = "Check if agent is running",
+            description = "Check if the agent is currently processing a request for this session.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Status retrieved successfully")
+            }
+    )
+    public ResponseEntity<Map<String, Object>> isAgentRunning(
+            @PathVariable
+            @Parameter(description = "Session ID to check", required = true)
+            String sessionId) {
+
+        boolean running = agentService.isRunning(sessionId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("sessionId", sessionId);
+        response.put("running", running);
+
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/chat")
     @Operation(
             summary = "Send message to agent",

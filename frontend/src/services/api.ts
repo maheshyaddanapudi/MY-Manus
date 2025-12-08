@@ -89,6 +89,17 @@ class ApiService {
     return response.data;
   }
 
+  // Agent control
+  async stopAgent(sessionId: string): Promise<{ sessionId: string; status: string; message: string }> {
+    const response = await this.client.post(`/api/agent/session/${sessionId}/stop`);
+    return response.data;
+  }
+
+  async isAgentRunning(sessionId: string): Promise<{ sessionId: string; running: boolean }> {
+    const response = await this.client.get(`/api/agent/session/${sessionId}/running`);
+    return response.data;
+  }
+
   // Event stream
   async getEventStream(sessionId: string): Promise<Event[]> {
     const response = await this.client.get<Event[]>(`/api/agent/session/${sessionId}/events`);
@@ -174,3 +185,5 @@ export const getEventsForIteration = (sessionId: string, iteration: number) => a
 export const getWorkspacePath = (sessionId: string) => apiService.getWorkspacePath(sessionId);
 export const listFiles = (sessionId: string, path?: string) => apiService.listFiles(sessionId, path);
 export const readFile = (sessionId: string, path: string) => apiService.readFile(sessionId, path);
+export const stopAgent = (sessionId: string) => apiService.stopAgent(sessionId);
+export const isAgentRunning = (sessionId: string) => apiService.isAgentRunning(sessionId);

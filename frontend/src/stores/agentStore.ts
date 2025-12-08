@@ -18,7 +18,7 @@ interface AgentState {
   events: Event[];
 
   // Agent status
-  agentStatus: 'idle' | 'thinking' | 'executing' | 'done' | 'error';
+  agentStatus: 'idle' | 'thinking' | 'executing' | 'done' | 'error' | 'stopping' | 'stopped';
   currentIteration: number;
   maxIterations: number;
 

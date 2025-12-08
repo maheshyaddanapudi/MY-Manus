@@ -9,7 +9,7 @@ export const ChatPanel = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleSendMessage = async (content: string) => {
-    if (!content.trim() || isProcessing) return;
+    if (!content.trim()) return;
 
     // Add user message to UI
     const userMessage = {
@@ -46,6 +46,31 @@ export const ChatPanel = () => {
       });
     } finally {
       setIsProcessing(false);
+      setAgentStatus('idle');
+    }
+  };
+
+  const handleStopAgent = async () => {
+    if (!sessionId) {
+      console.warn('No session ID to stop');
+      return;
+    }
+
+    try {
+      console.log('Stopping agent for session:', sessionId);
+      const response = await apiService.stopAgent(sessionId);
+      console.log('Stop response:', response);
+
+      // Add system message about stopping
+      addMessage({
+        id: `system-${Date.now()}`,
+        role: 'system',
+        content: 'Stop requested. Agent will stop at the next iteration.',
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error('Error stopping agent:', error);
+      // Still try to update local state
     }
   };
 
@@ -59,12 +84,8 @@ export const ChatPanel = () => {
       {/* Input */}
       <ChatInput
         onSend={handleSendMessage}
-        disabled={isProcessing}
-        placeholder={
-          isProcessing
-            ? '⏳ Agent is processing...'
-            : 'Ask the agent to solve a task...'
-        }
+        onStop={handleStopAgent}
+        isAgentRunning={isProcessing}
       />
     </div>
   );
