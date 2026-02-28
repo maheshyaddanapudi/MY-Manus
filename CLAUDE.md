@@ -183,4 +183,7 @@ Before any PR or commit, verify ALL of the following:
 @import docs/architecture/repo-map.md
 @import docs/architecture/modules.md
 @import docs/dev/build.md
+@import docs/system-summary-doc.md
+@import docs/flow-agent-loop-doc.md
+@import docs/data-model-doc.md
 @import .claude/workflow-config.yml
