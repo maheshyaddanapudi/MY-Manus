@@ -4,6 +4,7 @@ export interface Message {
   content: string;
   timestamp: Date;
   sourceType?: 'thought' | 'message'; // Track if this came from thought or message event
+  isStreaming?: boolean; // True while chunks are still being received
 }
 
 export interface AgentEvent {

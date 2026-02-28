@@ -17,26 +17,30 @@ export const MessageItem = ({ message }: MessageItemProps) => {
 
   // Parse message content to extract <execute> tags and thoughts
   const parseMessageContent = (content: string) => {
-    const parts: Array<{ 
-      type: 'text' | 'code' | 'thought'; 
+    const parts: Array<{
+      type: 'text' | 'code' | 'thought';
       content: string;
       observation?: string; // Observation/output for code blocks
     }> = [];
-    
+
     // If this message came from a 'message' event (final summary), render as normal text
     if (message.sourceType === 'message') {
       return [{ type: 'text', content }];
     }
-    
-    // First check if the entire message is a thought (no <execute> tags)
-    // Thoughts typically don't have <execute> tags and are explanatory
-    const hasExecuteTags = /<execute>/.test(content);
-    
-    if (!hasExecuteTags && content.trim().length > 50 && message.sourceType === 'thought') {
-      // This is a thought - make it collapsible
+
+    // Check for <execute> tag presence
+    const hasOpenExecuteTag = /<execute>/.test(content);
+    const hasCompleteExecuteTag = /<execute>[\s\S]*?<\/execute>/.test(content);
+
+    // Thought messages: show as collapsible immediately from the first chunk.
+    // This covers two cases:
+    //   1. No <execute> tags at all (pure reasoning).
+    //   2. An <execute> tag has opened but the closing </execute> hasn't arrived yet
+    //      (mid-stream code block) — keep showing as streaming thought until complete.
+    if (message.sourceType === 'thought' && (!hasOpenExecuteTag || !hasCompleteExecuteTag)) {
       return [{ type: 'thought', content }];
     }
-    
+
     // Parse <execute> tags with optional observation
     const regex = /<execute>([\s\S]*?)<\/execute>(?:\s*<observation>([\s\S]*?)<\/observation>)?/g;
     let lastIndex = 0;
@@ -234,6 +238,7 @@ export const MessageItem = ({ message }: MessageItemProps) => {
                 ) : (
                   <CollapsibleThought
                     content={part.content}
+                    isStreaming={message.isStreaming}
                   />
                 )}
               </div>

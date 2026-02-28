@@ -1,15 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '../../theme';
 
 interface CollapsibleThoughtProps {
   content: string;
+  isStreaming?: boolean;
 }
 
 export const CollapsibleThought: React.FC<CollapsibleThoughtProps> = ({
   content,
+  isStreaming = false,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Auto-expand when streaming starts so the user can see live content,
+  // but don't force-collapse when streaming ends (user may have scrolled through it).
+  useEffect(() => {
+    if (isStreaming) {
+      setIsExpanded(true);
+    }
+  }, [isStreaming]);
 
   // Extract first line or first 100 chars as summary
   const getSummary = (text: string): string => {
@@ -35,7 +45,15 @@ export const CollapsibleThought: React.FC<CollapsibleThoughtProps> = ({
       >
         <span className="text-lg">🤔</span>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-purple-200">Agent Thought</div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-purple-200">Agent Thought</span>
+            {isStreaming && (
+              <span className="flex items-center gap-1 text-xs text-purple-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+                thinking…
+              </span>
+            )}
+          </div>
           <div className="text-xs text-purple-300/70 truncate mt-0.5">
             {summary}
           </div>

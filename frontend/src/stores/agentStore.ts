@@ -125,9 +125,9 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       // Update or create message
       if (state.lastMessageId) {
         set((state) => ({
-          messages: state.messages.map(m => 
+          messages: state.messages.map(m =>
             m.id === state.lastMessageId
-              ? { ...m, content: newBuffer }
+              ? { ...m, content: newBuffer, isStreaming: true }
               : m
           ),
           messageBuffer: newBuffer,
@@ -140,6 +140,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           content: newBuffer,
           timestamp: new Date(),
           sourceType: 'message',
+          isStreaming: true,
         });
         set({ lastMessageId: messageId, messageBuffer: newBuffer });
       }
@@ -154,9 +155,9 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       // Finalize message
       if (state.lastMessageId) {
         set((state) => ({
-          messages: state.messages.map(m => 
+          messages: state.messages.map(m =>
             m.id === state.lastMessageId
-              ? { ...m, content: finalContent }
+              ? { ...m, content: finalContent, isStreaming: false }
               : m
           ),
           messageBuffer: '',
@@ -170,6 +171,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           content: finalContent,
           timestamp: new Date(),
           sourceType: 'message',
+          isStreaming: false,
         });
       }
       
@@ -244,9 +246,9 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       if (state.lastThoughtMessageId) {
         // Update existing message
         set((state) => ({
-          messages: state.messages.map(m => 
+          messages: state.messages.map(m =>
             m.id === state.lastThoughtMessageId
-              ? { ...m, content: newBuffer }
+              ? { ...m, content: newBuffer, isStreaming: true }
               : m
           ),
         }));
@@ -259,13 +261,14 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           content: newBuffer,
           timestamp: new Date(),
           sourceType: 'thought',
+          isStreaming: true,
         });
         set({ lastThoughtMessageId: messageId });
       }
-      
+
       return; // Don't process further
     }
-    
+
     // Handle complete thought - only finalize if complete flag is set
     if (event.type === 'thought') {
       const isComplete = event.metadata?.complete === true;
@@ -303,9 +306,9 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         // Update or create message
         if (state.lastThoughtMessageId) {
           set((state) => ({
-            messages: state.messages.map(m => 
+            messages: state.messages.map(m =>
               m.id === state.lastThoughtMessageId
-                ? { ...m, content: newBuffer }
+                ? { ...m, content: newBuffer, isStreaming: true }
                 : m
             ),
           }));
@@ -316,10 +319,12 @@ export const useAgentStore = create<AgentState>((set, get) => ({
             role: 'assistant',
             content: newBuffer,
             timestamp: new Date(),
+            sourceType: 'thought',
+            isStreaming: true,
           });
           set({ lastThoughtMessageId: messageId });
         }
-        
+
         return; // Don't process further
       }
       
@@ -356,9 +361,9 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         // Finalize message
         if (state.lastThoughtMessageId) {
           set((state) => ({
-            messages: state.messages.map(m => 
+            messages: state.messages.map(m =>
               m.id === state.lastThoughtMessageId
-                ? { ...m, content: finalContent }
+                ? { ...m, content: finalContent, isStreaming: false }
                 : m
             ),
             thoughtBuffer: '',
@@ -371,6 +376,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
             role: 'assistant',
             content: finalContent,
             timestamp: new Date(),
+            sourceType: 'thought',
+            isStreaming: false,
           });
         }
         
