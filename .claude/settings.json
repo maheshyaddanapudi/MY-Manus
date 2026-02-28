@@ -1,0 +1,142 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Bash(cd backend && mvn *)",
+      "Bash(cd frontend && mvn *)",
+      "Bash(mvn compile*)",
+      "Bash(mvn test*)",
+      "Bash(mvn package*)",
+      "Bash(mvn spring-boot:run*)",
+      "Bash(npm run *)",
+      "Bash(npm install*)",
+      "Bash(npm ci*)",
+      "Bash(npx tsc*)",
+      "Bash(npx vitest*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git show*)",
+      "Bash(git rev-parse*)",
+      "Bash(git ls-files*)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(ls *)",
+      "Bash(tree *)",
+      "Bash(wc *)",
+      "Bash(sort *)",
+      "Bash(which *)",
+      "Bash(java -version*)",
+      "Bash(node -v*)",
+      "Bash(npm -v*)",
+      "Bash(gh pr *)",
+      "Bash(gh issue *)",
+      "Bash(gh api *)",
+      "Bash(gh auth status*)",
+      "Bash(gh --version*)",
+      "Write(backend/src/main/java/**)",
+      "Write(backend/src/test/java/**)",
+      "Write(frontend/src/**)",
+      "Write(docs/**)",
+      "Write(.claude/**)",
+      "Write(plans/**)"
+    ],
+    "deny": [
+      "Read(.env*)",
+      "Read(**/.env*)",
+      "Read(**/secrets/**)",
+      "Read(**/*credentials*)",
+      "Read(**/*password*)",
+      "Bash(rm -rf *)",
+      "Bash(rm -r *)",
+      "Bash(sudo *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard*)",
+      "Write(docker-compose.yml)",
+      "Write(backend/Dockerfile)",
+      "Write(frontend/Dockerfile)",
+      "Write(sandbox/Dockerfile)",
+      "Write(backend/.env.example)",
+      "Write(frontend/.env.example)",
+      "Write(backend/src/main/resources/application.yml)",
+      "Write(backend/src/main/resources/application.properties)",
+      "Write(backend/src/main/resources/application-dev.yml)",
+      "Write(backend/src/main/java/ai/mymanus/config/SecurityConfig.java)",
+      "Write(backend/src/main/java/ai/mymanus/service/sandbox/PythonSandboxExecutor.java)",
+      "Write(frontend/package-lock.json)",
+      "Write(frontend/pnpm-lock.yaml)",
+      "Write(scripts/*)",
+      "Write(backend/src/main/resources/static/*)"
+    ],
+    "ask": [
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git checkout main*)",
+      "Bash(git checkout master*)",
+      "Bash(git merge*)",
+      "Bash(git rebase*)",
+      "Bash(git stash*)",
+      "Bash(git tag*)",
+      "Write(pom.xml)",
+      "Write(backend/pom.xml)",
+      "Write(package.json)",
+      "Write(frontend/package.json)",
+      "Write(frontend/vite.config.ts)",
+      "Write(frontend/tsconfig*.json)",
+      "Write(backend/src/main/resources/schema.sql)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "case \"$CLAUDE_TOOL_INPUT_command\" in *'rm -rf'*|*'rm -r /'*) echo 'BLOCKED: Recursive delete is not allowed' >&2; exit 2;; esac"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "case \"$CLAUDE_TOOL_INPUT_file_path\" in *.java) grep -q '@Autowired' \"$CLAUDE_TOOL_INPUT_file_path\" 2>/dev/null && echo 'WARNING: @Autowired field injection detected — use @RequiredArgsConstructor instead' || true;; esac"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "case \"$CLAUDE_TOOL_INPUT_file_path\" in *.java) grep -q 'columnDefinition.*=.*\"jsonb\"' \"$CLAUDE_TOOL_INPUT_file_path\" 2>/dev/null && echo 'WARNING: columnDefinition \"jsonb\" detected — use \"json\" instead (H2 incompatible)' || true;; esac"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "case \"$CLAUDE_TOOL_INPUT_file_path\" in *.test.tsx|*.test.ts) grep -qE '\\.(className|classList|querySelector\\()' \"$CLAUDE_TOOL_INPUT_file_path\" 2>/dev/null && echo 'WARNING: CSS class selector detected in test — use Testing Library queries (getByText, getByTestId, getByRole)' || true;; esac"
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "MAVEN_OPTS": "-Xmx1024m",
+    "NODE_OPTIONS": "--max-old-space-size=4096"
+  }
+}
