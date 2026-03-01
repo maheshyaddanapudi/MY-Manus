@@ -48,27 +48,28 @@ describe('TerminalPanel', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Default mock for useAgentStore
     (useAgentStore as any).mockReturnValue({
       terminalOutput: [],
       clearTerminal: mockClearTerminal,
+      agentStatus: 'idle',
     });
   });
 
   it('renders terminal panel with toolbar', () => {
     render(<TerminalPanel />);
-    
+
     expect(screen.getByText('🐍 Python 3.11 Output')).toBeInTheDocument();
     expect(screen.getByText('Clear')).toBeInTheDocument();
   });
 
   it('initializes xterm terminal on mount', () => {
     render(<TerminalPanel />);
-    
+
     // Terminal should be opened
     expect(mockTerminal.open).toHaveBeenCalled();
-    
+
     // Welcome messages should be written with ANSI formatting
     expect(mockTerminal.writeln).toHaveBeenCalledWith('\x1b[1;36mMY Manus Terminal\x1b[0m \x1b[32m✓\x1b[0m Ready');
     expect(mockTerminal.writeln).toHaveBeenCalledWith('\x1b[90mWaiting for agent execution...\x1b[0m\n');
@@ -80,10 +81,11 @@ describe('TerminalPanel', () => {
         { type: 'stdout', content: 'Hello, World!' },
       ],
       clearTerminal: mockClearTerminal,
+      agentStatus: 'idle',
     });
 
     render(<TerminalPanel />);
-    
+
     // Should write the output to terminal with ANSI formatting
     expect(mockTerminal.write).toHaveBeenCalledWith('\x1b[37mHello, World!\x1b[0m\n');
   });
@@ -94,10 +96,11 @@ describe('TerminalPanel', () => {
         { type: 'stderr', content: 'Error occurred' },
       ],
       clearTerminal: mockClearTerminal,
+      agentStatus: 'idle',
     });
 
     render(<TerminalPanel />);
-    
+
     // Should write error in red with ✗ prefix (ANSI escape codes)
     expect(mockTerminal.write).toHaveBeenCalledWith('\x1b[31m✗ Error occurred\x1b[0m\n');
   });
@@ -110,10 +113,11 @@ describe('TerminalPanel', () => {
         { type: 'stderr', content: 'Error line' },
       ],
       clearTerminal: mockClearTerminal,
+      agentStatus: 'idle',
     });
 
     render(<TerminalPanel />);
-    
+
     // Should write all outputs (only last one is written in useEffect) with ✗ prefix
     expect(mockTerminal.write).toHaveBeenCalledWith('\x1b[31m✗ Error line\x1b[0m\n');
   });
@@ -121,23 +125,23 @@ describe('TerminalPanel', () => {
   it('clears terminal when clear button is clicked', async () => {
     const user = userEvent.setup();
     render(<TerminalPanel />);
-    
+
     const clearButton = screen.getByText('Clear');
     await user.click(clearButton);
-    
+
     // Should clear the terminal
     expect(mockTerminal.clear).toHaveBeenCalled();
     expect(mockTerminal.writeln).toHaveBeenCalledWith('\x1b[90mTerminal cleared\x1b[0m\n');
-    
+
     // Should call store's clearTerminal
     expect(mockClearTerminal).toHaveBeenCalled();
   });
 
   it('disposes terminal on unmount', () => {
     const { unmount } = render(<TerminalPanel />);
-    
+
     unmount();
-    
+
     // Should dispose the terminal
     expect(mockTerminal.dispose).toHaveBeenCalled();
   });
@@ -146,17 +150,18 @@ describe('TerminalPanel', () => {
     (useAgentStore as any).mockReturnValue({
       terminalOutput: [],
       clearTerminal: mockClearTerminal,
+      agentStatus: 'idle',
     });
 
     render(<TerminalPanel />);
-    
+
     // Should only write welcome messages, not any output
     expect(mockTerminal.write).not.toHaveBeenCalled();
   });
 
   it('writes only the last output when terminalOutput changes', () => {
     const { rerender } = render(<TerminalPanel />);
-    
+
     // Update with new output
     (useAgentStore as any).mockReturnValue({
       terminalOutput: [
@@ -164,10 +169,11 @@ describe('TerminalPanel', () => {
         { type: 'stdout', content: 'Second output' },
       ],
       clearTerminal: mockClearTerminal,
+      agentStatus: 'idle',
     });
-    
+
     rerender(<TerminalPanel />);
-    
+
     // Should write only the last output with ANSI formatting
     expect(mockTerminal.write).toHaveBeenCalledWith('\x1b[37mSecond output\x1b[0m\n');
   });

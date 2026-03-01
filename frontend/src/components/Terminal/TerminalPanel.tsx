@@ -7,7 +7,7 @@ import { cn, getButtonClasses } from '../../theme';
 export const TerminalPanel = () => {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<Terminal | null>(null);
-  const { terminalOutput, clearTerminal } = useAgentStore();
+  const { terminalOutput, clearTerminal, agentStatus } = useAgentStore();
 
   useEffect(() => {
     if (!terminalRef.current) return;
@@ -98,6 +98,12 @@ export const TerminalPanel = () => {
           <span className="text-sm text-gray-400 font-mono font-medium">
             🐍 Python 3.11 Output
           </span>
+          {agentStatus === 'executing' && (
+            <span className="flex items-center gap-1 text-xs text-green-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              LIVE
+            </span>
+          )}
         </div>
         <button
           onClick={handleClear}

@@ -7,7 +7,7 @@ export interface Message {
 }
 
 export interface AgentEvent {
-  type: 'status' | 'thought' | 'thought_chunk' | 'message' | 'message_chunk' | 'code' | 'output' | 'error' | 'warning' | 'connected';
+  type: 'status' | 'thought' | 'thought_chunk' | 'message' | 'message_chunk' | 'code' | 'output' | 'output_chunk' | 'error' | 'warning' | 'connected' | 'browser_snapshot';
   content: string;
   metadata?: Record<string, any>;
 }
@@ -76,4 +76,14 @@ export interface Event {
   durationMs?: number;
   success?: boolean;
   error?: string;
+}
+
+export interface BrowserSnapshot {
+  id: string;
+  timestamp: number;
+  screenshot: string;
+  url: string;
+  title: string;
+  htmlContent?: string;
+  accessibilityTree?: string;
 }
