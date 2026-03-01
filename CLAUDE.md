@@ -108,6 +108,7 @@ Choose the right subagent based on the task type:
 - **Code review** → delegate to `reviewer`
 - **Security review (sandbox, auth, code execution paths)** → delegate to `security-auditor`
 - **Architecture or impact analysis** → delegate to `planner`
+- **Implementation completeness check** → delegate to `validator`
 
 For multi-phase work, orchestrate this delegation chain:
 
@@ -116,20 +117,48 @@ For multi-phase work, orchestrate this delegation chain:
 2. `implementer` → writes backend code (services, models, controllers, tools)
 3. `frontend-specialist` → writes frontend code (components, store updates, API client)
 4. `test-engineer` → writes unit and integration tests for both layers
-5. `reviewer` → reviews all changes for correctness, style, and completeness
+5. `validator` → checks completeness: interface parity, data flow conflicts, deployment mode coverage, test adequacy
+6. **Feedback loop**: If `validator` finds gaps, delegate back to the appropriate agent (`implementer`, `frontend-specialist`, or `test-engineer`) to address each gap, then re-run `validator`
+7. `reviewer` → reviews all changes for correctness, style, and completeness
+
+### Feature Development (backend-only)
+1. `planner` → produces implementation plan
+2. `implementer` → writes backend code
+3. `test-engineer` → writes tests
+4. `validator` → checks interface parity, deployment mode coverage, test adequacy
+5. **Feedback loop**: If gaps found, route back to `implementer` or `test-engineer`, then re-validate
+6. `reviewer` → final review
+
+### Feature Development (frontend-only)
+1. `planner` → produces implementation plan (if multi-file)
+2. `frontend-specialist` → writes frontend code
+3. `test-engineer` → writes tests
+4. `validator` → checks data flow conflicts, event handler consistency, test adequacy
+5. **Feedback loop**: If gaps found, route back to `frontend-specialist` or `test-engineer`, then re-validate
+6. `reviewer` → final review
 
 ### Bug Fix
 1. `debugger` → reproduces the bug, traces root cause, proposes minimal fix
 2. `implementer` → applies the fix (minimal change philosophy)
 3. `test-engineer` → writes regression test proving the fix
-4. `reviewer` → reviews fix and regression test
+4. `validator` → checks fix covers all code paths (e.g., both sandbox executors if applicable)
+5. **Feedback loop**: If gaps found, route back to `implementer` or `test-engineer`
+6. `reviewer` → reviews fix and regression test
 
 ### Security-Sensitive Change
 1. `planner` → scopes the change and identifies security implications
 2. `implementer` → writes the code
 3. `test-engineer` → writes tests including security-relevant edge cases
-4. `security-auditor` → reviews for vulnerabilities (injection, sandbox escape, auth bypass)
-5. `reviewer` → final review
+4. `validator` → checks implementation completeness
+5. **Feedback loop**: If gaps found, route back and re-validate
+6. `security-auditor` → reviews for vulnerabilities (injection, sandbox escape, auth bypass)
+7. `reviewer` → final review
+
+### Feedback Loop Rules
+- The `validator` produces a PASS or GAPS FOUND verdict with specific items to fix
+- If GAPS FOUND: delegate each gap to the appropriate agent, then delegate to `validator` again
+- Maximum 2 feedback iterations — if gaps persist after 2 rounds, proceed to `reviewer` and flag remaining gaps
+- The `reviewer` is ALWAYS the final step — never skip it
 
 **Important**: Subagents cannot spawn other subagents. You (the main agent) must orchestrate all delegation directly.
 

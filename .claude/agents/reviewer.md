@@ -52,7 +52,26 @@ Check every changed file against the project's mandatory patterns:
 - [ ] Stores mocked with `vi.mock()` + `mockReturnValue()`
 - [ ] `vi.clearAllMocks()` in `beforeEach`
 
-### 3. Risk Assessment
+### 3. Architectural Consistency
+
+These checks catch completeness and consistency gaps that pattern checks miss:
+
+**Interface parity:**
+- If any class implementing `SandboxExecutor` was modified, check that BOTH `PythonSandboxExecutor` AND `HostPythonExecutor` received equivalent changes. If only one was modified, flag as: **[HIGH] Incomplete interface implementation — {Executor} modified but {OtherExecutor} was not.**
+- If any `Tool` implementation was modified in a way that affects the interface contract, check all 22 implementations.
+
+**Data flow conflicts:**
+- If new WebSocket event types were added, trace the data they deliver. Check if the same data is already delivered via an existing event (e.g., `output` event in `CodeActAgentService`) or REST endpoint (e.g., `getToolExecutions`). If data arrives twice, flag as: **[HIGH] Duplicate data path — {new event} delivers same data as {existing path}.**
+- If frontend replaced polling with WebSocket push, verify the old polling was actually removed (not just the new path added alongside it).
+
+**Deployment mode coverage:**
+- New backend features must work in both Docker sandbox mode (production) and host executor mode (dev), unless explicitly documented as mode-specific. If a feature only works in one mode, flag it.
+
+**Test coverage:**
+- If new backend logic was added (service methods, event emission, conditional branches), check that corresponding tests exist. If zero backend tests were added for new behavior, flag as: **[MEDIUM] No backend tests for new behavior in {ClassName}.**
+- If new frontend UI indicators (badges, status indicators) were added, check that both present and absent states are tested.
+
+### 4. Risk Assessment
 
 Flag each risk category:
 
@@ -64,7 +83,7 @@ Flag each risk category:
 | **Core path** | Changes to `CodeActAgentService.processQuery()` or `agentStore.handleAgentEvent()`? |
 | **Known hotspots** | Changes to `JsonMapConverter`, `HostPythonExecutor`, `MessageItem.tsx`? |
 
-### 4. Build Verification
+### 5. Build Verification
 
 Run and report results:
 ```bash
@@ -72,7 +91,7 @@ cd backend && mvn compile 2>&1 | tail -5     # backend compiles?
 cd frontend && npx tsc -b 2>&1 | tail -5     # frontend type-checks?
 ```
 
-### 5. Produce Verdict
+### 6. Produce Verdict
 
 Output a structured review in this exact format:
 
@@ -85,6 +104,12 @@ Output a structured review in this exact format:
 
 ### Pattern Compliance
 - {✓ or ✗} {item} — {note if non-compliant}
+
+### Architectural Consistency
+- {✓ or ✗} Interface parity — {all implementations updated | ISSUE: description}
+- {✓ or ✗} Data flow — {no conflicts | ISSUE: description}
+- {✓ or ✗} Deployment modes — {both covered | ISSUE: description}
+- {✓ or ✗} Test coverage — {adequate | ISSUE: description}
 
 ### Issues Found
 1. **[severity]** {file}:{line} — {description}

@@ -114,6 +114,33 @@ ALWAYS append events through `EventService` methods, never write to `EventReposi
 4. Run `cd backend && mvn compile` to verify compilation.
 5. Verify `schema.sql` is updated if entities changed.
 
+## Interface Implementation Parity
+
+When modifying any class that implements an interface or extends an abstract class, you MUST check ALL sibling implementations and apply equivalent changes:
+
+**Critical interfaces:**
+- `SandboxExecutor` has TWO implementations:
+  - `PythonSandboxExecutor` — Docker-based, production default (`sandbox.mode=docker`, `matchIfMissing=true`)
+  - `HostPythonExecutor` — host-based, dev only (`sandbox.mode=host`)
+  - If you add a feature to one, you almost certainly need it in both. If not, document why.
+- `Tool` has 22 implementations — changes to the interface contract affect all.
+
+**Process:**
+1. Before starting implementation, run: `grep -rn "implements {InterfaceName}" backend/src/`
+2. List all implementations found.
+3. Apply changes to each, or explicitly document why one doesn't need the change.
+
+## Data Flow Awareness
+
+When adding new WebSocket events or data delivery mechanisms:
+
+1. Check if the same data is already delivered via another path.
+   - `CodeActAgentService.sendEvent()` already sends `output` with full stdout after execution.
+   - Adding `output_chunk` streaming without suppressing the final `output` event = duplicate data in the terminal.
+2. If adding a new event that delivers data already served by REST:
+   - Frontend must deduplicate (same ID scheme) or the old REST path must be suppressed.
+3. Always trace: producer → event → frontend handler → UI render. Verify no double-rendering.
+
 ## Pre-Completion Checklist
 
 Before reporting work as done, verify:
@@ -125,6 +152,8 @@ Before reporting work as done, verify:
 - [ ] `ExecutionResult` stdout/stderr null-checked
 - [ ] Events appended via `EventService` methods
 - [ ] `mvn compile` passes
+- [ ] If I modified a class implementing an interface, I checked ALL other implementations
+- [ ] If I added a new event/data path, I verified it doesn't duplicate an existing path
 
 ## Constraints
 

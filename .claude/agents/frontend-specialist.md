@@ -68,6 +68,13 @@ Events arrive through `handleAgentEvent()` in the store. The event flow:
 
 **Chunk buffering**: Streaming text arrives in chunks. The store buffers and assembles them. NEVER modify chunk buffering logic without understanding the full assembly pipeline.
 
+### Data Flow Conflict Awareness
+
+When adding new WebSocket-driven UI updates that replace or supplement polling:
+1. **Remove the old polling path**: If you add WebSocket push for data that was previously polled via REST, REMOVE the polling interval. Don't leave both active.
+2. **Deduplicate across transports**: If data arrives from both WebSocket (live) and REST (historical/on-mount), ensure IDs use the same scheme so deduplication works. Example: if REST returns `id: "42"` (database PK) and WebSocket generates `id: "snapshot-1709312345678"` (timestamp), they will never match and data will appear twice.
+3. **Preserve user selection during live updates**: When auto-selecting the newest item on arrival (e.g., newest browser snapshot), check whether the user has manually selected a different item. Only auto-select if the user is already viewing the latest item.
+
 ### Key Store Actions
 - `addMessage(message)` — append to message list
 - `setAgentStatus(status)` — update agent state indicator
@@ -121,6 +128,9 @@ websocketService.connect(sessionId);
 - [ ] Barrel export in `index.ts` for new components
 - [ ] Panel registered in `MainLayout.tsx` if applicable
 - [ ] `npx tsc -b` passes clean
+- [ ] If replacing polling with WebSocket, old polling interval is removed
+- [ ] If data arrives from both WebSocket and REST, IDs use compatible scheme for deduplication
+- [ ] Auto-selection of newest items doesn't override explicit user selection
 
 ## Constraints
 

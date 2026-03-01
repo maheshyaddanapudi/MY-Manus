@@ -2,9 +2,13 @@
 # Controls Claude Code behavior in this repository.
 # Read via @import in CLAUDE.md. Changes take effect immediately.
 
-# When true, Claude pauses between major phases (plan → implement → test → review)
+# When true, Claude pauses between major phases (plan → implement → test → validate → review)
 # and asks for confirmation. Set to false once comfortable with autonomous workflows.
 human_in_loop_at_handoff: true
 
 # When true, Claude suggests 2-4 relevant next actions after completing a task.
 suggest_next_actions: true
+
+# Maximum number of validator feedback loop iterations before proceeding to reviewer.
+# If gaps persist after this many rounds, proceed to reviewer and flag remaining gaps.
+max_validation_iterations: 2

@@ -133,14 +133,32 @@ Mock `Element.prototype.scrollIntoView = vi.fn()` in `beforeAll` for components 
 
 Baseline: 149/152 frontend tests pass, 137 ESLint errors. Do not increase failure counts.
 
+## Coverage Completeness Gate
+
+For EVERY new behavior added to a backend class, at least one test MUST verify it:
+- New WebSocket event emission → test that the event is sent with correct type, content, and destination topic
+- New conditional logic → test BOTH branches (e.g., tool result contains screenshot vs doesn't contain screenshot)
+- New stream processing → test that each output line produces the expected event
+- New service methods → unit test with mocked dependencies
+- New controller endpoints → WebMvcTest with MockMvc
+
+For EVERY new UI behavior added to a frontend component:
+- New visual indicators (badges, status lights, "LIVE" labels) → test BOTH present state AND absent state
+- New store actions → test the action updates state correctly
+- New event handlers in agentStore → test with mock events of the new type
+- New data merging logic → test deduplication and ordering
+
+If the implementer added code to a class that has no existing test file, CREATE one.
+
 ## Process
 
 1. Identify which source files need tests (check if tests already exist).
 2. Read the source file to understand its behavior and dependencies.
 3. Choose the correct test pattern based on the layer.
 4. Write tests covering: happy path, error handling, edge cases, security boundaries (for tools/sandbox).
-5. Run: `cd backend && mvn test -Dtest=MyTest` or `cd frontend && npx vitest run path/to/test`.
-6. Verify all tests pass before reporting completion.
+5. Verify coverage completeness: every new method, conditional branch, and event type has at least one test.
+6. Run: `cd backend && mvn test -Dtest=MyTest` or `cd frontend && npx vitest run path/to/test`.
+7. Verify all tests pass before reporting completion.
 
 ## Constraints
 
