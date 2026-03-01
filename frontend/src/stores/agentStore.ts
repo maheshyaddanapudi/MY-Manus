@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Message, AgentEvent, TerminalOutput, ExecutionContext, Session, Event, EventType } from '../types';
+import type { Message, AgentEvent, TerminalOutput, ExecutionContext, Session, Event, EventType, BrowserSnapshot } from '../types';
 import { apiService } from '../services/api';
 
 interface AgentState {
@@ -32,6 +32,9 @@ interface AgentState {
   // Execution context
   executionContext: ExecutionContext;
 
+  // Browser snapshots
+  browserSnapshots: BrowserSnapshot[];
+
   // UI State
   activePanel: 'terminal' | 'editor' | 'browser' | 'events' | 'files' | 'replay' | 'knowledge' | 'plan';
   suggestedPanel: 'terminal' | 'editor' | 'browser' | 'events' | 'files' | 'replay' | 'knowledge' | 'plan' | null;
@@ -54,6 +57,8 @@ interface AgentState {
   handleAgentEvent: (event: AgentEvent) => void;
   addTerminalOutput: (output: TerminalOutput) => void;
   clearTerminal: () => void;
+  addBrowserSnapshot: (snapshot: BrowserSnapshot) => void;
+  clearBrowserSnapshots: () => void;
   setCurrentCode: (code: string) => void;
   addCodeToHistory: (code: string, iteration: number) => void;
   setExecutionContext: (context: ExecutionContext) => void;
@@ -89,6 +94,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   currentCode: '',
   codeHistory: [],
   executionContext: {},
+  browserSnapshots: [],
   activePanel: 'terminal',
   suggestedPanel: null,
   isSidebarOpen: true,
@@ -118,14 +124,45 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   handleAgentEvent: (event) => {
     const state = get();
 
+    // Handle output_chunk - stream directly to terminal
+    if (event.type === 'output_chunk') {
+      get().addTerminalOutput({
+        content: event.content,
+        type: 'stdout',
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    // Handle browser_snapshot - update browser panel from WebSocket
+    if (event.type === 'browser_snapshot') {
+      try {
+        const data = JSON.parse(event.content);
+        const snapshot: BrowserSnapshot = {
+          id: `snapshot-${Date.now()}`,
+          timestamp: data.timestamp || Date.now(),
+          screenshot: data.screenshot || '',
+          url: data.url || '',
+          title: data.title || 'Browser Snapshot',
+          htmlContent: data.htmlContent,
+          accessibilityTree: data.accessibilityTree,
+        };
+        get().addBrowserSnapshot(snapshot);
+        set({ suggestedPanel: 'browser' });
+      } catch (e) {
+        console.error('Failed to parse browser_snapshot event', e);
+      }
+      return;
+    }
+
     // Handle message_chunk - accumulate final summary message
     if (event.type === 'message_chunk') {
       const newBuffer = state.messageBuffer + event.content;
-      
+
       // Update or create message
       if (state.lastMessageId) {
         set((state) => ({
-          messages: state.messages.map(m => 
+          messages: state.messages.map(m =>
             m.id === state.lastMessageId
               ? { ...m, content: newBuffer }
               : m
@@ -143,18 +180,18 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         });
         set({ lastMessageId: messageId, messageBuffer: newBuffer });
       }
-      
+
       return; // Don't process further
     }
-    
+
     // Handle complete message
     if (event.type === 'message') {
       const finalContent = event.content;
-      
+
       // Finalize message
       if (state.lastMessageId) {
         set((state) => ({
-          messages: state.messages.map(m => 
+          messages: state.messages.map(m =>
             m.id === state.lastMessageId
               ? { ...m, content: finalContent }
               : m
@@ -172,14 +209,14 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           sourceType: 'message',
         });
       }
-      
+
       return; // Don't process further
     }
-    
+
     // Handle output - attach to last message as observation
     if (event.type === 'output') {
       const output = event.content;
-      
+
       // Find the last assistant message and append observation
       set((state) => {
         const messages = [...state.messages];
@@ -205,20 +242,20 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         }
         return { messages };
       });
-      
+
       // Don't return - let it continue to add to events
     }
-    
+
     // Handle thought chunks - merge them into continuous events and messages
     if (event.type === 'thought_chunk') {
       const newBuffer = state.thoughtBuffer + event.content;
-      
+
       // Update or create event in Event Stream
       if (state.lastEventId) {
         // Update existing event
         set((state) => ({
-          events: state.events.map(e => 
-            e.id === state.lastEventId 
+          events: state.events.map(e =>
+            e.id === state.lastEventId
               ? { ...e, content: newBuffer }
               : e
           ),
@@ -239,12 +276,12 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         get().addEvent(eventRecord);
         set({ lastEventId: eventId });
       }
-      
+
       // Update or create message in chat
       if (state.lastThoughtMessageId) {
         // Update existing message
         set((state) => ({
-          messages: state.messages.map(m => 
+          messages: state.messages.map(m =>
             m.id === state.lastThoughtMessageId
               ? { ...m, content: newBuffer }
               : m
@@ -262,24 +299,24 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         });
         set({ lastThoughtMessageId: messageId });
       }
-      
+
       return; // Don't process further
     }
-    
+
     // Handle complete thought - only finalize if complete flag is set
     if (event.type === 'thought') {
       const isComplete = event.metadata?.complete === true;
       const isStreaming = event.metadata?.streaming === true;
-      
+
       // If streaming (not complete), treat like a chunk
       if (isStreaming && !isComplete) {
         const newBuffer = state.thoughtBuffer + event.content;
-        
+
         // Update or create event
         if (state.lastEventId) {
           set((state) => ({
-            events: state.events.map(e => 
-              e.id === state.lastEventId 
+            events: state.events.map(e =>
+              e.id === state.lastEventId
                 ? { ...e, content: newBuffer }
                 : e
             ),
@@ -299,11 +336,11 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           get().addEvent(eventRecord);
           set({ lastEventId: eventId });
         }
-        
+
         // Update or create message
         if (state.lastThoughtMessageId) {
           set((state) => ({
-            messages: state.messages.map(m => 
+            messages: state.messages.map(m =>
               m.id === state.lastThoughtMessageId
                 ? { ...m, content: newBuffer }
                 : m
@@ -319,20 +356,20 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           });
           set({ lastThoughtMessageId: messageId });
         }
-        
+
         return; // Don't process further
       }
-      
+
       // Complete thought - finalize
       if (isComplete) {
         // Use the complete content from the event (not buffer)
         const finalContent = event.content;
-        
+
         // Finalize event
         if (state.lastEventId) {
           set((state) => ({
-            events: state.events.map(e => 
-              e.id === state.lastEventId 
+            events: state.events.map(e =>
+              e.id === state.lastEventId
                 ? { ...e, content: finalContent }
                 : e
             ),
@@ -352,11 +389,11 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           };
           get().addEvent(eventRecord);
         }
-        
+
         // Finalize message
         if (state.lastThoughtMessageId) {
           set((state) => ({
-            messages: state.messages.map(m => 
+            messages: state.messages.map(m =>
               m.id === state.lastThoughtMessageId
                 ? { ...m, content: finalContent }
                 : m
@@ -373,7 +410,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
             timestamp: new Date(),
           });
         }
-        
+
         return; // Don't process further
       }
     }
@@ -386,7 +423,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       'status': 'SYSTEM',
       'connected': 'SYSTEM',
     };
-    
+
     const eventType = typeMap[event.type] || 'SYSTEM';
     if (eventType !== 'SYSTEM' || event.type === 'status') {
       const eventRecord: Event = {
@@ -455,6 +492,12 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
   clearTerminal: () => set({ terminalOutput: [] }),
 
+  addBrowserSnapshot: (snapshot) => set((state) => ({
+    browserSnapshots: [snapshot, ...state.browserSnapshots], // newest first
+  })),
+
+  clearBrowserSnapshots: () => set({ browserSnapshots: [] }),
+
   setCurrentCode: (code) => set({ currentCode: code }),
 
   addCodeToHistory: (code, iteration) => set((state) => ({
@@ -478,6 +521,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     currentCode: '',
     codeHistory: [],
     executionContext: {},
+    browserSnapshots: [],
   }),
 
   // Multi-session actions
@@ -500,6 +544,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     executionContext: {},
     agentStatus: 'idle',
     currentIteration: 0,
+    browserSnapshots: [],
   }),
 
   loadSessions: async () => {

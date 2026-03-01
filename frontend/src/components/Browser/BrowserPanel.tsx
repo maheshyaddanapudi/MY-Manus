@@ -1,16 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../../services/api';
+import { useAgentStore } from '../../stores/agentStore';
 import { SnapshotViewer } from './SnapshotViewer';
-
-interface BrowserSnapshot {
-  id: string;
-  timestamp: number;
-  screenshot: string;
-  url: string;
-  title: string;
-  htmlContent?: string;
-  accessibilityTree?: string;
-}
+import type { BrowserSnapshot } from '../../types';
 
 interface BrowserPanelProps {
   sessionId: string;
@@ -19,6 +11,7 @@ interface BrowserPanelProps {
 /**
  * Browser Panel - Displays browser snapshots from tool executions
  * Shows historical browser states captured by browser_view tool
+ * Live snapshots arrive via WebSocket; historical data loaded once via REST
  */
 export const BrowserPanel: React.FC<BrowserPanelProps> = ({ sessionId }) => {
   const [snapshots, setSnapshots] = useState<BrowserSnapshot[]>([]);
@@ -26,6 +19,8 @@ export const BrowserPanel: React.FC<BrowserPanelProps> = ({ sessionId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'screenshot' | 'html' | 'tree'>('screenshot');
+
+  const { browserSnapshots, agentStatus } = useAgentStore();
 
   // Fetch tool executions and extract browser snapshots
   const fetchSnapshots = async () => {
@@ -36,7 +31,7 @@ export const BrowserPanel: React.FC<BrowserPanelProps> = ({ sessionId }) => {
       const toolExecutions = await apiService.getToolExecutions(sessionId);
 
       // Filter browser_view executions and extract snapshots
-      const browserSnapshots: BrowserSnapshot[] = toolExecutions
+      const browserSnapshotsFromApi: BrowserSnapshot[] = toolExecutions
         .filter((exec: any) => exec.toolName === 'browser_view' && exec.result?.screenshot)
         .map((exec: any) => ({
           id: exec.id.toString(),
@@ -47,13 +42,13 @@ export const BrowserPanel: React.FC<BrowserPanelProps> = ({ sessionId }) => {
           htmlContent: exec.result.htmlContent,
           accessibilityTree: exec.result.accessibilityTree,
         }))
-        .sort((a, b) => b.timestamp - a.timestamp); // Most recent first
+        .sort((a: BrowserSnapshot, b: BrowserSnapshot) => b.timestamp - a.timestamp); // Most recent first
 
-      setSnapshots(browserSnapshots);
+      setSnapshots(browserSnapshotsFromApi);
 
       // Auto-select most recent snapshot
-      if (browserSnapshots.length > 0 && !selectedSnapshot) {
-        setSelectedSnapshot(browserSnapshots[0]);
+      if (browserSnapshotsFromApi.length > 0 && !selectedSnapshot) {
+        setSelectedSnapshot(browserSnapshotsFromApi[0]);
       }
 
       setError(null);
@@ -65,16 +60,25 @@ export const BrowserPanel: React.FC<BrowserPanelProps> = ({ sessionId }) => {
     }
   };
 
-  // Initial fetch
+  // Initial fetch (one-time historical data load)
   useEffect(() => {
     fetchSnapshots();
   }, [sessionId]);
 
-  // Auto-refresh every 3 seconds
+  // Sync WebSocket-driven snapshots from the store into local state
   useEffect(() => {
-    const interval = setInterval(fetchSnapshots, 3000);
-    return () => clearInterval(interval);
-  }, [sessionId]);
+    if (browserSnapshots.length === 0) return;
+    // Merge store snapshots (live) with API snapshots; store ones are newest
+    setSnapshots(prev => {
+      const existingIds = new Set(prev.map(s => s.id));
+      const newOnes = browserSnapshots.filter(s => !existingIds.has(s.id));
+      if (newOnes.length === 0) return prev;
+      const merged = [...newOnes, ...prev].sort((a, b) => b.timestamp - a.timestamp);
+      return merged;
+    });
+    // Auto-select the newest snapshot
+    setSelectedSnapshot(browserSnapshots[0]);
+  }, [browserSnapshots]);
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-gray-900 to-gray-900/95 text-gray-100">
@@ -85,6 +89,12 @@ export const BrowserPanel: React.FC<BrowserPanelProps> = ({ sessionId }) => {
           <span className="px-2 py-1 text-xs bg-blue-600 rounded">
             {snapshots.length} snapshot{snapshots.length !== 1 ? 's' : ''}
           </span>
+          {agentStatus === 'executing' && (
+            <span className="flex items-center gap-1 px-2 py-1 text-xs text-green-400 bg-green-400/10 rounded">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              Live
+            </span>
+          )}
         </div>
 
         {/* View Mode Selector */}

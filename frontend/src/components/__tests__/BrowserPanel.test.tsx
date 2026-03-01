@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserPanel } from '../Browser/BrowserPanel';
 import { apiService } from '../../services/api';
+import { useAgentStore } from '../../stores/agentStore';
 
 // Mock apiService
 vi.mock('../../services/api', () => ({
@@ -9,6 +10,9 @@ vi.mock('../../services/api', () => ({
     getToolExecutions: vi.fn(),
   },
 }));
+
+// Mock useAgentStore
+vi.mock('../../stores/agentStore');
 
 // Mock SnapshotViewer to isolate BrowserPanel testing
 vi.mock('../Browser/SnapshotViewer', () => ({
@@ -24,11 +28,17 @@ vi.mock('../Browser/SnapshotViewer', () => ({
 describe('BrowserPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Default mock for useAgentStore
+    (useAgentStore as any).mockReturnValue({
+      browserSnapshots: [],
+      agentStatus: 'idle',
+    });
   });
 
   it('renders browser panel', () => {
     (apiService.getToolExecutions as any).mockResolvedValue([]);
-    
+
     render(<BrowserPanel sessionId="test-session" />);
     expect(screen.getByText(/Browser/)).toBeInTheDocument();
   });
@@ -177,5 +187,36 @@ describe('BrowserPanel', () => {
     await waitFor(() => {
       expect(screen.getByText('3 snapshots')).toBeInTheDocument();
     });
+  });
+
+  it('shows Live indicator when agent is executing', async () => {
+    (useAgentStore as any).mockReturnValue({
+      browserSnapshots: [],
+      agentStatus: 'executing',
+    });
+    (apiService.getToolExecutions as any).mockResolvedValue([]);
+
+    render(<BrowserPanel sessionId="test-session" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Live')).toBeInTheDocument();
+    });
+  });
+
+  it('does not show Live indicator when agent is idle', async () => {
+    (useAgentStore as any).mockReturnValue({
+      browserSnapshots: [],
+      agentStatus: 'idle',
+    });
+    (apiService.getToolExecutions as any).mockResolvedValue([]);
+
+    render(<BrowserPanel sessionId="test-session" />);
+
+    // Allow async operations to settle
+    await waitFor(() => {
+      expect(apiService.getToolExecutions).toHaveBeenCalled();
+    });
+
+    expect(screen.queryByText('Live')).not.toBeInTheDocument();
   });
 });

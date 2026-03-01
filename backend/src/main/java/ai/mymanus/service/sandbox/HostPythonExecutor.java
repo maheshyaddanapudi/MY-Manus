@@ -1,5 +1,6 @@
 package ai.mymanus.service.sandbox;
 
+import ai.mymanus.dto.AgentEvent;
 import ai.mymanus.tool.ToolRegistry;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,11 +8,11 @@ import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,6 +37,7 @@ public class HostPythonExecutor implements SandboxExecutor {
     private final ToolRegistry toolRegistry;
     private final ObjectMapper objectMapper;
     private final ToolRpcHandler rpcHandler;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Value("${sandbox.host.python-executable:python3}")
     private String pythonExecutable;
@@ -46,10 +48,12 @@ public class HostPythonExecutor implements SandboxExecutor {
     @Value("${sandbox.host.timeout-seconds:30}")
     private Integer timeoutSeconds;
 
-    public HostPythonExecutor(ToolRegistry toolRegistry, ObjectMapper objectMapper, ToolRpcHandler rpcHandler) {
+    public HostPythonExecutor(ToolRegistry toolRegistry, ObjectMapper objectMapper,
+                               ToolRpcHandler rpcHandler, SimpMessagingTemplate messagingTemplate) {
         this.toolRegistry = toolRegistry;
         this.objectMapper = objectMapper;
         this.rpcHandler = rpcHandler;
+        this.messagingTemplate = messagingTemplate;
     }
 
     /**
@@ -118,15 +122,15 @@ public class HostPythonExecutor implements SandboxExecutor {
         script.append("import uuid\n");
         script.append("import traceback\n");
         script.append("import pickle\n\n");
-        
+
         // Inject sessionId as a global variable
         script.append("# Session context (automatically injected)\n");
         script.append(String.format("SESSION_ID = '%s'\n\n", sessionId));
-        
+
         // State persistence file path
         script.append("# State persistence file path\n");
         script.append("STATE_FILE = os.path.join(os.getcwd(), '.python_state.pkl')\n\n");
-        
+
         // Load previous state from pickle file if it exists
         script.append("# Load previous state if it exists\n");
         script.append("if os.path.exists(STATE_FILE):\n");
@@ -139,7 +143,7 @@ public class HostPythonExecutor implements SandboxExecutor {
         script.append("                    globals()[key] = value\n");
         script.append("    except Exception as e:\n");
         script.append("        print(f'Warning: Failed to load state: {e}', file=sys.stderr)\n\n");
-        
+
         // Debug: Print current working directory
         script.append("# Debug: Current working directory\n");
         script.append("print(f'[DEBUG] CWD: {os.getcwd()}')\n\n");
@@ -283,7 +287,22 @@ public class HostPythonExecutor implements SandboxExecutor {
                     if (line.contains("__TOOL_REQUEST__")) {
                         handleToolRequest(sessionId, line, stdinWriter);
                     } else {
+                        // Append to captured output (existing behaviour)
                         stdout.append(line).append("\n");
+
+                        // Stream output_chunk events for non-protocol lines
+                        if (!line.startsWith("STATE:")) {
+                            try {
+                                AgentEvent chunkEvent = AgentEvent.builder()
+                                        .type("output_chunk")
+                                        .content(line)
+                                        .metadata(null)
+                                        .build();
+                                messagingTemplate.convertAndSend("/topic/agent/" + sessionId, chunkEvent);
+                            } catch (Exception e) {
+                                log.warn("⚠️ Failed to send output_chunk event (non-fatal): {}", e.getMessage());
+                            }
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -346,11 +365,11 @@ public class HostPythonExecutor implements SandboxExecutor {
         try {
             // Delegate to shared RPC handler
             String response = rpcHandler.handleToolRequest(sessionId, line);
-            
+
             // Send response to Python
             stdinWriter.println(response);
             stdinWriter.flush();
-            
+
         } catch (Exception e) {
             log.error("❌ Error handling tool request", e);
         }

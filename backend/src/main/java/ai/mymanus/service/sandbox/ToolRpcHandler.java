@@ -1,5 +1,6 @@
 package ai.mymanus.service.sandbox;
 
+import ai.mymanus.dto.AgentEvent;
 import ai.mymanus.model.ToolExecution;
 import ai.mymanus.service.AgentStateService;
 import ai.mymanus.tool.Tool;
@@ -7,14 +8,16 @@ import ai.mymanus.tool.ToolRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Shared RPC handler for tool execution requests from Python sandbox.
  * Used by both HostPythonExecutor and PythonSandboxExecutor.
- * 
+ *
  * Handles the bidirectional RPC protocol:
  * Python → __TOOL_REQUEST__{json}__END__ → Java
  * Java → __TOOL_RESPONSE__{json}__END__ → Python
@@ -27,11 +30,12 @@ public class ToolRpcHandler {
     private final ToolRegistry toolRegistry;
     private final ObjectMapper objectMapper;
     private final AgentStateService stateService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * Handle a tool request line from Python stdout.
      * Parses the request, executes the tool, and returns the response.
-     * 
+     *
      * @param line The stdout line containing __TOOL_REQUEST__
      * @return The tool response to send to Python stdin (__TOOL_RESPONSE__{json}__END__)
      */
@@ -64,14 +68,38 @@ public class ToolRpcHandler {
 
             // Record tool execution in database for UI display
             try {
-                ToolExecution.ExecutionStatus status = (result != null && Boolean.TRUE.equals(result.get("success"))) 
-                    ? ToolExecution.ExecutionStatus.SUCCESS 
+                ToolExecution.ExecutionStatus status = (result != null && Boolean.TRUE.equals(result.get("success")))
+                    ? ToolExecution.ExecutionStatus.SUCCESS
                     : ToolExecution.ExecutionStatus.FAILED;
-                
+
                 stateService.recordToolExecution(sessionId, request.tool, request.params, result, status, (int) duration);
                 log.debug("📝 Tool execution recorded in database");
             } catch (Exception e) {
                 log.warn("⚠️ Failed to record tool execution (non-fatal): {}", e.getMessage());
+            }
+
+            // Emit browser_snapshot WebSocket event if result contains a screenshot
+            if (result != null && result.containsKey("screenshot")) {
+                try {
+                    Map<String, Object> snapshotData = new HashMap<>();
+                    String[] snapshotKeys = {"screenshot", "url", "title", "accessibilityTree", "htmlContent", "timestamp"};
+                    for (String key : snapshotKeys) {
+                        if (result.containsKey(key)) {
+                            snapshotData.put(key, result.get(key));
+                        }
+                    }
+
+                    AgentEvent snapshotEvent = AgentEvent.builder()
+                            .type("browser_snapshot")
+                            .content(objectMapper.writeValueAsString(snapshotData))
+                            .metadata(Map.of("toolName", request.tool, "timestamp", System.currentTimeMillis()))
+                            .build();
+
+                    messagingTemplate.convertAndSend("/topic/agent/" + sessionId, snapshotEvent);
+                    log.debug("📸 Emitted browser_snapshot event for session {}", sessionId);
+                } catch (Exception e) {
+                    log.warn("⚠️ Failed to emit browser_snapshot event (non-fatal): {}", e.getMessage());
+                }
             }
 
             // Build response
