@@ -113,6 +113,14 @@ Claude Code Session Analyzer — Python core.
 
 Reads JSONL session files, extracts structured data, and emits a Markdown report
 to stdout. A second copy without ANSI escapes is written to a file.
+
+Features:
+  - Custom agent detection (planner, implementer, reviewer, test-engineer, etc.)
+  - Skill() tool invocation tracking
+  - TaskStop detection
+  - Review verdict detection (REQUEST CHANGES / APPROVE)
+  - Review-fix loop pattern tracking
+  - Agent resume/background/stop lifecycle events
 """
 
 import json
@@ -195,12 +203,7 @@ def truncate(text, maxlen=200):
     return text[:maxlen] + "…"
 
 def decode_project_path(encoded):
-    """Decode a project directory name back to a path.
-    e.g. '-Users-sam-Projects-myapp' -> '/Users/sam/Projects/myapp'
-    Note: This is inherently ambiguous since hyphens in directory names
-    are indistinguishable from path separators. The cwd from session
-    data is preferred when available.
-    """
+    """Decode a project directory name back to a path."""
     if encoded.startswith("-"):
         return "/" + encoded[1:].replace("-", "/")
     return encoded.replace("-", "/")
@@ -437,14 +440,17 @@ class SessionData:
         self.glob_searches = []
         self.grep_searches = []
         self.todo_writes = []
-        self.task_invocations = []
+        self.task_invocations = []       # Task tool calls
+        self.task_stops = []             # TaskStop tool calls
+        self.skill_invocations = []      # Skill() tool calls
+        self.review_verdicts = []        # Detected review verdicts
         self.git_commits = []
         self.pr_created = False
         self.claude_md_read = False
         self.workflow_config_read = False
         self.agent_files_read = []
         self.rules_files_read = []
-        self.skills_invoked = []
+        self.skills_invoked = []         # Legacy — from file reads
         self.timeline = []
 
     def parse(self):
@@ -462,11 +468,14 @@ class SessionData:
                 message = obj.get("message", {})
                 content = message.get("content", "")
                 user_text = self._extract_user_text(content)
+                # Also extract tool result details for timeline
+                tool_results = self._extract_tool_results(content)
                 self.timeline.append({
                     "timestamp": timestamp,
                     "turn": turn_number,
                     "role": "user",
                     "text": user_text,
+                    "tool_results": tool_results,
                     "tools": [],
                 })
 
@@ -490,6 +499,28 @@ class SessionData:
             self.start_time = timestamp
         self.end_time = timestamp
 
+    def _extract_tool_results(self, content):
+        """Extract tool_result blocks from user message content for timeline display."""
+        results = []
+        if isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict) and block.get("type") == "tool_result":
+                    tool_use_id = block.get("tool_use_id", "")
+                    is_error = block.get("is_error", False)
+                    result_text = block.get("content", "")
+                    if isinstance(result_text, list):
+                        texts = []
+                        for rc in result_text:
+                            if isinstance(rc, dict) and rc.get("type") == "text":
+                                texts.append(rc.get("text", ""))
+                        result_text = " ".join(texts)
+                    results.append({
+                        "tool_use_id": tool_use_id,
+                        "is_error": is_error,
+                        "content": truncate(str(result_text), 300),
+                    })
+        return results
+
     def _extract_user_text(self, content):
         """Extract displayable text from user message content."""
         if isinstance(content, str):
@@ -501,7 +532,6 @@ class SessionData:
                     if block.get("type") == "tool_result":
                         result_content = block.get("content", "")
                         if isinstance(result_content, list):
-                            # Sometimes content is a list of text blocks
                             texts = []
                             for rc in result_content:
                                 if isinstance(rc, dict) and rc.get("type") == "text":
@@ -509,7 +539,7 @@ class SessionData:
                             result_content = " ".join(texts)
                         is_err = block.get("is_error", False)
                         prefix = "error" if is_err else "result"
-                        parts.append(f"[tool_{prefix}]")
+                        parts.append(f"[tool_{prefix}: {truncate(str(result_content), 100)}]")
                     elif block.get("type") == "text":
                         parts.append(truncate(block.get("text", ""), 150))
                 elif isinstance(block, str):
@@ -552,6 +582,8 @@ class SessionData:
                     text = block.get("text", "")
                     if text.strip():
                         thoughts.append(truncate(text, MAX_THOUGHT))
+                        # Scan for review verdicts in assistant text
+                        self._scan_for_verdicts(text, timestamp)
 
                 elif btype == "thinking":
                     thinking = block.get("thinking", "")
@@ -564,7 +596,7 @@ class SessionData:
                     tool_id = block.get("id", "")
                     self._process_tool_use(tool_name, tool_input, tool_id, timestamp)
                     tool_desc = self._describe_tool(tool_name, tool_input)
-                    tools_used.append({"name": tool_name, "description": tool_desc, "id": tool_id})
+                    tools_used.append({"name": tool_name, "description": tool_desc, "id": tool_id, "input": tool_input})
 
         # Also check toolUseMessages array (alternate format)
         for tum in obj.get("toolUseMessages", []):
@@ -575,7 +607,7 @@ class SessionData:
                 if tool_name:
                     self._process_tool_use(tool_name, tool_input, tool_id, timestamp)
                     tool_desc = self._describe_tool(tool_name, tool_input)
-                    tools_used.append({"name": tool_name, "description": tool_desc, "id": tool_id})
+                    tools_used.append({"name": tool_name, "description": tool_desc, "id": tool_id, "input": tool_input})
 
         self.timeline.append({
             "timestamp": timestamp,
@@ -584,6 +616,29 @@ class SessionData:
             "thoughts": thoughts,
             "tools": tools_used,
         })
+
+    def _scan_for_verdicts(self, text, timestamp):
+        """Scan assistant text for review verdicts like REQUEST CHANGES or APPROVE."""
+        text_upper = text.upper()
+        # Look for verdict patterns
+        verdict_patterns = [
+            (r'(?i)verdict\s*:\s*REQUEST\s+CHANGES', "REQUEST CHANGES"),
+            (r'(?i)verdict\s*:\s*APPROVE', "APPROVE"),
+            (r'(?i)verdict\s*:\s*APPROVED', "APPROVE"),
+            (r'(?i)verdict\s*:\s*REJECT', "REJECT"),
+            (r'(?i)verdict\s*:\s*NEEDS?\s+WORK', "NEEDS WORK"),
+        ]
+        for pattern, verdict in verdict_patterns:
+            if re.search(pattern, text):
+                # Extract review round info if present
+                round_match = re.search(r'(?i)(?:round|review)\s*(\d+)', text)
+                round_num = int(round_match.group(1)) if round_match else None
+                self.review_verdicts.append({
+                    "timestamp": timestamp,
+                    "verdict": verdict,
+                    "round": round_num,
+                    "context": truncate(text, 300),
+                })
 
     def _parse_summary(self, obj, timestamp, turn_number):
         """Parse a summary message."""
@@ -622,6 +677,8 @@ class SessionData:
                     self.agent_files_read.append(filepath)
                 if ".claude/rules/" in filepath and filepath.endswith(".md"):
                     self.rules_files_read.append(filepath)
+                if ".claude/skills/" in filepath:
+                    self.skills_invoked.append(filepath)
 
         elif name == "Write":
             filepath = inp.get("file_path") or inp.get("filePath") or inp.get("path", "")
@@ -658,14 +715,50 @@ class SessionData:
         elif name == "Task":
             desc = inp.get("description", "")
             command = inp.get("command", inp.get("prompt", ""))
-            agent_name = inp.get("agent", "")
+            # Extract agent type from multiple possible field names
+            agent_name = (
+                inp.get("agent", "") or
+                inp.get("agentType", "") or
+                inp.get("agent_type", "") or
+                inp.get("subagent_type", "") or
+                inp.get("type", "")
+            )
+            is_background = inp.get("background", False)
+            resume_id = inp.get("resume", "")
             self.task_invocations.append({
                 "timestamp": timestamp,
                 "description": desc,
                 "command": truncate(str(command), 500),
                 "agent": agent_name,
                 "tool_id": tool_id,
+                "background": is_background,
+                "resume": resume_id,
             })
+
+        elif name in ("TaskStop", "StopTask", "Stop Task"):
+            agent_id = inp.get("agentId", "") or inp.get("agent_id", "") or inp.get("id", "")
+            desc = inp.get("description", "")
+            self.task_stops.append({
+                "timestamp": timestamp,
+                "agent_id": agent_id,
+                "description": desc,
+                "tool_id": tool_id,
+            })
+
+        elif name == "Skill":
+            # Skill() tool invocation — loads a skill
+            skill_name = (
+                inp.get("name", "") or
+                inp.get("skill_name", "") or
+                inp.get("skillName", "") or
+                inp.get("skill", "")
+            )
+            if skill_name:
+                self.skill_invocations.append({
+                    "timestamp": timestamp,
+                    "name": skill_name,
+                    "tool_id": tool_id,
+                })
 
     def _describe_tool(self, name, inp):
         """Return a brief human-readable description of a tool call."""
@@ -675,10 +768,10 @@ class SessionData:
             return inp.get("file_path") or inp.get("filePath") or inp.get("path", "")
         elif name == "Write":
             fp = inp.get("file_path") or inp.get("filePath") or inp.get("path", "")
-            return f"write → {fp}"
+            return f"write -> {fp}"
         elif name in ("Edit", "MultiEdit"):
             fp = inp.get("file_path") or inp.get("filePath") or inp.get("path", "")
-            return f"edit → {fp}"
+            return f"edit -> {fp}"
         elif name == "Bash":
             cmd = inp.get("command", "")
             return truncate(cmd, MAX_BASH_CMD)
@@ -691,8 +784,41 @@ class SessionData:
                 return f"`{pat}` in {path}"
             return pat
         elif name == "Task":
+            agent = (
+                inp.get("agent", "") or
+                inp.get("agentType", "") or
+                inp.get("agent_type", "") or
+                inp.get("subagent_type", "")
+            )
             desc = inp.get("description", "")
-            return f"sub-agent: {truncate(desc, 150)}"
+            resume = inp.get("resume", "")
+            bg = inp.get("background", False)
+            parts = []
+            if agent:
+                parts.append(f"agent={agent}")
+            if desc:
+                parts.append(truncate(desc, 120))
+            if resume:
+                parts.append(f"resume={resume}")
+            if bg:
+                parts.append("(background)")
+            return " | ".join(parts) if parts else "sub-agent task"
+        elif name in ("TaskStop", "StopTask", "Stop Task"):
+            desc = inp.get("description", "")
+            agent_id = inp.get("agentId", "") or inp.get("agent_id", "")
+            parts = []
+            if agent_id:
+                parts.append(f"stop agent {agent_id}")
+            if desc:
+                parts.append(truncate(desc, 120))
+            return " | ".join(parts) if parts else "stop agent"
+        elif name == "Skill":
+            skill_name = (
+                inp.get("name", "") or
+                inp.get("skill_name", "") or
+                inp.get("skillName", "")
+            )
+            return f"load skill: {skill_name}" if skill_name else "load skill"
         elif name in ("TodoRead", "TodoWrite"):
             return name
         elif name == "WebSearch":
@@ -742,6 +868,8 @@ class ReportGenerator:
         self._section_header()
         self._section_overview()
         self._section_agent_discovery()
+        self._section_skills()
+        self._section_review_loop()
         self._section_timeline()
         self._section_sub_agent_timelines()
         self._section_files_touched()
@@ -763,8 +891,9 @@ class ReportGenerator:
         icons = {
             "Read": "📖", "Write": "✏️", "Edit": "🔧", "MultiEdit": "🔧",
             "Bash": "💻", "Glob": "🔍", "Grep": "🔍", "Task": "🤖",
-            "TodoRead": "📋", "TodoWrite": "📋", "WebSearch": "🌐",
-            "WebFetch": "🌐",
+            "TaskStop": "🛑", "StopTask": "🛑", "Stop Task": "🛑",
+            "Skill": "🎯", "TodoRead": "📋", "TodoWrite": "📋",
+            "WebSearch": "🌐", "WebFetch": "🌐",
         }
         return icons.get(name, "⚙️")
 
@@ -856,51 +985,201 @@ class ReportGenerator:
         self._add("## 2. Agent Discovery", bold(cyan("## 2. Agent Discovery")))
         self._blank()
 
-        if not self.agent_data and not self.main_data.task_invocations:
-            self._add("No sub-agents were spawned in this session.")
+        all_task_invocations = list(self.main_data.task_invocations)
+        all_task_stops = list(self.main_data.task_stops)
+        all_skill_invocations = list(self.main_data.skill_invocations)
+
+        has_agents = bool(self.agent_data or all_task_invocations)
+
+        if not has_agents and not all_skill_invocations:
+            self._add("No sub-agents or skills were used in this session.")
             self._blank()
             return
 
         self._add(f"**Main session file**: `{os.path.basename(self.main_data.filepath)}`")
         self._blank()
 
+        # ── Custom Agent Types Summary ──
+        agent_types_used = defaultdict(list)
+        for task in all_task_invocations:
+            agent_type = task.get("agent", "")
+            if agent_type:
+                agent_types_used[agent_type].append(task)
+
+        if agent_types_used:
+            self._add("### Custom Agent Types Used")
+            self._blank()
+            self._add("| Agent Type | Invocations | Descriptions |")
+            self._add("|------------|-------------|--------------|")
+            for agent_type, tasks in sorted(agent_types_used.items()):
+                descs = "; ".join(truncate(t["description"], 80) for t in tasks if t.get("description"))
+                self._add(f"| `{agent_type}` | {len(tasks)} | {descs} |")
+            self._blank()
+
+        # ── Sub-Agent Files Table ──
         if self.agent_data:
             self._add("### Sub-Agent Files")
             self._blank()
-            self._add("| # | Agent File | Agent ID | Slug | User Turns | Tool Calls | Cost |")
-            self._add("|---|------------|----------|------|------------|------------|------|")
+            self._add("| # | Agent File | Slug | User Turns | Tool Calls | Cost |")
+            self._add("|---|------------|------|------------|------------|------|")
             for i, ad in enumerate(self.agent_data, 1):
                 fname = os.path.basename(ad.filepath)
-                aid = ad.agent_id or fname.replace("agent-", "").replace(".jsonl", "")
                 slug = ad.slug or "—"
                 turns = len([e for e in ad.timeline if e["role"] == "user"])
                 tool_calls = sum(len(e.get("tools", [])) for e in ad.timeline if e["role"] == "assistant")
                 cost = f"${ad.total_cost:.4f}"
-                self._add(f"| {i} | `{fname}` | `{aid}` | {slug} | {turns} | {tool_calls} | {cost} |")
+                self._add(f"| {i} | `{fname}` | {slug} | {turns} | {tool_calls} | {cost} |")
             self._blank()
 
-        if self.main_data.task_invocations:
+        # ── Task Invocations Detail ──
+        if all_task_invocations:
             self._add("### Task (Sub-Agent) Invocations from Main Session")
             self._blank()
-            for i, task in enumerate(self.main_data.task_invocations, 1):
-                self._add(f"**Task #{i}** — {ts_to_str(task['timestamp'])}")
-                if task.get("agent"):
-                    self._add(f"- **Agent**: `{task['agent']}`")
-                if task.get("description"):
-                    self._add(f"- **Description**: {task['description']}")
+            for i, task in enumerate(all_task_invocations, 1):
+                ts = ts_to_str(task['timestamp'])
+                agent = task.get("agent", "")
+                desc = task.get("description", "")
+                bg = task.get("background", False)
+                resume = task.get("resume", "")
+
+                # Build header with agent type
+                header_parts = [f"**Task #{i}**"]
+                if agent:
+                    header_parts.append(f"[`{agent}`]")
+                header_parts.append(f"— {ts}")
+                self._add(" ".join(header_parts))
+
+                if desc:
+                    self._add(f"- **Description**: {desc}")
+                if bg:
+                    self._add(f"- **Mode**: Backgrounded")
+                if resume:
+                    self._add(f"- **Resume**: agent `{resume}`")
                 if task.get("command"):
                     self._add(f"- **Prompt**: {task['command']}")
                 self._blank()
 
-        # Custom agents
+        # ── Task Stops ──
+        if all_task_stops:
+            self._add("### Task Stops")
+            self._blank()
+            for stop in all_task_stops:
+                ts = ts_to_str(stop['timestamp'])
+                desc = stop.get("description", "")
+                agent_id = stop.get("agent_id", "")
+                self._add(f"- **{ts}**: Stopped agent `{agent_id}` — {desc}")
+            self._blank()
+
+        # ── Custom Agent Files Referenced ──
         all_agent_files = set()
         for ad in [self.main_data] + self.agent_data:
             all_agent_files.update(ad.agent_files_read)
         if all_agent_files:
-            self._add("### Custom Agents Referenced")
+            self._add("### Custom Agent Definition Files Referenced")
             self._blank()
             for af in sorted(all_agent_files):
                 self._add(f"- `{af}`")
+            self._blank()
+
+    def _section_skills(self):
+        """Dedicated section for Skill() invocations."""
+        all_skills = list(self.main_data.skill_invocations)
+        for ad in self.agent_data:
+            all_skills.extend(ad.skill_invocations)
+
+        # Also collect skills from file reads (legacy detection)
+        skill_files = set()
+        for ad in [self.main_data] + self.agent_data:
+            for fp in ad.skills_invoked:
+                skill_files.add(fp)
+
+        if not all_skills and not skill_files:
+            return  # Don't emit section if no skills
+
+        self._add("## 2b. Skills Loaded", bold(cyan("## 2b. Skills Loaded")))
+        self._blank()
+
+        if all_skills:
+            self._add("| # | Skill Name | Timestamp | Source |")
+            self._add("|---|------------|-----------|--------|")
+            for i, skill in enumerate(all_skills, 1):
+                ts = ts_to_str(skill['timestamp'])
+                source = "main session"
+                self._add(f"| {i} | `{skill['name']}` | {ts} | {source} |")
+            self._blank()
+
+        if skill_files:
+            self._add("**Skill files accessed:**")
+            self._blank()
+            for fp in sorted(skill_files):
+                self._add(f"- `{fp}`")
+            self._blank()
+
+    def _section_review_loop(self):
+        """Detect and display the review-fix loop pattern."""
+        all_verdicts = list(self.main_data.review_verdicts)
+        for ad in self.agent_data:
+            all_verdicts.extend(ad.review_verdicts)
+
+        if not all_verdicts:
+            return  # Don't emit section if no reviews
+
+        self._add("## 2c. Review-Fix Loop", bold(cyan("## 2c. Review-Fix Loop")))
+        self._blank()
+
+        # Build the review loop narrative
+        self._add("The session contains a code review cycle with the following verdicts:")
+        self._blank()
+
+        # Assign round numbers if not already present
+        for i, v in enumerate(all_verdicts):
+            if v.get("round") is None:
+                v["round"] = i + 1
+
+        self._add("| Round | Verdict | Timestamp |")
+        self._add("|-------|---------|-----------|")
+        for v in all_verdicts:
+            verdict_str = v["verdict"]
+            if verdict_str == "REQUEST CHANGES":
+                verdict_str = "❌ REQUEST CHANGES"
+            elif verdict_str == "APPROVE":
+                verdict_str = "✅ APPROVE"
+            elif verdict_str == "REJECT":
+                verdict_str = "❌ REJECT"
+            self._add(f"| {v['round']} | {verdict_str} | {ts_to_str(v['timestamp'])} |")
+        self._blank()
+
+        # Analyze the pattern
+        request_changes = [v for v in all_verdicts if v["verdict"] == "REQUEST CHANGES"]
+        approvals = [v for v in all_verdicts if v["verdict"] == "APPROVE"]
+
+        if request_changes and approvals:
+            # Find remediation agents between review rounds
+            remediation_agents = []
+            for task in self.main_data.task_invocations:
+                agent = task.get("agent", "").lower()
+                desc = task.get("description", "").lower()
+                if any(kw in desc for kw in ["remediat", "fix", "resolve", "address"]):
+                    remediation_agents.append(task)
+                elif agent in ("implementer", "fixer"):
+                    # Check if this was after a REQUEST CHANGES
+                    remediation_agents.append(task)
+
+            self._add("**Review-Fix Pattern Detected:**")
+            self._blank()
+            self._add(f"1. **Round 1 Review**: {request_changes[0]['verdict']} — {len(request_changes)} issue(s) flagged")
+            if remediation_agents:
+                for ra in remediation_agents:
+                    agent = ra.get("agent", "unknown")
+                    desc = ra.get("description", "")
+                    self._add(f"2. **Remediation**: `{agent}` agent — {desc}")
+            self._add(f"3. **Round 2 Review**: {approvals[0]['verdict']} — all issues resolved")
+            self._blank()
+        elif request_changes:
+            self._add(f"**Status**: Review requested changes ({len(request_changes)} round(s)), no approval yet.")
+            self._blank()
+        elif approvals:
+            self._add(f"**Status**: Code approved after {len(approvals)} review round(s).")
             self._blank()
 
     def _section_timeline(self):
@@ -922,9 +1201,20 @@ class ReportGenerator:
                 header = f"### Turn {entry['turn']} — User ({ts})"
                 self._add(header, bold(green(header)))
                 self._blank()
-                # Only show user text if it's a real prompt (not just tool results)
+                # Show user text if it's a real prompt (not just tool results)
                 if text and not text.startswith("[tool_"):
                     self._add(f"> {text}")
+                    self._blank()
+                # Show tool results summary if present
+                tool_results = entry.get("tool_results", [])
+                if tool_results:
+                    for tr in tool_results:
+                        is_err = tr.get("is_error", False)
+                        content = tr.get("content", "")
+                        if is_err:
+                            self._add(f"- ❌ **Tool Error**: {content}")
+                        elif content:
+                            self._add(f"- ✅ **Tool Result**: {content}")
                     self._blank()
 
             elif role == "assistant":
@@ -938,7 +1228,6 @@ class ReportGenerator:
                     self._add("**Reasoning / Thoughts:**")
                     self._blank()
                     for t in thoughts:
-                        # Escape any markdown blockquote characters inside the text
                         self._add(f"> {t}")
                         self._blank()
 
@@ -976,11 +1265,23 @@ class ReportGenerator:
 
         for ad in self.agent_data:
             fname = os.path.basename(ad.filepath)
-            aid = ad.agent_id or fname.replace("agent-", "").replace(".jsonl", "")
-            slug_str = f" ({ad.slug})" if ad.slug else ""
+            slug_str = f" (`{ad.slug}`)" if ad.slug else ""
             header = f"### Sub-Agent: `{fname}`{slug_str}"
             self._add(header, bold(yellow(header)))
             self._blank()
+
+            # Show agent metadata
+            meta_parts = []
+            if ad.slug:
+                meta_parts.append(f"Type: `{ad.slug}`")
+            if ad.total_cost > 0:
+                meta_parts.append(f"Cost: ${ad.total_cost:.4f}")
+            tool_count = sum(len(e.get("tools", [])) for e in ad.timeline if e["role"] == "assistant")
+            if tool_count:
+                meta_parts.append(f"Tool calls: {tool_count}")
+            if meta_parts:
+                self._add(f"*{' | '.join(meta_parts)}*")
+                self._blank()
 
             if not ad.timeline:
                 self._add("_(No messages found)_")
@@ -1129,12 +1430,15 @@ class ReportGenerator:
 
         all_agent_files = set()
         all_rules = set()
-        all_skills = set()
+        all_skill_names = set()
+        all_skill_files = set()
         all_todos = []
         for sd in all_sessions:
             all_agent_files.update(sd.agent_files_read)
             all_rules.update(sd.rules_files_read)
-            all_skills.update(sd.skills_invoked)
+            all_skill_files.update(sd.skills_invoked)
+            for sk in sd.skill_invocations:
+                all_skill_names.add(sk["name"])
             all_todos.extend(sd.todo_writes)
 
         items = [
@@ -1144,7 +1448,10 @@ class ReportGenerator:
              ", ".join(f"`{f}`" for f in sorted(all_agent_files)) if all_agent_files else "None"),
             ("Rules files (.claude/rules/*.md)",
              ", ".join(f"`{f}`" for f in sorted(all_rules)) if all_rules else "None"),
-            ("Skills invoked", ", ".join(sorted(all_skills)) if all_skills else "None"),
+            ("Skills loaded via Skill()",
+             ", ".join(f"`{s}`" for s in sorted(all_skill_names)) if all_skill_names else "None"),
+            ("Skill files accessed",
+             ", ".join(f"`{f}`" for f in sorted(all_skill_files)) if all_skill_files else "None"),
             ("TodoWrite entries", str(len(all_todos)) if all_todos else "0"),
         ]
 
@@ -1159,7 +1466,6 @@ class ReportGenerator:
             self._blank()
             for i, todo in enumerate(all_todos, 1):
                 if isinstance(todo, dict):
-                    # Try to extract individual todo items
                     todo_items = todo.get("todos", [])
                     if todo_items and isinstance(todo_items, list):
                         self._add(f"**TodoWrite #{i}:**")
@@ -1193,7 +1499,6 @@ class ReportGenerator:
             thoughts = last_assistant.get("thoughts", [])
             if thoughts:
                 for t in thoughts:
-                    # Use longer truncation for the final message
                     self._add(f"> {truncate(t, MAX_FINAL_MSG)}")
                     self._blank()
             tools = last_assistant.get("tools", [])
@@ -1206,6 +1511,21 @@ class ReportGenerator:
                 self._blank()
         else:
             self._add("_(No assistant messages found)_")
+            self._blank()
+
+        # Review outcome summary
+        all_verdicts = list(self.main_data.review_verdicts)
+        for ad in self.agent_data:
+            all_verdicts.extend(ad.review_verdicts)
+        if all_verdicts:
+            last_verdict = all_verdicts[-1]
+            verdict_str = last_verdict["verdict"]
+            if verdict_str == "APPROVE":
+                self._add(f"**Code Review**: ✅ APPROVED (after {len(all_verdicts)} review round(s))")
+            elif verdict_str == "REQUEST CHANGES":
+                self._add(f"**Code Review**: ❌ Changes still requested (after {len(all_verdicts)} review round(s))")
+            else:
+                self._add(f"**Code Review**: {verdict_str} (after {len(all_verdicts)} review round(s))")
             self._blank()
 
         # Git commits
@@ -1229,7 +1549,18 @@ class ReportGenerator:
         if pr_created:
             self._add("**Pull Request**: ✅ A PR creation was detected.")
         else:
-            self._add("**Pull Request**: No PR creation detected.")
+            # Also check for PR URL patterns in assistant text
+            pr_url_found = False
+            for entry in self.main_data.timeline:
+                if entry["role"] == "assistant":
+                    for t in entry.get("thoughts", []):
+                        if re.search(r'https?://[^\s]+/compare/[^\s]+|https?://[^\s]+/pull/\d+', t):
+                            pr_url_found = True
+                            break
+            if pr_url_found:
+                self._add("**Pull Request**: A PR URL was shared (manual creation via browser).")
+            else:
+                self._add("**Pull Request**: No PR creation detected.")
         self._blank()
 
         # Push activity
