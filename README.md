@@ -78,7 +78,9 @@ docker run -d \
 ```bash
 # Backend configuration
 cp backend/.env.example backend/.env
-# Edit backend/.env with your API keys
+# Edit backend/.env with your API keys, then export it into your shell
+# (Spring Boot does not read .env files on its own)
+set -a; source backend/.env; set +a
 
 # Frontend configuration
 cp frontend/.env.example frontend/.env
