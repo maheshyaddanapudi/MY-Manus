@@ -12,7 +12,7 @@
 ### Step 1: Clone & Configure
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/maheshyaddanapudi/MY-Manus.git
 cd MY-Manus
 
 # Backend environment
@@ -73,7 +73,7 @@ docker-compose up -d
 This starts:
 - PostgreSQL (port 5432)
 - Backend API (port 8080)
-- Frontend UI (port 3000)
+- Frontend UI (published on 3000, but Vite listens on 5173 inside the container — see the Docker Compose note in README.md)
 
 #### Option B: Run Individually
 
@@ -103,14 +103,14 @@ npm run dev
 
 ### Step 4: Access the Application
 
-🌐 **Frontend**: http://localhost:3000
+🌐 **Frontend**: http://localhost:5173 (`npm run dev`)
 📡 **Backend API**: http://localhost:8080
 📚 **Swagger UI**: http://localhost:8080/swagger-ui.html
 🔍 **OpenAPI Spec**: http://localhost:8080/v3/api-docs
 
 ### Step 5: Test the Agent
 
-1. Open http://localhost:3000
+1. Open http://localhost:5173
 2. Type a task: *"Create a simple data visualization showing random numbers"*
 3. Watch the agent:
    - 💭 Think and plan
@@ -331,7 +331,6 @@ Open http://localhost:8080/swagger-ui.html to:
 - **[Deployment Guide](docs/guides/DEPLOYMENT.md)** - Production deployment
 
 ### Project Status
-- **[Implementation Status](IMPLEMENTATION_STATUS.md)** - Current implementation status
 - **[Final Summary](docs/project/FINAL_SUMMARY.md)** - Complete differential analysis
 
 ## 🆘 Get Help
