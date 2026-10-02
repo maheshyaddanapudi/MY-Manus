@@ -20,7 +20,7 @@ MY Manus is a self-hosted implementation of an autonomous AI agent platform buil
 - **🔐 Auth Toggle**: `AUTH_ENABLED=true` makes Spring Security require authentication on all API routes except `/ws/**` and `/api/health` (off by default; JWT token issuance/validation is not wired up yet)
 - **🎬 Session Replay**: Record and replay agent sessions step by step
 - **🧠 RAG/Knowledge Base**: Upload documents for semantic search and context augmentation
-- **🌐 Enhanced Browser**: Multi-tab browsing with console logs and network monitoring
+- **🌐 Browser Panel**: Playwright-driven browsing with console log and network request viewers
 - **🔔 Real-Time Notifications**: Browser notifications and in-app notification center with priority levels
 - **📋 Live Plan Visualization**: Real-time task tracking synchronized with todo.md files
 - **💬 Multi-Turn Conversations**: Intelligent LLM-based message classification for parallel query handling
