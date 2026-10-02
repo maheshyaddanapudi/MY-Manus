@@ -1456,7 +1456,7 @@ MY-Manus implements a **production-grade CodeAct agent platform** with:
 
 **Get Started:**
 ```bash
-git clone https://github.com/yourusername/MY-Manus.git
+git clone https://github.com/maheshyaddanapudi/MY-Manus.git
 cd MY-Manus
 docker-compose up
 # Visit http://localhost:3000

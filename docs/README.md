@@ -8,7 +8,6 @@ Welcome to the MY-Manus documentation! This directory contains comprehensive gui
 Before diving into the detailed documentation, start here:
 - **[QUICKSTART.md](../QUICKSTART.md)** - Get up and running in 5 minutes
 - **[SETUP.md](../SETUP.md)** - Detailed installation and configuration guide
-- **[CLAUDE.md](../CLAUDE.md)** - Development instructions for Claude Code users
 
 ---
 
@@ -184,9 +183,7 @@ Found an error or want to improve the docs?
 
 ## 📧 Support
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/yourusername/my-manus/issues)
-- **Discussions**: [Ask questions and share ideas](https://github.com/yourusername/my-manus/discussions)
-- **Email**: support@mymanus.ai
+- **GitHub Issues**: [Report bugs or request features](https://github.com/maheshyaddanapudi/MY-Manus/issues)
 
 ---
 
@@ -202,4 +199,4 @@ Found an error or want to improve the docs?
 
 **Last Updated**: 2025-11-25
 **Documentation Version**: 2.0
-**Project Status**: 100% Complete ✅
+**Project Status**: Active development

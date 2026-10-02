@@ -14,7 +14,7 @@
 ### 1. Clone and Setup
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/maheshyaddanapudi/MY-Manus.git
 cd MY-Manus
 ```
 
@@ -101,7 +101,7 @@ docker-compose up -d
 This starts:
 - PostgreSQL database (port 5432)
 - Backend Spring Boot API (port 8080)
-- Frontend React app (port 3000)
+- Frontend React app (published on 3000, but Vite listens on 5173 inside the container — see the Docker Compose note in README.md)
 
 Or run services individually:
 
@@ -147,7 +147,7 @@ This creates TypeScript client code in `frontend/src/api/generated/` based on th
 
 ## Accessing the Application
 
-- **Frontend UI**: http://localhost:3000
+- **Frontend UI**: http://localhost:5173 (Vite dev server)
 - **Backend API**: http://localhost:8080
 - **Swagger UI**: http://localhost:8080/swagger-ui.html
 - **OpenAPI Spec**: http://localhost:8080/v3/api-docs
@@ -194,12 +194,6 @@ cd backend
 ```bash
 cd frontend
 npm test
-```
-
-### Integration Tests
-
-```bash
-./scripts/integration-test.sh
 ```
 
 ## Troubleshooting
@@ -320,14 +314,10 @@ MY-Manus/
 - **[Deployment Guide](docs/guides/DEPLOYMENT.md)** - Production deployment
 
 ### Project Status
-- **[Implementation Status](IMPLEMENTATION_STATUS.md)** - Current implementation status
 - **[Final Summary](docs/project/FINAL_SUMMARY.md)** - Complete differential analysis
-
-### For Claude Code
-- **[CLAUDE.md](CLAUDE.md)** - Instructions for Claude Code development
 
 ## 🆘 Support
 
 - **Documentation**: See comprehensive docs above
-- **GitHub Issues**: [Report bugs](https://github.com/yourusername/my-manus/issues)
+- **GitHub Issues**: [Report bugs](https://github.com/maheshyaddanapudi/MY-Manus/issues)
 - **Quick Reference**: See [Development Guide - Quick Reference](docs/guides/DEVELOPMENT_GUIDE.md#quick-reference)

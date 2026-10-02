@@ -2,31 +2,29 @@
 
 > A transparent AI agent platform where agents write and execute Python code to solve complex tasks, inspired by Manus AI's interface and powered by CodeAct architecture.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
 ![Java](https://img.shields.io/badge/Java-17-orange)
 ![React](https://img.shields.io/badge/React-18-61dafb)
 ![Python](https://img.shields.io/badge/Python-3.11-yellow)
 
 ## 🎯 What is MY Manus?
 
-MY Manus is an open-source implementation of an autonomous AI agent platform that uses the revolutionary CodeAct architecture. Unlike traditional agent systems that rely on rigid API calls, MY Manus agents write and execute Python code to accomplish tasks, providing complete transparency through real-time visualization of their work.
+MY Manus is a self-hosted implementation of an autonomous AI agent platform built on the CodeAct architecture. Unlike traditional agent systems that rely on rigid API calls, MY Manus agents write and execute Python code to accomplish tasks, providing complete transparency through real-time visualization of their work.
 
 ### Key Features
 
-- **🧠 CodeAct Architecture**: Agents write Python code instead of calling JSON APIs, achieving 20% better performance
-- **👁️ Transparent Execution**: Eight-panel interface with real-time visualization (Chat, Terminal, Editor, Browser, Events, Files, Replay, Knowledge, Plan)
-- **🔒 Secure Sandboxing**: All code runs in isolated Docker containers with strict resource limits
-- **🔧 Extensible Tools**: 22 built-in tools with hybrid system (core infrastructure tools + dynamic MCP tool discovery)
+- **🧠 CodeAct Architecture**: Agents write Python code instead of emitting JSON tool calls (the [CodeAct paper](https://arxiv.org/abs/2402.01030) reports up to 20% higher success rates than JSON/text actions on its benchmarks; this project has not been benchmarked independently)
+- **👁️ Transparent Execution**: Multi-panel interface with real-time visualization (Chat, Terminal, Editor, Browser, Events, Files, Replay, Knowledge, Plan)
+- **🔒 Secure Sandboxing**: Code runs in Docker containers with memory/CPU/time limits and networking disabled by default (a `host` mode exists for local development)
+- **🔧 Extensible Tools**: Built-in file, shell, browser, web search, todo, messaging, and visualization tools, plus dynamic MCP tool discovery
 - **💾 State Persistence**: Variables and context persist between code executions
-- **🚀 Production Ready**: Configurable authentication, rate limiting, and horizontal scaling
-- **🎬 Session Replay**: Record and replay agent sessions with time-travel debugging
+- **🔐 Auth Toggle**: `AUTH_ENABLED=true` makes Spring Security require authentication on all API routes except `/ws/**` and `/api/health` (off by default; JWT token issuance/validation is not wired up yet)
+- **🎬 Session Replay**: Record and replay agent sessions step by step
 - **🧠 RAG/Knowledge Base**: Upload documents for semantic search and context augmentation
-- **🌐 Enhanced Browser**: Multi-tab browsing with console logs and network monitoring
+- **🌐 Browser Panel**: Playwright-driven browsing with console log and network request viewers
 - **🔔 Real-Time Notifications**: Browser notifications and in-app notification center with priority levels
 - **📋 Live Plan Visualization**: Real-time task tracking synchronized with todo.md files
 - **💬 Multi-Turn Conversations**: Intelligent LLM-based message classification for parallel query handling
-- **📊 Observability**: Comprehensive Prometheus metrics for monitoring and analytics
+- **📊 Observability**: Prometheus metrics via Spring Boot Actuator / Micrometer
 
 ## 🏗️ Architecture Overview
 
@@ -34,7 +32,7 @@ MY Manus is an open-source implementation of an autonomous AI agent platform tha
 graph TB
     User[User] -->|Query| UI[React Frontend]
     UI -->|WebSocket| Backend[Spring Boot Backend]
-    Backend -->|Prompt| LLM[Claude/GPT]
+    Backend -->|Prompt| LLM[Anthropic Claude]
     LLM -->|Python Code| Backend
     Backend -->|Execute| Sandbox[Docker Sandbox]
     Sandbox -->|Output| Backend
@@ -47,20 +45,25 @@ graph TB
 ### Prerequisites
 
 - Java 17+
-- Node.js 22.13+
-- Docker Desktop
-- PostgreSQL 15+
-- 8GB RAM minimum
+- Node.js 22+
+- Docker (for the code sandbox and, optionally, PostgreSQL)
+- An Anthropic API key
 
 ### Installation
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/my-manus.git
-cd my-manus
+git clone https://github.com/maheshyaddanapudi/MY-Manus.git
+cd MY-Manus
 ```
 
-2. **Start PostgreSQL**
+2. **Build the sandbox image** (one-time; the backend runs code in `mymanus-sandbox:latest`)
+```bash
+./scripts/build-sandbox.sh
+```
+For quick local experiments you can skip this and set `SANDBOX_MODE=host`, which runs agent code directly on your machine — only do that in a trusted environment.
+
+3. **Start PostgreSQL** (needed for the default profile; the `dev` profile below uses an in-memory H2 database instead)
 ```bash
 docker run -d \
   --name mymanus-db \
@@ -71,33 +74,35 @@ docker run -d \
   postgres:15
 ```
 
-3. **Configure environment**
+4. **Configure environment**
 ```bash
 # Backend configuration
 cp backend/.env.example backend/.env
-# Edit backend/.env with your API keys
+# Edit backend/.env with your API keys, then export it into your shell
+# (Spring Boot does not read .env files on its own)
+set -a; source backend/.env; set +a
 
-# Frontend configuration  
+# Frontend configuration
 cp frontend/.env.example frontend/.env
 ```
 
-4. **Run the backend**
+5. **Run the backend** (`dev` = in-memory H2; omit the profile to use PostgreSQL)
 ```bash
 cd backend
 ./mvnw spring-boot:run -Dspring.profiles.active=dev
 ```
 
-5. **Run the frontend**
+6. **Run the frontend**
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-6. **Access the application**
-```
-http://localhost:3000
-```
+7. **Access the application**
+- Frontend: http://localhost:5173 (Vite dev server; proxies `/api` and `/ws` to the backend)
+- Backend API: http://localhost:8080
+- Swagger UI: http://localhost:8080/swagger-ui.html
 
 ## 🎮 Usage
 
@@ -139,16 +144,6 @@ plt.savefig('sentiment_analysis.png')
 print("Analysis complete! Saved visualization.")
 ```
 
-### Available Commands
-
-When using with Claude Code:
-- `START` - Initialize project structure
-- `AGENT` - Build core agent loop
-- `UI` - Create the interface
-- `SANDBOX` - Setup execution environment
-- `TOOLS [name]` - Add new tools
-- `TEST` - Run all tests
-
 ## 🛠️ Core Components
 
 ### Backend (Spring Boot)
@@ -168,34 +163,26 @@ When using with Claude Code:
 - Python 3.11 with data science stack
 - Node.js 22.13 for JavaScript tools
 - FFmpeg, Poppler for media processing
-- Isolated network and filesystem
+- Network disabled by default (`network-mode: none`)
 
 ## 🔧 Configuration
 
-### Development Mode
-```yaml
-# application-dev.yml
-auth:
-  enabled: false
-logging:
-  level: DEBUG
-```
+### Profiles
+- default (`application.yml`): PostgreSQL, Docker sandbox
+- `dev` (`application-dev.yml`): in-memory H2 database
+- `dev-local` (`application-dev-local.yml`): file-based H2 and host-mode sandbox
 
-### Production Mode
+### Authentication (work in progress)
 ```yaml
-# application-prod.yml
+# application.yml (set via environment variables)
 auth:
-  enabled: true
+  enabled: ${AUTH_ENABLED:false}
   jwt:
     secret: ${JWT_SECRET}
-rate-limit:
-  requests: 100
-  window: 3600
 ```
+With `auth.enabled=true`, Spring Security rejects unauthenticated requests, but no login or JWT filter is implemented yet, so this is a lock-down switch rather than a working login flow.
 
 ## 📚 Documentation
-
-> **Comprehensive documentation suite enabling new developers to understand everything A-Z without reading code first.**
 
 ### 🚀 Getting Started
 - **[QUICKSTART.md](QUICKSTART.md)** - Get started in 5 minutes
@@ -206,7 +193,6 @@ rate-limit:
   - First contribution ideas (easy → advanced)
 - **[Project Overview](docs/PROJECT_OVERVIEW.md)** - Project need, inspiration, vision, and design philosophy
   - Why MY-Manus exists, Manus AI inspiration, design philosophy
-- **[CLAUDE.md](CLAUDE.md)** - Development instructions for Claude Code
 
 ### 🏗️ Architecture & Design
 - **[System Architecture](docs/architecture/ARCHITECTURE.md)** - Complete system architecture with 10+ diagrams
@@ -250,7 +236,6 @@ rate-limit:
 - **[Deployment Guide](docs/guides/DEPLOYMENT.md)** - Production deployment strategies
 
 ### 📊 Project Status
-- **[Implementation Status](IMPLEMENTATION_STATUS.md)** - Current implementation status
 - **[Final Summary](docs/project/FINAL_SUMMARY.md)** - Complete differential analysis
 - **[Differential Analysis](docs/project/DIFFERENTIAL_ANALYSIS.md)** - Comparison with Manus AI
 
@@ -267,12 +252,6 @@ cd backend
 # Frontend tests
 cd frontend
 npm test
-
-# Integration tests
-./scripts/integration-test.sh
-
-# Security tests
-./scripts/security-test.sh
 ```
 
 ## 🚢 Deployment
@@ -281,24 +260,28 @@ npm test
 ```bash
 docker-compose up -d
 ```
+Starts PostgreSQL (5432), the backend (8080), and the frontend dev server. Build the sandbox image first (`./scripts/build-sandbox.sh`). The backend container mounts the host Docker socket to launch sandboxes.
 
-### Kubernetes (Production)
-```bash
-kubectl apply -f k8s/
-```
+> Note: the frontend container runs `vite --host`, which listens on Vite's default port 5173, while Compose publishes port 3000. Until that mapping is aligned, run the frontend natively (`npm run dev`) or adjust the port.
+
+Kubernetes manifests are not included; see [Deployment Guide](docs/guides/DEPLOYMENT.md) for options.
 
 ### Environment Variables
 ```bash
 DB_HOST=localhost
+DB_PORT=5432
 DB_NAME=mymanus
+DB_USER=mymanus
+DB_PASSWORD=mymanus
 ANTHROPIC_API_KEY=your-key-here
-AUTH_ENABLED=false  # true in production
+AUTH_ENABLED=false  # true locks down the API (JWT login not yet implemented)
 JWT_SECRET=your-secret-here
+SANDBOX_MODE=docker # or host (trusted local development only)
 ```
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+Issues and pull requests are welcome.
 
 ### Development Workflow
 1. Fork the repository
@@ -307,40 +290,37 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 4. Add tests
 5. Submit a pull request
 
-## 📊 Performance
+## ⚙️ Default Limits
 
-- **Task Success Rate**: 85%+
-- **Average Response Time**: <2 seconds
-- **Code Execution**: <5 seconds
-- **Memory Usage**: ~512MB per sandbox
-- **Concurrent Users**: 100+ supported
+These are configured defaults (`backend/src/main/resources/application.yml`), not measured benchmarks:
+
+- **Sandbox memory**: 512 MB per container
+- **Sandbox CPU**: 50% of one core
+- **Code execution timeout**: 30 seconds
+- **Agent loop**: up to 20 iterations per task
 
 ## 🔐 Security
 
-- All code execution in isolated Docker containers
-- Resource limits enforced (CPU, memory, time)
-- Input validation and sanitization
-- JWT-based authentication (production)
-- Rate limiting per user
-- Audit logging for compliance
+- Agent code runs in Docker containers with CPU, memory, and time limits and no network by default
+- `host` sandbox mode bypasses container isolation — use only for trusted local development
+- Authentication is disabled by default; `AUTH_ENABLED=true` locks down the API, but JWT login is not implemented yet
+- The backend needs access to the Docker socket to launch sandboxes, so treat the backend host as privileged
 
 ## 🙏 Acknowledgments
 
 - Inspired by [Manus AI](https://manus.im) interface design
 - CodeAct architecture from [ICML 2024 paper](https://arxiv.org/abs/2402.01030)
 - Built with Spring Boot, React, Docker, and PostgreSQL
-- Powered by Anthropic Claude and OpenAI GPT models
+- Powered by Anthropic Claude via Spring AI
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE).
 
 ## 💬 Support
 
 - **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/my-manus/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/my-manus/discussions)
-- **Email**: support@mymanus.ai
+- **Issues**: [GitHub Issues](https://github.com/maheshyaddanapudi/MY-Manus/issues)
 
 ## 🌟 Star History
 
@@ -349,5 +329,3 @@ If you find MY Manus useful, please consider giving it a star! ⭐
 ---
 
 **MY Manus** - Where AI agents write code to solve your problems transparently.
-
-Built with ❤️ for the AI community.

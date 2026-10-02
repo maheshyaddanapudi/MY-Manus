@@ -874,7 +874,7 @@ Whether you're a developer wanting to learn agent architectures, an enterprise n
 
 **Get Started:**
 ```bash
-git clone https://github.com/yourusername/MY-Manus.git
+git clone https://github.com/maheshyaddanapudi/MY-Manus.git
 cd MY-Manus
 export ANTHROPIC_API_KEY=your-key-here
 docker-compose up
