@@ -315,7 +315,7 @@ These are configured defaults (`backend/src/main/resources/application.yml`), no
 
 ## 📄 License
 
-No license file is included yet; all rights reserved unless a license is added.
+MIT License — see [LICENSE](LICENSE).
 
 ## 💬 Support
 
